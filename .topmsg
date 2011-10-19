@@ -1,6 +1,6 @@
 From: nzinfo <li.monan@gmail.com>
-Subject: [PATCH] t/cs_fix
+Subject: [PATCH] t/cjk
 
-<patch description>
+CJK-related branches
 
 Signed-off-by: nzinfo <li.monan@gmail.com>
