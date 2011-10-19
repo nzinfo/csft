@@ -360,6 +360,10 @@
 				RelativePath="..\src\sphinxutils.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\src\tokenizer_zhcn.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -448,6 +452,10 @@
 			</File>
 			<File
 				RelativePath="..\src\sphinxutils.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\tokenizer_zhcn.h"
 				>
 			</File>
 		</Filter>

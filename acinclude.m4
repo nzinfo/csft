@@ -291,6 +291,103 @@ fi
 ])
 
 dnl ---------------------------------------------------------------------------
+dnl Macro: AC_CHECK_MMSEG
+dnl First check for custom PostgreSQL paths in --with-mmseg-* options.
+dnl If some paths are missing,  check if pg_config exists. 
+dnl ---------------------------------------------------------------------------
+
+AC_DEFUN([AC_CHECK_MMSEG],[
+
+# if there's nothing from mysql_config, check well-known include paths
+# explicit overrides will be applied later
+if test [ -z "$MMSEG_CFLAGS" ]
+then
+	for CANDIDATE in "$user_mmseg_includes" "/usr/local/include/mmseg" "/usr/include/mmseg"
+	do
+		if test [ -n "$CANDIDATE" -a -r "$CANDIDATE/Segmenter.h" ]
+		then
+			MMSEG_CFLAGS="-I$CANDIDATE"
+			break
+		fi
+	done
+fi
+
+
+# if there's nothing from mysql_config, check well-known library paths
+# explicit overrides will be applied later
+if test [ -z "$MMSEG_LIBS" ]
+then
+	for CANDIDATE in "$user_mmseg_libs" "/usr/lib64" \
+		"/usr/local/lib" "/usr/local/mmseg/lib" \
+		"/usr/local/lib/mmseg" "/usr/lib" \
+		"/opt/mmseg/lib"
+	do
+		if test [ -n "$CANDIDATE" -a -d "$CANDIDATE" ]
+		then
+			MMSEG_LIBS="-L$CANDIDATE -lmmseg"
+			break
+		fi
+	done
+fi
+
+
+
+# apply explicit include path overrides
+AC_ARG_WITH([mmseg-includes],
+	AC_HELP_STRING([--with-mmseg-includes], [path to libmmseg header files]),
+	[ac_cv_mmseg_includes=$withval])
+if test [ -n "$ac_cv_mmseg_includes" ]
+then
+	MMSEG_CFLAGS="-I$ac_cv_mmseg_includes"
+fi
+
+
+# apply explicit lib path overrides
+AC_ARG_WITH([mmseg-libs], 
+	AC_HELP_STRING([--with-mmseg-libs], [path to libmmseg libraries]),
+	[ac_cv_mmseg_libs=$withval])
+if test [ -n "$ac_cv_mmseg_libs" ]
+then
+	# Trim trailing '.libs' if user passed it in --with-mysql-libs option
+	ac_cv_mmseg_libs=`echo ${ac_cv_mmseg_libs} | sed -e 's/.libs$//' \
+		-e 's+.libs/$++'`
+	MMSEG_LIBS="-L$ac_cv_mmseg_libs -lmmseg"
+fi
+
+# now that we did all we could, perform final checks
+AC_MSG_CHECKING([libmmseg include files])
+if test [ -z "$MMSEG_CFLAGS" ]
+then
+	AC_MSG_ERROR([missing include files.
+
+******************************************************************************
+ERROR: cannot find libmmseg include files.
+
+To disable libmmseg support, use --without-mmseg option.
+******************************************************************************
+])
+else
+	AC_MSG_RESULT([$MMSEG_CFLAGS])
+fi
+
+AC_MSG_CHECKING([libmmseg libraries])
+if test [ -z "$MMSEG_LIBS" ]
+then
+	AC_MSG_ERROR([missing libraries.
+
+******************************************************************************
+ERROR: cannot find libmmseg libraries.
+
+To disable libmmseg support, use --without-mmseg option.
+******************************************************************************
+])
+else
+	AC_MSG_RESULT([$MMSEG_LIBS])
+fi
+
+])
+
+dnl ---------------------------------------------------------------------------
 dnl Macro: SPHINX_CONFIGURE_PART
 dnl
 dnl Tells what stage is ./configure running now, nicely formatted
