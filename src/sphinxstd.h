@@ -154,8 +154,10 @@ typedef unsigned long long uint64_t;
 #define UINT64_FMT "%" PRIu64
 #define INT64_FMT "%" PRIi64
 
+#ifndef UINT64_MAX //FIX Warning -CS
 #define UINT64_MAX U64C(0xffffffffffffffff)
 #define INT64_MAX I64C(0x7fffffffffffffff)
+#endif
 
 STATIC_SIZE_ASSERT ( uint64_t, 8 );
 STATIC_SIZE_ASSERT ( int64_t, 8 );
@@ -204,10 +206,10 @@ void			sphMemStatMMapDel ( int64_t iSize );
 #endif // SPH_DEBUG_LEAKS || SPH_ALLOCS_PROFILER
 
 /// delete for my new
-void			operator delete ( void * pPtr );
+void			operator delete ( void * pPtr ) throw();
 
 /// delete for my new
-void			operator delete [] ( void * pPtr );
+void			operator delete [] ( void * pPtr ) throw();
 
 /////////////////////////////////////////////////////////////////////////////
 // HELPERS
