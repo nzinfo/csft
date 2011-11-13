@@ -403,7 +403,7 @@ struct SnippetsQword_ExactForm_c : public SnippetsQword_c<SnippetsQword_ExactFor
 		int iLen = m_sWord.Length()-1;
 		BYTE sTmp [ 3*SPH_MAX_WORD_LEN + 16 ];
 
-		assert ( iLen>0 && iLen<sizeof(sTmp) );
+		assert ( iLen>0 && iLen<(int)sizeof(sTmp) );
 		assert ( m_sWord.Begins ( "=" ) );
 		assert ( pDict && m_pTokenizer );
 
@@ -822,8 +822,8 @@ void ExcerptGen_c::TokenizeDocument ( char * pData, int iDataLen, CSphDict * pDi
 		{
 			BYTE sBuf [ 3*SPH_MAX_WORD_LEN+4 ];
 			int iBytes = pLastTokenEnd - pTokenStart;
-			if ( iBytes+2>sizeof(sBuf) )
-				iBytes = sizeof(sBuf)-2;
+			if ( iBytes+2>(int)sizeof(sBuf) )
+				iBytes = (int)sizeof(sBuf)-2;
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sBuf[iBytes+1] = '\0';
@@ -2471,8 +2471,8 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 				if ( tFunctor.m_bHighlightQuery && tFunctor.m_bIndexExactWords )
 				{
 					int iLen = strlen ( (const char *)sWord );
-					if ( iLen+2>sizeof(sExactBuf) )
-						iLen = sizeof(sExactBuf)-2;
+					if ( iLen+2>(int)sizeof(sExactBuf) )
+						iLen = (int)sizeof(sExactBuf)-2;
 					memcpy ( sExactBuf + 1, sWord, iLen );
 					sExactBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 					sExactBuf[iLen+1] = '\0';
@@ -2585,8 +2585,8 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 		if ( tFunctor.m_bHighlightQuery && tFunctor.m_bIndexExactWords )
 		{
 			int iBytes = iWordLen;
-			if ( iBytes+2>sizeof(sExactBuf) )
-				iBytes = sizeof(sExactBuf)-2;
+			if ( iBytes+2>(int)sizeof(sExactBuf) )
+				iBytes = (int)sizeof(sExactBuf)-2;
 			memcpy ( sExactBuf + 1, sWord, iBytes );
 			sExactBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sExactBuf[iBytes+1] = '\0';
@@ -2594,7 +2594,7 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 		}
 
 		int iNonStemmedLen = iWordLen;
-		if ( iNonStemmedLen+1>sizeof(sNonStemmed) )
+		if ( iNonStemmedLen+1>(int)sizeof(sNonStemmed) )
 			iNonStemmedLen = sizeof(sNonStemmed)-1;
 
 		memcpy ( sNonStemmed, sWord, iNonStemmedLen );

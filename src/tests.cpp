@@ -403,7 +403,6 @@ void TestTokenizer ( bool bUTF8 )
 	printf ( "test %s\n", sTest4 );
 	pTokenizer->SetBuffer ( (BYTE*)sTest4, strlen(sTest4) );
 
-	const BYTE * sToken;
 	assert ( !strcmp ( (const char*)pTokenizer->GetToken(), "hello" ) );
 	assert ( !strcmp ( (const char*)pTokenizer->GetToken(), "=world" ) );
 

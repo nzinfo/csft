@@ -1366,7 +1366,7 @@ public:
 		// how many bytes of a previous keyword can we reuse?
 		BYTE iMatch = 0;
 		int iMinLen = Min ( m_iLastLen, iLen );
-		assert ( iMinLen<sizeof(m_sLastKeyword) );
+		assert ( iMinLen<(int)sizeof(m_sLastKeyword) );
 		while ( iMatch<iMinLen && m_sLastKeyword[iMatch]==pWord[iMatch] )
 		{
 			iMatch++;

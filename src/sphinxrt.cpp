@@ -3012,7 +3012,7 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 		{
 			const char * pPacked = pCheckpoints + dCheckpoints[i].m_uWord;
 			int iLen = *pPacked;
-			assert ( iLen && dCheckpoints[i].m_uWord+1+iLen<=dKeywordCheckpoints.GetLength() );
+			assert ( iLen && (int)dCheckpoints[i].m_uWord+1+iLen<=dKeywordCheckpoints.GetLength() );
 			wrDict.PutDword ( iLen );
 			wrDict.PutBytes ( pPacked+1, iLen );
 			wrDict.PutOffset ( dCheckpoints[i].m_uOffset );
@@ -4577,7 +4577,7 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 		if ( iFixupCount>0 )
 		{
 			CSphRowitem * pAttr = new CSphRowitem [ iFixupCount * iStaticSize ];
-			pResult->m_dStorage2Free.Add ( pAttr );
+			pResult->m_dStorage2Free.Add ( (BYTE*)pAttr );
 #ifndef NDEBUG
 			CSphRowitem * pEnd = pAttr + iFixupCount * iStaticSize;
 #endif
@@ -4718,7 +4718,7 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 		if ( dStorageMva.GetLength()>1 )
 		{
 			DWORD * pMva = dStorageMva.LeakData();
-			pResult->m_dStorage2Free.Add ( pMva );
+			pResult->m_dStorage2Free.Add ( (BYTE*)pMva );
 			pResult->m_pMva = pMva;
 		}
 	}
@@ -4838,11 +4838,11 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	// check if we have to
 
 	assert ( tUpd.m_dDocids.GetLength()==0 || tUpd.m_dRows.GetLength()==0 );
-	DWORD uRows = Max ( tUpd.m_dDocids.GetLength(), tUpd.m_dRows.GetLength() );
+	int iRows = Max ( tUpd.m_dDocids.GetLength(), tUpd.m_dRows.GetLength() );
 	bool bRaw = tUpd.m_dDocids.GetLength()==0;
 
-	assert ( uRows==tUpd.m_dRowOffset.GetLength() );
-	if ( !uRows )
+	assert ( iRows==(int)tUpd.m_dRowOffset.GetLength() );
+	if ( !iRows )
 		return 0;
 
 	// remap update schema to index schema
@@ -4924,7 +4924,7 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	DWORD uUpdateMask = 0;
 
 	int iFirst = ( iIndex<0 ) ? 0 : iIndex;
-	int iLast = ( iIndex<0 ) ? uRows : iIndex+1;
+	int iLast = ( iIndex<0 ) ? iRows : iIndex+1;
 	for ( int iUpd=iFirst; iUpd<iLast; iUpd++ )
 	{
 		// search segments first
