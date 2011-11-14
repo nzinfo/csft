@@ -407,6 +407,13 @@ void TestTokenizer ( bool bUTF8 )
 	assert ( !strcmp ( (const char*)pTokenizer->GetToken(), "=world" ) );
 
 	SafeDelete ( pTokenizer );
+
+	char sTestUtf8Len[] = "ab\0cd";
+	printf ( "test utf8 len 1\n" );
+	assert ( sphUTF8Len ( sTestUtf8Len, 256 )==2 );
+
+	printf ( "test utf8 len 2\n" );
+	assert ( sphUTF8Len ( "", 256 )==0 && sphUTF8Len ( NULL, 256 )==0 );
 }
 
 
