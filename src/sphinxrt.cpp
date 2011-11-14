@@ -4840,6 +4840,7 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	assert ( tUpd.m_dDocids.GetLength()==0 || tUpd.m_dRows.GetLength()==0 );
 	int iRows = Max ( tUpd.m_dDocids.GetLength(), tUpd.m_dRows.GetLength() );
 	bool bRaw = tUpd.m_dDocids.GetLength()==0;
+	bool bHasMva = false;
 
 	assert ( iRows==(int)tUpd.m_dRowOffset.GetLength() );
 	if ( !iRows )
@@ -4897,6 +4898,7 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 
 		dFloats.Add ( tCol.m_eAttrType==SPH_ATTR_FLOAT );
 		dLocators.Add ( tCol.m_tLocator );
+		bHasMva |= ( tCol.m_eAttrType==SPH_ATTR_UINT32SET || tCol.m_eAttrType==SPH_ATTR_UINT64SET );
 
 		// find dupes to optimize
 		ARRAY_FOREACH ( i, dIndexes )
@@ -4909,13 +4911,9 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	}
 	assert ( dLocators.GetLength()==tUpd.m_dAttrs.GetLength() );
 
-	// get that lock
-	m_tRwlock.WriteLock();
-
 	// check if we are empty
 	if ( !m_pSegments.GetLength() && !m_pDiskChunks.GetLength() )
 	{
-		m_tRwlock.Unlock();
 		return true;
 	}
 
@@ -4923,13 +4921,16 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	int iUpdated = 0;
 	DWORD uUpdateMask = 0;
 
+	// bRaw do only one pass as it has pointers to actual data at segments
+	// MVA && bRaw should find appropriate segment to update storage there
+
 	int iFirst = ( iIndex<0 ) ? 0 : iIndex;
 	int iLast = ( iIndex<0 ) ? iRows : iIndex+1;
 	for ( int iUpd=iFirst; iUpd<iLast; iUpd++ )
 	{
 		// search segments first
 		bool bUpdated = false;
-		ARRAY_FOREACH ( iSeg, m_pSegments )
+		for ( int iSeg=0; iSeg<m_pSegments.GetLength() && ( !bRaw || !iSeg ); iSeg++ )
 		{
 			CSphRowitem * pRow = const_cast<CSphRowitem*> ( bRaw? tUpd.m_dRows[iUpd] : m_pSegments[iSeg]->FindAliveRow ( tUpd.m_dDocids[iUpd] ) );
 			if ( !pRow )
@@ -4937,6 +4938,27 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 
 			assert ( bRaw || ( DOCINFO2ID(pRow)==tUpd.m_dDocids[iUpd] ) );
 			pRow = DOCINFO2ATTRS(pRow);
+
+			CSphTightVector<DWORD> * pStorageMVA = NULL;
+			if ( bHasMva )
+			{
+				if ( !bRaw )
+				{
+					pStorageMVA = &m_pSegments[iSeg]->m_dMvas;
+				} else
+				{
+					ARRAY_FOREACH ( iMva, m_pSegments )
+					{
+						const CSphVector<CSphRowitem> & dSegRows = m_pSegments[iMva]->m_dRows;
+						if ( dSegRows.Begin()<=pRow && pRow<dSegRows.Begin()+dSegRows.GetLength() )
+						{
+							pStorageMVA = &m_pSegments[iMva]->m_dMvas;
+							break;
+						}
+					}
+				}
+			}
+			assert ( !bHasMva || pStorageMVA );
 
 			int iPos = tUpd.m_dRowOffset[iUpd];
 			ARRAY_FOREACH ( iCol, tUpd.m_dAttrs )
@@ -4973,16 +4995,14 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 						assert ( ( iLen%2 )==0 );
 						DWORD uCount = ( bDst64 ? iLen : iLen/2 );
 
-						CSphTightVector<DWORD> & dMvas = m_pSegments[iSeg]->m_dMvas;
-
-						DWORD uMvaOff = (DWORD)sphGetRowAttr ( pRow, dLocators[iCol] );
-						assert ( !dMvas.Begin() || uMvaOff );
-						DWORD * pDst = dMvas.Begin() + uMvaOff;
+						DWORD uMvaOff = MVA_DOWNSIZE ( sphGetRowAttr ( pRow, dLocators[iCol] ) );
+						assert ( uMvaOff<(DWORD)pStorageMVA->GetLength() );
+						DWORD * pDst = pStorageMVA->Begin() + uMvaOff;
 						if ( uCount>(*pDst) )
 						{
-							uMvaOff = dMvas.GetLength();
-							dMvas.Resize ( uMvaOff+uCount+1 );
-							pDst = dMvas.Begin()+uMvaOff;
+							uMvaOff = pStorageMVA->GetLength();
+							pStorageMVA->Resize ( uMvaOff+uCount+1 );
+							pDst = pStorageMVA->Begin()+uMvaOff;
 							sphSetRowAttr ( pRow, dLocators[iCol], uMvaOff );
 						}
 
@@ -5011,12 +5031,12 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 			continue;
 
 		// check disk K-list now
-		// FIXME! optimize away flush
-		m_tKlist.Flush();
-		m_tKlist.KillListLock();
+		if ( iUpdated==1 )
+		{
+			m_tKlist.Flush(); // no need to lock here as it got protected here by writer locks
+		}
 		const SphAttr_t uRef = bRaw ? DOCINFO2ID ( tUpd.m_dRows[iUpd] ) : tUpd.m_dDocids[iUpd];
 		bUpdated = ( sphBinarySearch ( m_tKlist.GetKillList(), m_tKlist.GetKillList() + m_tKlist.GetKillListSize() - 1, uRef )!=NULL );
-		m_tKlist.KillListUnlock();
 		if ( bUpdated )
 			continue;
 
@@ -5049,7 +5069,6 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	g_pBinlog->BinlogUpdateAttributes ( m_sIndexName.cstr(), ++m_iTID, tUpd );
 
 	// all done
-	m_tRwlock.Unlock ();
 	return iUpdated;
 }
 

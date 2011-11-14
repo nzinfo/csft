@@ -6071,9 +6071,7 @@ public:
 	explicit						SearchHandler_c ( int iQueries, bool bSphinxql=false );
 	~SearchHandler_c();
 	void							RunQueries ();					///< run all queries, get all results
-
-public:
-	void							SetUpdates ( CSphAttrUpdateEx * pUpdates ); ///< run Update command instead of Search
+	void							RunUpdates ( const CSphQuery & tQuery, const CSphString & sIndex, CSphAttrUpdateEx * pUpdates ); ///< run Update command instead of Search
 
 public:
 	CSphVector<CSphQuery>			m_dQueries;						///< queries which i need to search
@@ -6097,15 +6095,20 @@ protected:
 	mutable CSphVector<CSphSchemaMT>		m_dExtraSchemas; ///< the extra fields for agents
 	mutable CSphMutex				m_tLock;
 	bool							m_bSphinxql;	///< if the query get from sphinxql - to avoid applying sphinxql magick for others
-	CSphAttrUpdateEx *		m_pUpdates;				///< holder for updates
+	CSphAttrUpdateEx *				m_pUpdates;		///< holder for updates
 
 	const ServedIndex_t *			UseIndex ( int iLocal ) const;
 	void							ReleaseIndex ( int iLocal ) const;
+
+	void							OnRunFinished ();
 };
 
 
 SearchHandler_c::SearchHandler_c ( int iQueries, bool bSphinxql )
 {
+	m_iStart = m_iEnd = 0;
+	m_bMultiQueue = false;
+
 	m_dQueries.Resize ( iQueries );
 	m_dResults.Resize ( iQueries );
 	m_dFailuresSet.Resize ( iQueries );
@@ -6114,6 +6117,11 @@ SearchHandler_c::SearchHandler_c ( int iQueries, bool bSphinxql )
 	m_tLock.Init();
 	m_bSphinxql = bSphinxql;
 	m_pUpdates = NULL;
+
+	m_dMvaStorage.Reserve ( 1024 );
+	m_dMvaStorage.Add ( 0 ); // dummy value
+	m_dStringsStorage.Reserve ( 1024 );
+	m_dStringsStorage.Add ( 0 ); // dummy value
 
 	ARRAY_FOREACH ( i, m_dResults )
 	{
@@ -6144,6 +6152,8 @@ const ServedIndex_t * SearchHandler_c::UseIndex ( int iLocal ) const
 
 	int iUseCount = m_dLocal[iLocal].m_iValue;
 
+	assert ( ( m_pUpdates && iUseCount>0 ) || !m_pUpdates );
+
 	const ServedIndex_t * pServed = NULL;
 	if ( iUseCount )
 		pServed = &g_pIndexes->GetUnlockedEntry ( m_dLocal[iLocal].m_sName );
@@ -6173,12 +6183,71 @@ void SearchHandler_c::ReleaseIndex ( int iLocal ) const
 	if ( !iUseCount )
 		g_pIndexes->GetUnlockedEntry ( m_dLocal[iLocal].m_sName ).Unlock();
 
+	assert ( ( m_pUpdates && iUseCount>0 ) || !m_pUpdates );
+
 	m_tLock.Unlock();
 }
 
-void SearchHandler_c::SetUpdates ( CSphAttrUpdateEx * pUpdates )
+
+void SearchHandler_c::RunUpdates ( const CSphQuery & tQuery, const CSphString & sIndex, CSphAttrUpdateEx * pUpdates )
 {
 	m_pUpdates = pUpdates;
+
+	m_dQueries[0] = tQuery;
+	m_dQueries[0].m_sIndexes = sIndex;
+
+	m_dLocal.Add().m_sName = sIndex;
+	m_dLocal.Last().m_iValue = 1;
+
+	CheckQuery ( tQuery, *pUpdates->m_pError );
+	if ( !pUpdates->m_pError->IsEmpty() )
+		return;
+
+	int64_t tmLocal = -sphMicroTimer();
+	if ( g_bIOStats )
+		sphStartIOStats ();
+
+	RunLocalSearches ( NULL, NULL );
+	tmLocal += sphMicroTimer();
+
+	OnRunFinished();
+
+	CSphQueryResult & tRes = m_dResults[0];
+
+	tRes.m_iOffset = tQuery.m_iOffset;
+	tRes.m_iCount = Max ( Min ( tQuery.m_iLimit, tRes.m_dMatches.GetLength()-tQuery.m_iOffset ), 0 );
+
+	tRes.m_iQueryTime += (int)(tmLocal/1000);
+	tRes.m_iCpuTime += tmLocal;
+
+	if ( !tRes.m_iSuccesses )
+	{
+		StrBuf_t sFailures;
+		m_dFailuresSet[0].BuildReport ( sFailures );
+		*pUpdates->m_pError = sFailures.cstr();
+
+	} else if ( !tRes.m_sError.IsEmpty() )
+	{
+		StrBuf_t sFailures;
+		m_dFailuresSet[0].BuildReport ( sFailures );
+		tRes.m_sWarning = sFailures.cstr(); // FIXME!!! commint warnings too
+	}
+
+	const CSphIOStats & tIO = sphStopIOStats ();
+
+	if ( g_pStats )
+	{
+		g_tStatsMutex.Lock();
+		g_pStats->m_iQueries += 1;
+		g_pStats->m_iQueryTime += tmLocal;
+		g_pStats->m_iQueryCpuTime += tmLocal;
+		g_pStats->m_iDiskReads += tIO.m_iReadOps;
+		g_pStats->m_iDiskReadTime += tIO.m_iReadTime;
+		g_pStats->m_iDiskReadBytes += tIO.m_iReadBytes;
+		g_tStatsMutex.Unlock();
+	}
+
+	LogQuery ( m_dQueries[0], m_dResults[0], m_dAgentTimes[0] );
 };
 
 void SearchHandler_c::RunQueries ()
@@ -6186,13 +6255,6 @@ void SearchHandler_c::RunQueries ()
 	///////////////////////////////
 	// choose path and run queries
 	///////////////////////////////
-
-	m_dMvaStorage.Reserve ( 1024 );
-	m_dMvaStorage.Resize ( 0 );
-	m_dMvaStorage.Add ( 0 );	// dummy value
-	m_dStringsStorage.Reserve ( 1024 );
-	m_dStringsStorage.Resize ( 0 );
-	m_dStringsStorage.Add ( 0 );
 
 	// check if all queries are to the same index
 	bool bSameIndex = false;
@@ -6230,7 +6292,13 @@ void SearchHandler_c::RunQueries ()
 		}
 	}
 
-	// final fixup
+	OnRunFinished();
+}
+
+
+// final fixup
+void SearchHandler_c::OnRunFinished()
+{
 	ARRAY_FOREACH ( i, m_dResults )
 	{
 		m_dResults[i].m_dTag2Pools[0].m_pMva = m_dMvaStorage.Begin();
@@ -9291,7 +9359,7 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 	ARRAY_FOREACH ( iIdx, dIndexNames )
 	{
 		const char * sReqIndex = dIndexNames[iIdx].m_sName.cstr();
-		const ServedIndex_t * pLocked = g_pIndexes->GetRlockedEntry ( sReqIndex );
+		const ServedIndex_t * pLocked = g_pIndexes->GetWlockedEntry ( sReqIndex );
 		if ( pLocked )
 		{
 			DoCommandUpdate ( sReqIndex, tUpd, iSuccesses, iUpdated, dFails, pLocked );
@@ -9304,7 +9372,7 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 			ARRAY_FOREACH ( i, dLocal )
 			{
 				const char * sLocal = dLocal[i].cstr();
-				const ServedIndex_t * pServed = g_pIndexes->GetRlockedEntry ( sLocal );
+				const ServedIndex_t * pServed = g_pIndexes->GetWlockedEntry ( sLocal );
 				DoCommandUpdate ( sLocal, tUpd, iSuccesses, iUpdated, dFails, pServed );
 				if ( pServed )
 					pServed->Unlock();
@@ -10690,41 +10758,23 @@ static void DoExtendedUpdate ( const char * sIndex, const SqlStmt_t & tStmt,
 							int & iSuccesses, int & iUpdated, bool bCommit,
 							SearchFailuresLog_c & dFails, const ServedIndex_t * pServed )
 {
-	if ( !pServed || !pServed->m_pIndex )
+	if ( !pServed || !pServed->m_pIndex || !pServed->m_bEnabled )
 	{
+		if ( pServed )
+			pServed->Unlock();
 		dFails.Submit ( sIndex, "index not available" );
 		return;
 	}
 
-	SearchHandler_c tHandler ( 1, true );
+	SearchHandler_c tHandler ( 1, true ); //handler unlocks index at destructor - no need to do it manually
 	CSphAttrUpdateEx tUpdate;
 	CSphString sError;
 
 	tUpdate.m_pUpdate = &tStmt.m_tUpdate;
 	tUpdate.m_pIndex = pServed->m_pIndex;
 	tUpdate.m_pError = &sError;
-	tHandler.SetUpdates ( &tUpdate );
 
-	tHandler.m_dQueries[0] = tStmt.m_tQuery;
-	tHandler.m_dQueries[0].m_sIndexes = sIndex;
-
-	if ( !pServed->m_bEnabled )
-	{
-		sError.SetSprintf ( "index '%s' does not support Update (enabled=%d)", tStmt.m_sIndex.cstr(), pServed->m_bEnabled );
-		dFails.Submit ( sIndex, sError.cstr() );
-		return;
-	}
-
-	CheckQuery ( tStmt.m_tQuery, tHandler.m_dResults[0].m_sError );
-	if ( !tHandler.m_dResults[0].m_sError.IsEmpty() )
-	{
-		sError.SetSprintf ( "%squery 0 error: %s ; ", sError.cstr(), tHandler.m_dResults[0].m_sError.cstr() );
-		dFails.Submit ( sIndex, sError.cstr() );
-		return;
-	}
-
-	// actual updating
-	tHandler.RunQueries ();
+	tHandler.RunUpdates ( tStmt.m_tQuery, sIndex, &tUpdate );
 
 	if ( sError.Length() )
 	{
@@ -10796,11 +10846,10 @@ void HandleMysqlUpdate ( NetOutputBuffer_c & tOut, BYTE uPacketID, const SqlStmt
 	ARRAY_FOREACH ( iIdx, dIndexNames )
 	{
 		const char * sReqIndex = dIndexNames[iIdx].m_sName.cstr();
-		const ServedIndex_t * pLocked = g_pIndexes->GetRlockedEntry ( sReqIndex );
+		const ServedIndex_t * pLocked = g_pIndexes->GetWlockedEntry ( sReqIndex );
 		if ( pLocked )
 		{
 			DoExtendedUpdate ( sReqIndex, tStmt, iSuccesses, iUpdated, bCommit, dFails, pLocked );
-			pLocked->Unlock();
 		} else
 		{
 			assert ( dDistributed[iIdx].m_bToDelete );
@@ -10809,10 +10858,8 @@ void HandleMysqlUpdate ( NetOutputBuffer_c & tOut, BYTE uPacketID, const SqlStmt
 			ARRAY_FOREACH ( i, dLocal )
 			{
 				const char * sLocal = dLocal[i].cstr();
-				const ServedIndex_t * pServed = g_pIndexes->GetRlockedEntry ( sLocal );
+				const ServedIndex_t * pServed = g_pIndexes->GetWlockedEntry ( sLocal );
 				DoExtendedUpdate ( sLocal, tStmt, iSuccesses, iUpdated, bCommit, dFails, pServed );
-				if ( pServed )
-					pServed->Unlock();
 			}
 		}
 
