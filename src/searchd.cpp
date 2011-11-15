@@ -9859,6 +9859,7 @@ enum MysqlColumnType_e
 {
 	MYSQL_COL_DECIMAL	= 0,
 	MYSQL_COL_LONG		= 3,
+	MYSQL_COL_FLOAT	= 4,
 	MYSQL_COL_LONGLONG	= 8,
 	MYSQL_COL_STRING	= 254
 };
@@ -10766,7 +10767,7 @@ static void DoExtendedUpdate ( const char * sIndex, const SqlStmt_t & tStmt,
 		return;
 	}
 
-	SearchHandler_c tHandler ( 1, true ); //handler unlocks index at destructor - no need to do it manually
+	SearchHandler_c tHandler ( 1, true ); // handler unlocks index at destructor - no need to do it manually
 	CSphAttrUpdateEx tUpdate;
 	CSphString sError;
 
@@ -11081,8 +11082,10 @@ void SendMysqlSelectResult ( NetOutputBuffer_c & tOut, BYTE & uPacketID, SqlRowB
 			const CSphColumnInfo & tCol = tRes.m_tSchema.GetAttr(i);
 			MysqlColumnType_e eType = MYSQL_COL_STRING;
 			if ( tCol.m_eAttrType==SPH_ATTR_INTEGER || tCol.m_eAttrType==SPH_ATTR_TIMESTAMP || tCol.m_eAttrType==SPH_ATTR_BOOL
-				|| tCol.m_eAttrType==SPH_ATTR_FLOAT || tCol.m_eAttrType==SPH_ATTR_ORDINAL || tCol.m_eAttrType==SPH_ATTR_WORDCOUNT )
+				|| tCol.m_eAttrType==SPH_ATTR_ORDINAL || tCol.m_eAttrType==SPH_ATTR_WORDCOUNT )
 				eType = MYSQL_COL_LONG;
+			if ( tCol.m_eAttrType==SPH_ATTR_FLOAT )
+				eType = MYSQL_COL_FLOAT;
 			if ( tCol.m_eAttrType==SPH_ATTR_BIGINT )
 				eType = MYSQL_COL_LONGLONG;
 			if ( tCol.m_eAttrType==SPH_ATTR_STRING )
