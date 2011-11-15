@@ -2104,6 +2104,7 @@ public:
 	int		m_iStopwordStep;
 	bool	m_bIndexExactWords;
 	int		m_iDocLen;
+	int		m_iMatchesCount;
 
 	explicit TokenFunctorTraits_c ( SnippetsDocIndex_c & tContainer, ISphTokenizer * pTokenizer, CSphDict * pDict, const ExcerptQuery_t & tQuery, const CSphIndexSettings & tSettingsIndex, const char * sDoc, int iDocLen )
 		: m_tContainer ( tContainer )
@@ -2114,6 +2115,7 @@ public:
 		, m_iStopwordStep ( tSettingsIndex.m_iStopwordStep )
 		, m_bIndexExactWords ( tSettingsIndex.m_bIndexExactWords )
 		, m_iDocLen ( iDocLen )
+		, m_iMatchesCount ( 0 )
 	{
 		assert ( m_pTokenizer && m_pDict );
 		ExcerptQuery_t::operator = ( tQuery );
@@ -2284,7 +2286,10 @@ public:
 				bMatch = true;
 
 		if ( bMatch )
+		{
 			ResultEmit ( m_sBeforeMatch.cstr(), m_iBeforeLen, m_bHasBeforePassageMacro, m_iPassageId, m_sBeforeMatchPassage.cstr(), m_iBeforePostLen );
+			m_iMatchesCount++;
+		}
 
 		ResultEmit ( m_pDoc+iStart, iLen );
 
@@ -2337,7 +2342,10 @@ public:
 
 		// marker folding, emit "before" marker at span start only
 		if ( m_pHit<m_pHitEnd && uPosition==m_pHit->m_uPosition )
+		{
 			ResultEmit ( m_sBeforeMatch.cstr(), m_iBeforeLen, m_bHasBeforePassageMacro, m_iPassageId, m_sBeforeMatchPassage.cstr(), m_iBeforePostLen );
+			m_iMatchesCount++;
+		}
 
 		// emit token itself
 		ResultEmit ( m_pDoc+iStart, iLen );
@@ -2774,6 +2782,9 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		HighlightPlain_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen );
 		TokenizeDocument ( tHighlighter, NULL );
 
+		if ( !tHighlighter.m_iMatchesCount && !tFixedSettings.m_bAllowEmpty )
+			tHighlighter.m_dResult.Reset();
+
 		// add trailing zero, and return
 		tHighlighter.m_dResult.Add ( 0 );
 		return (char*) tHighlighter.m_dResult.LeakData();
@@ -2876,6 +2887,9 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		// 2nd pass
 		HighlightQuery_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen, dMarked );
 		TokenizeDocument ( tHighlighter, pStripper );
+
+		if ( !tHighlighter.m_iMatchesCount && !tFixedSettings.m_bAllowEmpty )
+			tHighlighter.m_dResult.Reset();
 
 		// add trailing zero, and return
 		tHighlighter.m_dResult.Add ( 0 );

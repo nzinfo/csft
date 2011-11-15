@@ -32,7 +32,7 @@ index test
 $results = array();
 
 $docs = array( 'test_130/load_file.txt' );
-$opts = array( 'load_files'=>true, 'limit'=>0 );
+$opts = array( 'load_files'=>true, 'limit'=>0, 'allow_empty'=>1 );
 
 $results[] = $client->BuildExcerpts($docs, 'test', 'end point', $opts );
 $results[] = $client->BuildExcerpts($docs, 'test', 'not_found', $opts );
