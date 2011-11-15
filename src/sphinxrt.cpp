@@ -5737,16 +5737,28 @@ void RtBinlog_c::LoadMeta ()
 	if ( rdMeta.GetDword()!=BINLOG_META_MAGIC )
 		sphDie ( "invalid meta file %s", sMeta.cstr() );
 
+	// binlog meta v1 was dev only, crippled, and we don't like it anymore
+	// binlog metas v2 upto current v4 (and likely up) share the same simplistic format
+	// so let's support empty (!) binlogs w/ known versions and compatible metas
 	DWORD uVersion = rdMeta.GetDword();
-	if ( uVersion!=BINLOG_VERSION )
+	if ( uVersion==1 || uVersion>BINLOG_VERSION )
 		sphDie ( "binlog meta file %s is v.%d, binary is v.%d; recovery requires previous binary version", sMeta.cstr(), uVersion, BINLOG_VERSION );
 
 	const bool bLoaded64bit = ( rdMeta.GetByte()==1 );
+	m_dLogFiles.Resize ( rdMeta.UnzipInt() ); // FIXME! sanity check
+
+	if ( !m_dLogFiles.GetLength() )
+		return;
+
+	// ok, so there is actual recovery data
+	// let's require that exact version and bitness, then
+	if ( uVersion!=BINLOG_VERSION )
+		sphDie ( "binlog meta file %s is v.%d, binary is v.%d; recovery requires previous binary version", sMeta.cstr(), uVersion, BINLOG_VERSION );
+
 	if ( bLoaded64bit!=USE_64BIT )
 		sphDie ( "USE_64BIT inconsistency (binary=%d, binlog=%d); recovery requires previous binary version", USE_64BIT, bLoaded64bit );
 
 	// load list of active log files
-	m_dLogFiles.Resize ( rdMeta.UnzipInt() ); // FIXME! sanity check
 	ARRAY_FOREACH ( i, m_dLogFiles )
 		m_dLogFiles[i].m_iExt = rdMeta.UnzipInt(); // everything else is saved in logs themselves
 }

@@ -15103,10 +15103,7 @@ int WINAPI ServiceMain ( int argc, char **argv )
 #endif
 
 	if ( !g_bService )
-	{
 		fprintf ( stdout, SPHINX_BANNER );
-		fprintf ( stdout, "PID is %d\n", getpid() );
-	}
 
 	//////////////////////
 	// parse command line
