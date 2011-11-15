@@ -8792,15 +8792,19 @@ bool MakeSnippets ( CSphString sIndex, CSphVector<ExcerptQuery_t> & dQueries, CS
 	// do highlighting
 	///////////////////
 
+	bool bOk = true;
 	int iAbsentHead = -1;
 	if ( g_iDistThreads<=1 || dQueries.GetLength()<2 )
 	{
 		// boring single threaded loop
 		ARRAY_FOREACH ( i, dQueries )
 		{
-			dQueries[i].m_sRes = sphBuildExcerpt ( dQueries[i], tCtx.m_pDict, tCtx.m_tTokenizer.Ptr(), &pIndex->GetMatchSchema(), pIndex, dQueries[i].m_sError, tCtx.m_tStripper.Ptr(), tCtx.m_pQueryTokenizer );
+			dQueries[i].m_sRes = sphBuildExcerpt ( dQueries[i], tCtx.m_pDict, tCtx.m_tTokenizer.Ptr(), &pIndex->GetMatchSchema(), pIndex, sError, tCtx.m_tStripper.Ptr(), tCtx.m_pQueryTokenizer );
 			if ( !dQueries[i].m_sRes )
+			{
+				bOk = false;
 				break;
+			}
 		}
 	} else
 	{
@@ -8950,10 +8954,22 @@ bool MakeSnippets ( CSphString sIndex, CSphVector<ExcerptQuery_t> & dQueries, CS
 
 		// back in query order
 		dQueries.Sort ( bind ( &ExcerptQuery_t::m_iSeq ) );
+
+		ARRAY_FOREACH ( i, dQueries )
+		{
+			if ( !dQueries[i].m_sError.IsEmpty() )
+			{
+				bOk = false;
+				if ( sError.IsEmpty() )
+					sError.SetSprintf ( "%s", dQueries[i].m_sError.cstr() );
+				else
+					sError.SetSprintf ( "%s; %s", sError.cstr(), dQueries[i].m_sError.cstr() );
+			}
+		}
 	}
 
 	pServed->Unlock();
-	return true;
+	return bOk;
 }
 
 void HandleCommandExcerpt ( int iSock, int iVer, InputBuffer_c & tReq )
