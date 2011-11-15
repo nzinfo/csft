@@ -9894,6 +9894,7 @@ void SendMysqlFieldPacket ( NetOutputBuffer_c & tOut, BYTE uPacketID, const char
 	{
 		case MYSQL_COL_DECIMAL:		iColLen = 20; break;
 		case MYSQL_COL_LONG:		iColLen = 11; break;
+		case MYSQL_COL_FLOAT:		iColLen = 20; break;
 		case MYSQL_COL_LONGLONG:	iColLen = 20; break;
 		case MYSQL_COL_STRING:		iColLen = 255; break;
 	}
