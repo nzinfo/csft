@@ -95,7 +95,7 @@ typedef int __declspec("SAL_nokernel") __declspec("SAL_nodriver") __prefast_flag
 
 #if USE_ODBC
 // UnixODBC compatible DWORD
-#if defined(__alpha) || defined(__sparcv9) || defined(__LP64__) || (defined(__HOS_AIX__) && defined(_LP64))
+#if defined(__alpha) || defined(__sparcv9) || defined(__LP64__) || (defined(__HOS_AIX__) && defined(_LP64)) || defined(__APPLE__)
 typedef unsigned int		DWORD;
 #else
 typedef unsigned long		DWORD;
@@ -154,8 +154,13 @@ typedef unsigned long long uint64_t;
 #define UINT64_FMT "%" PRIu64
 #define INT64_FMT "%" PRIi64
 
+#ifndef UINT64_MAX
 #define UINT64_MAX U64C(0xffffffffffffffff)
+#endif
+
+#ifndef INT64_MAX
 #define INT64_MAX I64C(0x7fffffffffffffff)
+#endif
 
 STATIC_SIZE_ASSERT ( uint64_t, 8 );
 STATIC_SIZE_ASSERT ( int64_t, 8 );
@@ -1156,7 +1161,7 @@ public:
 
 	/// add new entry
 	/// returns true on success
-	/// returns false if this key is alredy hashed
+	/// returns false if this key is already hashed
 	bool Add ( const T & tValue, const KEY & tKey )
 	{
 		unsigned int uHash = ( (unsigned int) HASHFUNC::Hash ( tKey ) ) % LENGTH;
@@ -2118,15 +2123,14 @@ public:
 	static const int iTOTALBITS = 256;
 
 private:
-	typedef unsigned long ELTYPE;
-	static const int iELEMBITS = sizeof ( ELTYPE ) * 8;
+	static const int iELEMBITS = sizeof(DWORD) * 8;
 	static const int iBYTESIZE = iTOTALBITS / 8;
 	static const int IELEMENTS = iTOTALBITS / iELEMBITS;
-	static const ELTYPE uALLBITS = ~(0UL);
+	static const DWORD uALLBITS = ~(0UL);
 	STATIC_ASSERT ( IELEMENTS>=1, 8_BITS_MINIMAL_SIZE_OF_VECTOR );
 
-private:
-	ELTYPE m_dFieldsMask[IELEMENTS];
+public:
+	DWORD m_dFieldsMask[IELEMENTS];
 
 public:
 	// no custom cstr and d-tor - to be usable from inside unions
@@ -2186,7 +2190,7 @@ public:
 	// test if all bits are set or unset
 	bool TestAll ( bool bSet=false ) const
 	{
-		ELTYPE uTest = bSet?uALLBITS:0;
+		DWORD uTest = bSet?uALLBITS:0;
 		for ( int i=0; i<IELEMENTS; i++ )
 			if ( m_dFieldsMask[i]!=uTest )
 				return false;
@@ -2211,7 +2215,7 @@ public:
 			return;
 
 		int iMaskPos = iBits / iELEMBITS;
-		ELTYPE uMask = ( 1UL << ( iBits % iELEMBITS ) ) - 1;
+		DWORD uMask = ( 1UL << ( iBits % iELEMBITS ) ) - 1;
 		m_dFieldsMask[iMaskPos++] &= uMask;
 		for ( ; iMaskPos < IELEMENTS; iMaskPos++ )
 			m_dFieldsMask[iMaskPos] = 0UL;

@@ -1034,14 +1034,6 @@ public:
 		}
 	}
 
-	virtual void CollectHitMask()
-	{
-		SeekHitlist ( m_iHitlistPos );
-		for ( Hitpos_t uHit = GetNextHit(); uHit!=EMPTY_HIT; uHit = GetNextHit() )
-			m_dQwordFields.Set ( HITMAN::GetField ( uHit ) );
-		m_bAllFieldsKnown = true;
-	}
-
 	virtual const CSphMatch & GetNextDoc ( DWORD * pDocinfo )
 	{
 		SphDocID_t iDelta = m_rdDoclist.UnzipDocid();
