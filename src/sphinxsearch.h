@@ -55,10 +55,12 @@ public:
 	bool			m_bHasHitlist;	///< hitlist presence flag
 
 	// iterator state
-	CSphSmallBitvec m_dQwordFields;		///< current match fields
-	bool			m_bAllFieldsKnown; ///< whether the all match fields is known, or only low 32.
+	CSphSmallBitvec m_dQwordFields;	///< current match fields
 	DWORD			m_uMatchHits;	///< current match hits count
 	SphOffset_t		m_iHitlistPos;	///< current position in hitlist, from doclist
+
+protected:
+	bool			m_bAllFieldsKnown; ///< whether the all match fields is known, or only low 32.
 
 public:
 	ISphQword ()
@@ -70,9 +72,9 @@ public:
 		, m_iDocs ( 0 )
 		, m_iHits ( 0 )
 		, m_bHasHitlist ( true )
-		, m_bAllFieldsKnown ( false )
 		, m_uMatchHits ( 0 )
 		, m_iHitlistPos ( 0 )
+		, m_bAllFieldsKnown ( false )
 	{
 		m_dQwordFields.Unset();
 	}
@@ -81,10 +83,7 @@ public:
 	virtual const CSphMatch &	GetNextDoc ( DWORD * pInlineDocinfo ) = 0;
 	virtual void				SeekHitlist ( SphOffset_t uOff ) = 0;
 	virtual Hitpos_t			GetNextHit () = 0;
-	virtual void				CollectHitMask ()
-	{
-		m_bAllFieldsKnown = true;
-	}
+	virtual void				CollectHitMask ();
 
 	virtual void Reset ()
 	{
