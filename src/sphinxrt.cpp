@@ -1700,7 +1700,9 @@ RtSegment_t * RtAccum_t::CreateSegment ( int iRowSize, int iWordsCheckpoint )
 			tOutHit.ZipHit ( tHit.m_iWordPos );
 		}
 
-		tDoc.m_uDocFields |= 1 << ( HITMAN::GetField ( tHit.m_iWordPos ) );
+		const int iField = HITMAN::GetField ( tHit.m_iWordPos );
+		if ( iField<32 )
+			tDoc.m_uDocFields |= ( 1UL<<iField );
 		tDoc.m_uHits++;
 	}
 
@@ -3779,6 +3781,7 @@ public:
 			m_dQwordFields.Assign32 ( pDoc->m_uDocFields );
 			m_uMatchHits = pDoc->m_uHits;
 			m_iHitlistPos = (uint64_t(pDoc->m_uHits)<<32) + pDoc->m_uHit;
+			m_bAllFieldsKnown = false;
 			return m_tMatch;
 		}
 	}
