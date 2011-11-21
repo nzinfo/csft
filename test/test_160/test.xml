@@ -59,7 +59,7 @@ $data[] = 'ZONE:zoneZZ to* a*';
 
 
 $results = array();
-$opts = array ( 'passage_boundary'=>'zone', 'limit'=>0, 'allow_empty'=>1 );
+$opts = array ( 'passage_boundary'=>'zone', 'limit'=>0 );
 $docs = array('<zoneZZ><zoneA> these words </zoneA><zoneB> and these to </zoneB> are cool </zoneZZ>');
 $pass = 0;
 
@@ -81,10 +81,10 @@ foreach ( array(0, 1) as $qmode )
 	}
 }
 
-$results[] = $client->BuildExcerpts(array('small doc', 'one more'), 'multiform', 'crash on tokenizer from another doc', array ('query_mode'=>0, 'allow_empty'=>1 ) );
+$results[] = $client->BuildExcerpts(array('small doc', 'one more'), 'multiform', 'crash on tokenizer from another doc', array ('query_mode'=>0) );
 
 // another regression - zone transformed by stripper in result set
-$opts = array ( 'query_mode'=>1, 'limit_words'=>6, 'allow_empty'=>1 );
+$opts = array ( 'query_mode'=>1, 'limit_words'=>6 );
 
 $opts['html_strip_mode'] = 'index';
 $res =  $client->BuildExcerpts($docs, 'test', 'these | are',  $opts);
@@ -114,7 +114,7 @@ $docs = array(
 '<zoneZZ><zoneA> these words </zoneA><zoneB> and these to </zoneB> are cool </zoneZZ>',
 '<zoneZZ><zoneA> these words <TR> and these to </zoneA> are cool </zoneZZ>'
 );
-$opts = array ( 'limit'=>0, 'html_strip_mode'=>'retain', 'query_mode'=>1, 'allow_empty'=>1 );
+$opts = array ( 'limit'=>0, 'html_strip_mode'=>'retain', 'query_mode'=>1 );
 
 $res =  $client->BuildExcerpts($docs, 'test', 'ZONE:zoneZZ these',  $opts);
 $res['zone'] = 'zoneZZ';

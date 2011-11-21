@@ -1026,7 +1026,7 @@ char * ExcerptGen_c::BuildExcerpt ( const ExcerptQuery_t & tQuery )
 	{
 		if ( !( ExtractPassages ( tQuery ) && HighlightBestPassages ( tQuery ) ) )
 		{
-			if ( tQuery.m_bAllowEmpty )
+			if ( !tQuery.m_bAllowEmpty )
 				HighlightStart ( tQuery );
 		}
 	}
@@ -2784,7 +2784,7 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		HighlightPlain_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen );
 		TokenizeDocument ( tHighlighter, NULL );
 
-		if ( !tHighlighter.m_iMatchesCount && !tFixedSettings.m_bAllowEmpty )
+		if ( !tHighlighter.m_iMatchesCount && tFixedSettings.m_bAllowEmpty )
 			tHighlighter.m_dResult.Reset();
 
 		// add trailing zero, and return
@@ -2890,7 +2890,7 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		HighlightQuery_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen, dMarked );
 		TokenizeDocument ( tHighlighter, pStripper );
 
-		if ( !tHighlighter.m_iMatchesCount && !tFixedSettings.m_bAllowEmpty )
+		if ( !tHighlighter.m_iMatchesCount && tFixedSettings.m_bAllowEmpty )
 			tHighlighter.m_dResult.Reset();
 
 		// add trailing zero, and return
