@@ -12043,7 +12043,8 @@ void HandleClientMySQL ( int iSock, const char * sClientIP, ThdDesc_t * pThd )
 		} else if ( uMysqlCmd==MYSQL_COM_SET_OPTION )
 		{
 			// bMulti = ( tIn.GetWord()==MYSQL_OPTION_MULTI_STATEMENTS_ON ); // that's how we could double check and validate multi query
-			SendMysqlOkPacket ( tOut, uPacketID );
+			// server reporting success in response to COM_SET_OPTION and COM_DEBUG
+			SendMysqlEofPacket ( tOut, uPacketID, 0 );
 			continue;
 
 		} else if ( uMysqlCmd!=MYSQL_COM_QUERY )
