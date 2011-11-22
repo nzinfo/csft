@@ -1275,7 +1275,10 @@ void Shutdown ()
 
 			// tell rotation thread to shutdown, and wait until it does
 			g_bRotateShutdown = true;
-			sphThreadJoin ( &g_tRotateThread );
+			if ( g_bSeamlessRotate )
+			{
+				sphThreadJoin ( &g_tRotateThread );
+			}
 			g_tRotateQueueMutex.Done();
 			g_tRotateConfigMutex.Done();
 
