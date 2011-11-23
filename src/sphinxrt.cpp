@@ -782,7 +782,7 @@ public:
 					explicit RtAccum_t ( bool bKeywordDict );
 					~RtAccum_t();
 
-	void			SetupDict ( RtIndex_t * pIndex, CSphDict * pDict );
+	void			SetupDict ( RtIndex_t * pIndex, CSphDict * pDict, bool bKeywordDict );
 	void			ResetDict ();
 	void			Sort ();
 
@@ -1414,7 +1414,7 @@ RtAccum_t * RtIndex_t::AcquireAccum ( CSphString * sError )
 
 	assert ( pAcc->m_pIndex==NULL || pAcc->m_pIndex==this );
 	pAcc->m_pIndex = this;
-	pAcc->SetupDict ( this, m_pDict );
+	pAcc->SetupDict ( this, m_pDict, m_bKeywordDict );
 	return pAcc;
 }
 
@@ -1450,15 +1450,16 @@ RtAccum_t::~RtAccum_t()
 	SafeDelete ( m_pDictRt );
 }
 
-void RtAccum_t::SetupDict ( RtIndex_t * pIndex, CSphDict * pDict )
+void RtAccum_t::SetupDict ( RtIndex_t * pIndex, CSphDict * pDict, bool bKeywordDict )
 {
-	if ( pIndex!=m_pRefIndex || pDict!=m_pRefDict )
+	if ( pIndex!=m_pRefIndex || pDict!=m_pRefDict || bKeywordDict!=m_bKeywordDict )
 	{
 		SafeDelete ( m_pDictCloned );
 		SafeDelete ( m_pDictRt );
 		m_pDict = NULL;
 		m_pRefIndex = pIndex;
 		m_pRefDict = pDict;
+		m_bKeywordDict = bKeywordDict;
 	}
 
 	if ( !m_pDict )
@@ -1585,7 +1586,8 @@ void RtAccum_t::AddDocument ( ISphHits * pHits, const CSphMatch & tDoc, int iRow
 // cook checkpoints - make NULL terminating strings from offsets
 static void FixupSegmentCheckpoints ( RtSegment_t * pSeg )
 {
-	assert ( !pSeg->m_dWordCheckpoints.GetLength() || pSeg->m_dKeywordCheckpoints.GetLength() );
+	assert ( pSeg &&
+		( !pSeg->m_dWordCheckpoints.GetLength() || pSeg->m_dKeywordCheckpoints.GetLength() ) );
 	if ( !pSeg->m_dWordCheckpoints.GetLength() )
 		return;
 
@@ -6128,7 +6130,7 @@ bool RtBinlog_c::ReplayCommit ( int iBinlog, DWORD uReplayFlags, BinlogReader_c 
 				tIndex.m_sName.cstr(), tIndex.m_pRT->m_iTID, iTID, iTxnPos );
 
 		// cook checkpoint in case dict=keywords
-		if ( tIndex.m_pRT->IsWordDict() )
+		if ( tIndex.m_pRT->IsWordDict() && pSeg.Ptr() )
 			FixupSegmentCheckpoints ( pSeg.Ptr() );
 
 		// actually replay
