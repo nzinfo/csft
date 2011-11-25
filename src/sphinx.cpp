@@ -5813,7 +5813,10 @@ void CSphReader::GetBytes ( void * pData, int iSize )
 		{
 			UpdateCache ();
 			if ( !m_iBuffUsed )
+			{
+				memset ( pData, 0, iSize );
 				return; // unexpected io failure
+			}
 		}
 	}
 
@@ -5833,7 +5836,7 @@ void CSphReader::GetBytes ( void * pData, int iSize )
 		UpdateCache ();
 		if ( m_iBuffPos+iSize>m_iBuffUsed )
 		{
-			memset ( pOut, 0, iSize ); // unexpected io failure
+			memset ( pData, 0, iSize ); // unexpected io failure
 			return;
 		}
 	}
@@ -5955,7 +5958,7 @@ const CSphReader & CSphReader::operator = ( const CSphReader & rhs )
 
 DWORD CSphReader::GetDword ()
 {
-	DWORD uRes;
+	DWORD uRes = 0;
 	GetBytes ( &uRes, sizeof(DWORD) );
 	return uRes;
 }
@@ -5963,7 +5966,7 @@ DWORD CSphReader::GetDword ()
 
 SphOffset_t CSphReader::GetOffset ()
 {
-	SphOffset_t uRes;
+	SphOffset_t uRes = 0;
 	GetBytes ( &uRes, sizeof(SphOffset_t) );
 	return uRes;
 }
@@ -7127,7 +7130,7 @@ CSphIndex::CSphIndex ( const char * sIndexName, const char * sFilename )
 	, m_bKeepFilesOpen ( false )
 	, m_bPreloadWordlist ( true )
 	, m_bStripperInited ( true )
-    , m_bEnableStar ( false )
+	, m_bEnableStar ( false )
 	, m_bId32to64 ( false )
 	, m_pTokenizer ( NULL )
 	, m_pDict ( NULL )
