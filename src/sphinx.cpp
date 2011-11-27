@@ -23350,6 +23350,9 @@ void CSphSource_ODBC::SqlDismissResult ()
 }
 
 
+#define MS_SQL_BUFFER_GAP 16
+
+
 bool CSphSource_ODBC::SqlQuery ( const char * sQuery )
 {
 	if ( SQLAllocHandle ( SQL_HANDLE_STMT, m_hDBC, &m_hStmt )==SQL_ERROR )
@@ -23405,8 +23408,8 @@ bool CSphSource_ODBC::SqlQuery ( const char * sQuery )
 		else if ( uColSize )
 			iBuffLen = Min ( uColSize+1, (SQLULEN) MAX_COL_SIZE ); // got data from driver
 
-		tCol.m_dContents.Resize ( iBuffLen );
-		tCol.m_dRaw.Resize ( iBuffLen );
+		tCol.m_dContents.Resize ( iBuffLen + MS_SQL_BUFFER_GAP );
+		tCol.m_dRaw.Resize ( iBuffLen + MS_SQL_BUFFER_GAP );
 		tCol.m_iInd = 0;
 		tCol.m_iBufferSize = iBuffLen;
 		tCol.m_bUnicode = m_bUnicode && ( iDataType==SQL_WCHAR || iDataType==SQL_WVARCHAR || iDataType==SQL_WLONGVARCHAR );
@@ -23415,7 +23418,7 @@ bool CSphSource_ODBC::SqlQuery ( const char * sQuery )
 
 		if ( SQLBindCol ( m_hStmt, (SQLUSMALLINT)(i+1),
 			tCol.m_bUnicode ? SQL_UNICODE : SQL_C_CHAR,
-			tCol.m_bUnicode ? &(tCol.m_dRaw[0]) : &(tCol.m_dContents[0]),
+			tCol.m_bUnicode ? tCol.m_dRaw.Begin() : tCol.m_dContents.Begin(),
 			iBuffLen, &(tCol.m_iInd) )==SQL_ERROR )
 				return false;
 	}
@@ -23531,8 +23534,7 @@ bool CSphSource_ODBC::SqlFetchRow ()
 				if ( tCol.m_bUnicode )
 				{
 					// WideCharToMultiByte should get NULL terminated string
-					for ( int i=0; i<sizeof(WCHAR); i++ )
-						tCol.m_dRaw.Add ( 0 );
+					memset ( tCol.m_dRaw.Begin()+tCol.m_iBufferSize, 0, MS_SQL_BUFFER_GAP );
 
 					int iConv = WideCharToMultiByte ( CP_UTF8, 0, LPCWSTR ( tCol.m_dRaw.Begin() ), tCol.m_iInd/sizeof(WCHAR),
 						LPSTR ( tCol.m_dContents.Begin() ), tCol.m_iBufferSize-1, NULL, NULL );
