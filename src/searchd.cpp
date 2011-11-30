@@ -8056,9 +8056,12 @@ void SqlParser_c::AddUpdatedAttr ( const CSphString& sName, ESphAttr eType )
 
 void SqlParser_c::UpdateAttr ( const CSphString& sName, const SqlNode_t * pValue, ESphAttr eType )
 {
+	assert ( eType==SPH_ATTR_FLOAT || eType==SPH_ATTR_INTEGER || eType==SPH_ATTR_BIGINT );
 	if ( eType==SPH_ATTR_FLOAT )
+	{
 		m_pStmt->m_tUpdate.m_dPool.Add ( *(const DWORD*)( &pValue->m_fValue ) );
-	else // default: if ( eType==SPH_ATTR_INTEGER )
+
+	} else if ( eType==SPH_ATTR_INTEGER || eType==SPH_ATTR_BIGINT )
 	{
 		m_pStmt->m_tUpdate.m_dPool.Add ( (DWORD) pValue->m_iValue );
 		DWORD uHi = (DWORD) ( pValue->m_iValue>>32 );
@@ -8071,25 +8074,36 @@ void SqlParser_c::UpdateAttr ( const CSphString& sName, const SqlNode_t * pValue
 	AddUpdatedAttr ( sName, eType );
 }
 
-void SqlParser_c::UpdateMVAAttr ( const CSphString& sName, const SqlNode_t& dValues )
+void SqlParser_c::UpdateMVAAttr ( const CSphString & sName, const SqlNode_t & dValues )
 {
 	CSphAttrUpdate & tUpd = m_pStmt->m_tUpdate;
-	assert ( dValues.m_pValues.Ptr() && dValues.m_pValues->GetLength()>0 );
-	dValues.m_pValues->Uniq(); // don't need dupes within MVA
-	tUpd.m_dPool.Add ( dValues.m_pValues->GetLength()*2 );
-	SphAttr_t * pVal = dValues.m_pValues.Ptr()->Begin();
-	SphAttr_t * pValMax = pVal + dValues.m_pValues->GetLength();
 	ESphAttr eType = SPH_ATTR_UINT32SET;
-	for ( ;pVal<pValMax; pVal++ )
+
+	if ( dValues.m_pValues.Ptr() && dValues.m_pValues->GetLength()>0 )
 	{
-		SphAttr_t uVal = *pVal;
-		if ( uVal>UINT_MAX )
+		// got MVA values, let's process them
+		dValues.m_pValues->Uniq(); // don't need dupes within MVA
+		tUpd.m_dPool.Add ( dValues.m_pValues->GetLength()*2 );
+		SphAttr_t * pVal = dValues.m_pValues.Ptr()->Begin();
+		SphAttr_t * pValMax = pVal + dValues.m_pValues->GetLength();
+		for ( ;pVal<pValMax; pVal++ )
 		{
-			eType = SPH_ATTR_UINT64SET;
+			SphAttr_t uVal = *pVal;
+			if ( uVal>UINT_MAX )
+			{
+				eType = SPH_ATTR_UINT64SET;
+			}
+			tUpd.m_dPool.Add ( (DWORD)uVal );
+			tUpd.m_dPool.Add ( (DWORD)( uVal>>32 ) );
 		}
-		tUpd.m_dPool.Add ( (DWORD)uVal );
-		tUpd.m_dPool.Add ( (DWORD)( uVal>>32 ) );
+	} else
+	{
+		// no values, means we should delete the attribute
+		// we signal that to the update code by putting a single zero
+		// to the values pool (meaning a zero-length MVA values list)
+		tUpd.m_dPool.Add ( 0 );
 	}
+
 	AddUpdatedAttr ( sName, eType );
 }
 

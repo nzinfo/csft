@@ -825,7 +825,8 @@ update_item:
 		}
 	| TOK_IDENT '='  '(' ')' // special case () means delete mva
 		{
-			pParser->UpdateAttr ( $1.m_sValue, NULL, SPH_ATTR_UINT32SET );
+			SqlNode_t tNoValues;
+			pParser->UpdateMVAAttr ( $1.m_sValue, tNoValues );
 		}
 	;
 
