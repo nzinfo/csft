@@ -116,7 +116,7 @@
 				AdditionalIncludeDirectories="$(SolutionDir)/libstemmer_c/include; $(SolutionDir)/libexpat/lib"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				ExceptionHandling="0"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)/$(ProjectName).pdb"
 				WarningLevel="4"

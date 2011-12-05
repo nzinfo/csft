@@ -109,7 +109,6 @@
 			IntermediateDirectory="$(SolutionDir)/junk/$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
-			
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -131,7 +130,7 @@
 				Optimization="2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				ExceptionHandling="0"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(IntDir)/$(ProjectName).pdb"
 				WarningLevel="4"
@@ -190,7 +189,6 @@
 			IntermediateDirectory="$(SolutionDir)/junk/$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
-			
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -276,7 +274,6 @@
 			IntermediateDirectory="$(SolutionDir)/junk/$(ConfigurationName)"
 			ConfigurationType="1"
 			CharacterSet="2"
-			
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
