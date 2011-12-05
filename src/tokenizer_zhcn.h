@@ -23,14 +23,24 @@
 #define ICONV_INBUF_CONST	1
 #endif
 
+#if USE_MMSEG
 #include "SegmenterManager.h"
 #include "Segmenter.h"
+#endif
+
+/// haifeng.fang
+#if USE_ICTCLAS
+#include "ICTCLAS2011.h"
+#endif
+
+
 /*
 class css::SegmenterManager;
 class css::Segmenter;
 class css::ToLowerImpl;
 class css::ChineseCharTaggerImpl;
 */
+#if USE_MMSEG
 ////////////////////////////////////////////////////////////
 typedef CSR_Singleton<css::SegmenterManager> SegmenterManagerSingleInstance;
 
@@ -98,6 +108,7 @@ public:
 
 };
 
+#endif //use_mmseg
 
 #endif
 

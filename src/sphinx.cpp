@@ -38,6 +38,11 @@
 #define SPH_READ_PROGRESS_CHUNK (8192*1024)
 #define SPH_READ_NOPROGRESS_CHUNK (32768*1024)
 
+/// haifeng.fang
+#if USE_ICTCLAS
+#include "ICTCLAS2011.h"
+#endif
+
 #if USE_LIBSTEMMER
 #include "libstemmer.h"
 #endif
@@ -128,6 +133,12 @@
 #if ( USE_WINDOWS && USE_MMSEG )
 	#pragma comment(linker, "/defaultlib:libcss.lib")
 	#pragma message("Automatically linking with libcss.lib")
+#endif
+
+// haifeng.fang
+#if ( USE_WINDOWS && USE_ICTCLAS )
+	#pragma comment(linker, "/defaultlib:ICTCLAS2011.lib")
+	#pragma message("Automatically_linking with ICTCLAS2011.lib")
 #endif
 
 
@@ -1894,6 +1905,15 @@ ISphTokenizer *			sphCreateUTF8ChineseTokenizer ( const char* dict_path );
 
 #endif
 
+/// haifeng.fang
+#if USE_ICTCLAS
+
+/// create UTF-8 tokenizer with Chinese Segment support for ICTCLAS50
+ISphTokenizer *			sphCreateUTF8ChineseTokenizer ( const char* dict_path );
+
+#endif
+
+
 /// synonym list entry
 struct CSphSynonym
 {
@@ -1929,6 +1949,10 @@ public:
 
 protected:
 	virtual bool			IsSegment(const BYTE * ) { return true; } //mmseg: use to sep CJK characters
+
+	// haifeng.fang
+	virtual bool			IsSegment_ICTCLAS (const BYTE *) { return true; }
+
 	BYTE *	GetTokenSyn ();
 	bool	BlendAdjust ( BYTE * pPosition );
 	BYTE *	GetBlendedVariant ();
@@ -2192,8 +2216,311 @@ protected:
 
 #endif
 
+enum
+{
+	MASK_CODEPOINT			= 0x00ffffffUL,	// mask off codepoint flags
+	MASK_FLAGS				= 0xff000000UL, // mask off codepoint value
+	FLAG_CODEPOINT_SPECIAL	= 0x01000000UL,	// this codepoint is special
+	FLAG_CODEPOINT_DUAL		= 0x02000000UL,	// this codepoint is special but also a valid word part
+	FLAG_CODEPOINT_NGRAM	= 0x04000000UL,	// this codepoint is n-gram indexed
+	FLAG_CODEPOINT_SYNONYM	= 0x08000000UL,	// this codepoint is used in synonym tokens only
+	FLAG_CODEPOINT_BOUNDARY	= 0x10000000UL,	// this codepoint is phrase boundary
+	FLAG_CODEPOINT_IGNORE	= 0x20000000UL,	// this codepoint is ignored
+	FLAG_CODEPOINT_BLEND	= 0x40000000UL	// this codepoint is "blended" (indexed both as a character, and as a separator)
+};
+
+
 #if USE_WINDOWS
 #pragma warning(default:4127) // conditional expr is const
+#endif
+
+/// haifeng.fang
+#if USE_ICTCLAS
+#include "tokenizer_zhcn.h"
+
+class CSphTokenizer_ICTCLAS : public CSphTokenizer_UTF8
+{
+public:
+	CSphTokenizer_ICTCLAS(): CSphTokenizer_UTF8(),m_segoffset(0) 
+	{ 	
+		m_dictpath = NULL;
+
+		//FIXCJK
+		CSphVector<CSphRemapRange> dRemaps;
+
+		dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+		dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
+		dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+		
+		m_tLC.AddRemaps ( dRemaps, FLAG_CODEPOINT_NGRAM | FLAG_CODEPOINT_SPECIAL ); // !COMMIT support other n-gram lengths than 1
+		//ENDCJK
+
+		this->m_pAccumSeg = m_sAccumSeg;
+		m_iLastTokenBufferLen = 0;
+		m_iLastTokenLen_ICTCLAS = 0;
+
+		m_bInitOk = false; 
+		m_bHaveResults = false; 
+		m_iResultCount = 0; 
+		m_rstVec = NULL;
+		m_bReadyExit = true;
+		m_iStackTop = 0;
+		//m_segoffset = 0;
+		//printf("\ncalling ICTCLAS constructor.\n");
+	}
+
+	CSphTokenizer_ICTCLAS(bool isClone): CSphTokenizer_UTF8(),m_segoffset(0) 
+	{ 	
+		m_dictpath = NULL;
+
+		//FIXCJK
+		CSphVector<CSphRemapRange> dRemaps;
+
+		dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+		dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
+		dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+		
+		m_tLC.AddRemaps ( dRemaps, FLAG_CODEPOINT_NGRAM | FLAG_CODEPOINT_SPECIAL ); // !COMMIT support other n-gram lengths than 1
+		//ENDCJK
+
+		this->m_pAccumSeg = m_sAccumSeg;
+		m_iLastTokenBufferLen = 0;
+		m_iLastTokenLen_ICTCLAS = 0;
+
+		m_bInitOk = true; 
+		m_bHaveResults = false; 
+		m_iResultCount = 0; 
+		m_rstVec = NULL;
+		m_bReadyExit = !isClone;
+		m_iStackTop = 0;
+
+		//printf("\ncalling ICTCLAS constructor.\n");
+	}
+	
+	~CSphTokenizer_ICTCLAS();
+
+	void setDictPath(const char * path);
+
+	bool ImportUserDict(const char * sFilename, const int nLength);
+	//void setExit() { m_bReadyExit = true; }
+
+	virtual void SetBuffer(BYTE * sBuffer, int iLength);
+	virtual BYTE * GetToken();
+
+	virtual const char * GetBufferPtr() const { return (const char *) m_pCur; }
+	virtual const char * GetTokenStart() const { return m_segToken; }
+	virtual int GetLastTokenLen() const { return m_iLastTokenLen_ICTCLAS; }
+
+	virtual ISphTokenizer *	Clone ( bool bEscaped ) const;
+	
+protected:
+	bool m_bReadyExit;
+	void peekToken (int & len);
+	void popToken ();
+	virtual bool IsSegment(const BYTE *pCur);
+
+protected:
+	enum eCodeType m_eCT;
+	const char * m_sUserDict;
+	bool m_bInitOk;
+	CSphString m_dictpath;
+
+	bool m_bHaveResults;
+	const result_t * m_rstVec;
+	int m_iResultCount;
+	int m_iStackTop;
+	
+	char* m_segToken;
+	int	m_iLastTokenLen_ICTCLAS;
+
+	BYTE m_sAccumSeg [ 3*SPH_MAX_WORD_LEN+3 ];
+	BYTE * m_pAccumSeg;
+
+	size_t m_segoffset;
+};
+
+void CSphTokenizer_ICTCLAS::setDictPath(const char * path)
+{
+	this->m_dictpath = path;
+	int ret = 0;
+	ret = ::ICTCLAS_Init(path, UTF8_CODE);
+	if (! (ret == 0))
+	{
+		//CSphString sError;
+		//sError.SetSprintf ( "failed to initialize the ICTCLAS Tokenizor (%d).", ret);
+		//printf(sError.cstr());
+		this->m_bInitOk = false;
+		return;
+	}
+	this->m_bInitOk = true;
+}
+
+CSphTokenizer_ICTCLAS::~CSphTokenizer_ICTCLAS()
+{
+	//printf("\ncalling ICTCLAS deconstructor.\n");
+	if (this->m_bHaveResults == true || !(m_rstVec == NULL))
+	{
+		///::ICTCLAS_ResultFree(m_rstVec);
+	}
+
+	if (this->m_bInitOk && this->m_bReadyExit) 
+	{
+		::ICTCLAS_Exit();
+	}
+}
+
+bool CSphTokenizer_ICTCLAS::ImportUserDict(const char * sFilename, const int nLength)
+{
+	if (this->m_bInitOk)
+	{
+		if (::ICTCLAS_ImportUserDict(sFilename))
+		{
+			this->m_sUserDict = sFilename;
+		}
+		return true;
+	}
+	else
+		return false;
+}
+
+void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
+{
+	printf("\ncalling setbuffer.\n");
+	CSphTokenizer_UTF8::SetBuffer(sBuffer, iLength);
+
+	if (this->m_bHaveResults == true)
+	{
+		//::ICTCLAS_ResultFree(m_rstVec);
+		this->m_bHaveResults = false;
+	}
+	
+	int _iResultCount = 0;
+
+	this->m_rstVec = ::ICTCLAS_ParagraphProcessA(this->GetBufferPtr(), &_iResultCount);
+	this->m_iResultCount = _iResultCount;
+
+	if (this->m_iResultCount > 0)
+	{
+		this->m_bHaveResults = true;
+		*m_sAccumSeg = 0;
+		m_pAccumSeg = m_sAccumSeg;
+		m_iStackTop = 0;
+	}
+	else
+	{
+		this->m_bHaveResults = false;
+		*m_sAccumSeg = 0;
+		m_pAccumSeg = m_sAccumSeg;
+		m_iStackTop = 0;
+	}
+	
+	m_segoffset = 0;
+	m_segToken = (char*)m_pCur;
+}
+
+
+void CSphTokenizer_ICTCLAS::peekToken (int & len)
+{
+	len = 0;
+	
+	if (this->m_bHaveResults == true)
+	{
+		if (this->m_iStackTop < this->m_iResultCount)
+		{
+			len = this->m_rstVec[this->m_iStackTop].length;
+
+			//char buff[1024];
+			//::memcpy(buff, (char *)&(this->m_pBuffer[this->m_rstVec[this->m_iStackTop].iStartPos]),len);
+			//buff[len] = 0;
+			//CSphString sError;
+			//sError.SetSprintf ( "[%s]", buff);
+			//printf(sError.cstr());
+		}
+	}
+	
+}
+
+void CSphTokenizer_ICTCLAS::popToken ()
+{
+	if (this->m_bHaveResults == true)
+	{
+		if (this->m_iStackTop < this->m_iResultCount)
+		{
+			this->m_iStackTop++;
+		}
+	}
+}
+
+bool CSphTokenizer_ICTCLAS::IsSegment(const BYTE * pCur)
+{
+	size_t offset = pCur - m_pBuffer;
+
+	int len = 0;
+	//printf("%d:%d:", offset,m_segoffset); 
+	while(m_segoffset < offset) 
+	{
+			this->peekToken(len);
+
+			this->popToken();
+			m_segoffset += len;
+			if(len==0)
+			{
+				break; 
+			}
+	}
+	//printf("%d;\n", m_segoffset == offset);
+	return (m_segoffset == offset);
+}
+
+BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
+{
+	printf("\ncalling gettoken.\n");
+	m_iLastTokenLen_ICTCLAS = 0;
+	while (!this->IsSegment(m_pCur) || m_pAccumSeg == m_sAccumSeg)
+	{
+		BYTE * tok = CSphTokenizer_UTF8::GetToken();
+		if(!tok){
+			m_iLastTokenLen_ICTCLAS = 0;
+			return NULL;
+		}
+
+		if(m_pAccumSeg == m_sAccumSeg)
+			m_segToken = (char*)m_pTokenStart;
+		
+		if(tok[0] < 256) {
+			m_segToken = (char*)m_pTokenStart;
+			return tok;
+		}
+
+		if ( (m_pAccumSeg - m_sAccumSeg)<SPH_MAX_WORD_LEN )  {
+			::memcpy(m_pAccumSeg, tok, m_iLastTokenBufferLen);
+			m_pAccumSeg += m_iLastTokenBufferLen;
+			m_iLastTokenLen_ICTCLAS += m_iLastTokenLen;
+		}
+	}
+	{
+		*m_pAccumSeg = 0;
+
+		m_iLastTokenBufferLen = m_pAccumSeg - m_sAccumSeg;
+		m_pAccumSeg = m_sAccumSeg;
+		
+		//m_segToken = (char*)(m_pTokenEnd-m_iLastTokenBufferLen);
+		return m_sAccumSeg;
+	}
+	//return NULL;
+
+}
+
+ISphTokenizer * CSphTokenizer_ICTCLAS::Clone ( bool bEscaped ) const
+{
+	printf("\ncalling clone.\n");
+	CSphTokenizer_ICTCLAS * pClone = new CSphTokenizer_ICTCLAS (true);
+	pClone->CloneBase ( this, bEscaped );
+	pClone->m_dictpath = m_dictpath;
+	pClone->m_eCT = m_eCT;
+	return pClone;
+}
+
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2225,20 +2552,21 @@ ISphTokenizer *	sphCreateUTF8ChineseTokenizer ( const char* dict_path )
 
 #endif 
 
+/// haifeng.fang
+#if USE_ICTCLAS
+
+ISphTokenizer *	sphCreateUTF8ChineseTokenizer_ICTCLAS ( const char* dict_path )
+{
+	CSphTokenizer_ICTCLAS * tokenizer = new CSphTokenizer_ICTCLAS ();
+	tokenizer->setDictPath(dict_path);
+	return tokenizer;
+}
+
+#endif 
+
+
 /////////////////////////////////////////////////////////////////////////////
 
-enum
-{
-	MASK_CODEPOINT			= 0x00ffffffUL,	// mask off codepoint flags
-	MASK_FLAGS				= 0xff000000UL, // mask off codepoint value
-	FLAG_CODEPOINT_SPECIAL	= 0x01000000UL,	// this codepoint is special
-	FLAG_CODEPOINT_DUAL		= 0x02000000UL,	// this codepoint is special but also a valid word part
-	FLAG_CODEPOINT_NGRAM	= 0x04000000UL,	// this codepoint is n-gram indexed
-	FLAG_CODEPOINT_SYNONYM	= 0x08000000UL,	// this codepoint is used in synonym tokens only
-	FLAG_CODEPOINT_BOUNDARY	= 0x10000000UL,	// this codepoint is phrase boundary
-	FLAG_CODEPOINT_IGNORE	= 0x20000000UL,	// this codepoint is ignored
-	FLAG_CODEPOINT_BLEND	= 0x40000000UL	// this codepoint is "blended" (indexed both as a character, and as a separator)
-};
 
 
 CSphLowercaser::CSphLowercaser ()
@@ -2938,6 +3266,13 @@ ISphTokenizer * ISphTokenizer::Create ( const CSphTokenizerSettings & tSettings,
 			pTokenizer = sphCreateUTF8ChineseTokenizer
 				(tSettings.m_sDictPath.cstr()); break;
 #endif
+/// haifeng.fang
+#if USE_ICTCLAS
+		case TOKENIZER_ZHCN_UTF8_ICTCLAS:
+			pTokenizer = sphCreateUTF8ChineseTokenizer_ICTCLAS
+				(tSettings.m_sDictPath.cstr()); break;
+#endif
+
 		default:
 			sError.SetSprintf ( "failed to create tokenizer (unknown charset type '%d')", tSettings.m_iType );
 			return NULL;
@@ -4768,6 +5103,8 @@ CSphTokenizer_UTF8MMSeg::CSphTokenizer_UTF8MMSeg ()
 
 void CSphTokenizer_UTF8MMSeg::SetBuffer ( BYTE * sBuffer, int iLength )
 {
+		printf("\ncalling mmseg setbuffer.\n");
+
 	CSphTokenizer_UTF8::SetBuffer(sBuffer, iLength);
 	css::Segmenter* seg = d_->GetSegmenter(m_dictpath.cstr());
 	if(seg)
@@ -4803,6 +5140,8 @@ bool	CSphTokenizer_UTF8MMSeg::IsSegment(const BYTE * pCur)
 
 BYTE *	CSphTokenizer_UTF8MMSeg::GetToken ()
 {
+		printf("\ncalling mmseg gettoken.\n");
+
 	m_iLastTokenLenMMSeg = 0;
 	//BYTE* tok = CSphTokenizer_UTF8::GetToken();
 	while(!IsSegment(m_pCur) || m_pAccumSeg == m_sAccumSeg)
@@ -4835,6 +5174,7 @@ BYTE *	CSphTokenizer_UTF8MMSeg::GetToken ()
 
 ISphTokenizer * CSphTokenizer_UTF8MMSeg::Clone ( bool bEscaped ) const
 {
+	printf("\ncalling mmseg clone.\n");
 	CSphTokenizer_UTF8MMSeg * pClone = new CSphTokenizer_UTF8MMSeg ();
 	pClone->CloneBase ( this, bEscaped );
 	pClone->m_dictpath = m_dictpath;
@@ -4850,6 +5190,7 @@ const BYTE* CSphTokenizer_UTF8MMSeg::GetThesaurus(BYTE * sBuffer, int iLength )
 }
 
 #endif
+
 
 //////////////////////////////////////////////////////////////////////////
 

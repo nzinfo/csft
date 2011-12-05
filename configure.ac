@@ -323,13 +323,35 @@ else
 fi
 AM_CONDITIONAL(USE_MMSEG, test x$ac_cv_use_mmseg != xno)
 
+# haifeng.fang
+dnl ---
+# check if we should complie with lib(ICTCLAS50.lib) (a ICTCLAS Chinese Segmenter) support
+AC_ARG_WITH([ictclas],
+            AC_HELP_STRING([--with-ictclas], [compile with ictclas50.lib, a ICTCLAS Chinese Segmenter support (default is enabled)]),
+            [ac_cv_use_ictclas=$withval], [ac_cv_use_ictclas=yes]
+)
+AC_MSG_CHECKING([whether to compile with ICTCLAS50.LIB support])
+if test x$ac_cv_use_ictclas != xno; then
+	AC_MSG_RESULT([yes])
+    AC_CHECK_MMSEG([$ac_cv_use_ictclas])
+    AC_DEFINE(USE_ICTCLAS,1,[Define to 1 if you want to compile with ICTCLAS50.LIB support])
+    AC_SUBST([ICTCLAS_LIBS])
+    AC_SUBST([ICTCLAS_CFLAGS])
+else
+	AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL(USE_ICTCLAS, test x$ac_cv_use_ictclas != xno)
+
+###########################################################
+
 # add macports include directory
 if (echo $MYSQL_LIBS | grep -q -- -L/opt/local/lib); then
    MYSQL_CFLAGS="$MYSQL_CFLAGS -I/opt/local/include"
 fi
 
 # we can now set preprocessor flags for both C and C++ compilers
-CPPFLAGS="$CPPFLAGS $MYSQL_CFLAGS $PGSQL_CFLAGS $MMSEG_CFLAGS"
+# haifeng.fang
+CPPFLAGS="$CPPFLAGS $MYSQL_CFLAGS $PGSQL_CFLAGS $MMSEG_CFLAGS $ICTCLAS_CFLAGS"
 
 dnl ---
 

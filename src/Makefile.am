@@ -7,6 +7,10 @@ if USE_MMSEG
 SRC_MMSEG = tokenizer_zhcn.cpp
 endif
 
+if USE_ICTCLAS
+SRC_ICTCLAS = tokenizer_zhcn.cpp
+endif
+
 noinst_LIBRARIES = libsphinx.a
 libsphinx_a_SOURCES = $(SRC_SPHINX) $(SRC_MMSEG)
 
@@ -33,5 +37,6 @@ LIBSTEMMER_LIBS =
 AM_CPPFLAGS = -DSYSCONFDIR="\"$(sysconfdir)\"" -DDATADIR="\"$(localstatedir)/data\""
 endif
 
-COMMON_LIBS = libsphinx.a $(LIBSTEMMER_LIBS) $(MYSQL_LIBS) $(PGSQL_LIBS) $(MMSEG_LIBS)
+#haifeng.fang
+COMMON_LIBS = libsphinx.a $(LIBSTEMMER_LIBS) $(MYSQL_LIBS) $(PGSQL_LIBS) $(MMSEG_LIBS) $(ICTCLAS_LIBS)
 LDADD = $(COMMON_LIBS)

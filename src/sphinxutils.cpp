@@ -861,6 +861,16 @@ bool sphConfTokenizer ( const CSphConfigSection & hIndex, CSphTokenizerSettings 
 		tSettings.m_iType = TOKENIZER_ZHCN_UTF8;
 	} 
 	#endif
+
+    // haifeng.fang
+	#if USE_ICTCLAS
+	else if (hIndex("charset_dictpath") && hIndex["charset_type"]=="zh_cn.utf-8.ictclas" )
+	{
+		tSettings.m_sDictPath = hIndex["charset_dictpath"];
+		tSettings.m_iType = TOKENIZER_ZHCN_UTF8_ICTCLAS;
+	} 
+	#endif
+
 	else
 	{
 		sError.SetSprintf ( "unknown charset type '%s'", hIndex["charset_type"].cstr() );
