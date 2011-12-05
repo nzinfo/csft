@@ -20,7 +20,7 @@
 			OutputDirectory="$(SolutionDir)/bin/$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)/junk/$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			
 			CharacterSet="2"
 			>
 			<Tool
@@ -102,7 +102,7 @@
 			OutputDirectory="$(SolutionDir)/bin/$(ConfigurationName)"
 			IntermediateDirectory="$(SolutionDir)/junk/$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			
 			CharacterSet="2"
 			>
 			<Tool
