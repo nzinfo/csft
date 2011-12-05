@@ -2487,7 +2487,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 		if(m_pAccumSeg == m_sAccumSeg)
 			m_segToken = (char*)m_pTokenStart;
 		
-		if(tok[0] < 256) {
+		if(tok[0] < 128) {
 			m_segToken = (char*)m_pTokenStart;
 			return tok;
 		}

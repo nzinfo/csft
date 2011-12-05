@@ -19,7 +19,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef _WIN32
-	#define USE_MYSQL		0	/// whether to compile MySQL support
+	#define USE_MYSQL		1	/// whether to compile MySQL support
 	#define USE_PGSQL		0	/// whether to compile PgSQL support
 	#define USE_ODBC		1	/// whether to compile ODBC support
 	#define USE_LIBEXPAT	1	/// whether to compile libexpat support
@@ -28,7 +28,7 @@
 	#define	USE_LIBSTEMMER	0	/// whether to compile libstemmber support
 	#define USE_WINDOWS		1	/// whether to compile for Windows
 	#define USE_MMSEG		1   /// enable mmseg
-	#define USE_ICTCLAS		1	/// enable ICTCLAS
+	#define USE_ICTCLAS		0	/// enable ICTCLAS
 	#define USE_SYSLOG		0	/// whether to use syslog for logging
 
 	#define UNALIGNED_RAM_ACCESS	1
