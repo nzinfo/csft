@@ -3450,6 +3450,8 @@ int WaitForRemoteAgents ( CSphVector<AgentConn_t> & dAgents, int iTimeout, IRepl
 					} else if ( tAgent.m_iReplyStatus==SEARCHD_RETRY )
 					{
 						tAgent.m_eState = AGENT_RETRY;
+						CSphString sAgentError = tReq.GetString ();
+						tAgent.m_sFailure.SetSprintf ( "remote warning: %s", sAgentError.cstr() );
 						break;
 
 					} else if ( tAgent.m_iReplyStatus!=SEARCHD_OK )
@@ -14788,7 +14790,7 @@ void TickHead ( CSphProcessSharedMutex * pAcceptMutex )
 	if ( !pListener )
 		return;
 
-	if ( ( g_iMaxChildren && g_dChildren.GetLength()>=g_iMaxChildren )
+	if ( ( g_iMaxChildren && ( g_dChildren.GetLength()>=g_iMaxChildren || g_dThd.GetLength()>=g_iMaxChildren ) )
 		|| ( g_iRotateCount && !g_bSeamlessRotate ) )
 	{
 		FailClient ( iClientSock, SEARCHD_RETRY, "server maxed out, retry in a second" );
