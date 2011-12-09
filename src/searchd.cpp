@@ -191,9 +191,9 @@ public:
 	void SetupTLS ();
 
 private:
-	CrashQuery_t			m_tQuery;
-
-	static SphThreadKey_t	m_tLastQueryTLS; // last query ( non threaded workers could use dist_threads too )
+	CrashQuery_t			m_tQuery;			// per thread copy of last query for thread mode
+	static CrashQuery_t		m_tForkQuery;		// copy of last query for fork / prefork modes
+	static SphThreadKey_t	m_tLastQueryTLS;	// last query ( non threaded workers could use dist_threads too )
 };
 
 enum LogFormat_e
@@ -1529,6 +1529,7 @@ static int		g_iCrashInfoLen = 0;
 static char		g_sMinidump[SPH_TIME_PID_MAX_SIZE] = "";
 #endif
 
+CrashQuery_t SphCrashLogger_c::m_tForkQuery = CrashQuery_t();
 SphThreadKey_t SphCrashLogger_c::m_tLastQueryTLS = SphThreadKey_t ();
 
 void SphCrashLogger_c::Init ()
@@ -1670,6 +1671,7 @@ LONG WINAPI SphCrashLogger_c::HandleCrash ( EXCEPTION_POINTERS * pExc )
 
 void SphCrashLogger_c::SetLastQuery ( const CrashQuery_t & tQuery )
 {
+	m_tForkQuery = tQuery;
 	SphCrashLogger_c * pCrashLogger = (SphCrashLogger_c *)sphThreadGet ( m_tLastQueryTLS );
 	if ( pCrashLogger )
 	{
@@ -1693,7 +1695,7 @@ void SphCrashLogger_c::SetupTLS ()
 CrashQuery_t SphCrashLogger_c::GetQuery()
 {
 	SphCrashLogger_c * pCrashLogger = (SphCrashLogger_c *)sphThreadGet ( m_tLastQueryTLS );
-	return pCrashLogger ? pCrashLogger->m_tQuery : CrashQuery_t();
+	return pCrashLogger ? pCrashLogger->m_tQuery : m_tForkQuery;
 }
 
 
