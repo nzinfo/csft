@@ -7743,7 +7743,7 @@ bool CSphIndex_VLN::PrecomputeMinMax()
 
 	for ( DWORD uIndexEntry=0; uIndexEntry<m_uDocinfo; uIndexEntry++ )
 	{
-		if ( !tBuilder.Collect ( &m_pDocinfo[uIndexEntry*uStride], m_pMva.GetWritePtr(), (int64_t)m_pMva.GetNumEntries(), m_sLastError ) )
+		if ( !tBuilder.Collect ( &m_pDocinfo[(int64_t(uIndexEntry))*uStride], m_pMva.GetWritePtr(), (int64_t)m_pMva.GetNumEntries(), m_sLastError ) )
 			return false;
 		m_uMinMaxIndex += uStride;
 
@@ -12115,7 +12115,7 @@ const DWORD * CSphIndex_VLN::FindDocinfo ( SphDocID_t uDocID ) const
 	if ( m_pDocinfoHash.GetLength() )
 	{
 		SphDocID_t uFirst = DOCINFO2ID ( &m_pDocinfo[0] );
-		SphDocID_t uLast = DOCINFO2ID ( &m_pDocinfo[(m_uDocinfo-1)*iStride] );
+		SphDocID_t uLast = DOCINFO2ID ( &m_pDocinfo[(int64_t(m_uDocinfo-1))*iStride] );
 		if ( uDocID<uFirst || uDocID>uLast )
 			return NULL;
 
@@ -12128,13 +12128,13 @@ const DWORD * CSphIndex_VLN::FindDocinfo ( SphDocID_t uDocID ) const
 	}
 
 	const DWORD * pFound = NULL;
-	if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ iStart*iStride ] ) )
+	if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ (int64_t(iStart))*iStride ] ) )
 	{
-		pFound = &m_pDocinfo [ iStart*iStride ];
+		pFound = &m_pDocinfo [ (int64_t(iStart))*iStride ];
 
-	} else if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ iEnd*iStride ] ) )
+	} else if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ (int64_t(iEnd))*iStride ] ) )
 	{
-		pFound = &m_pDocinfo [ iEnd*iStride ];
+		pFound = &m_pDocinfo [ (int64_t(iEnd))*iStride ];
 
 	} else
 	{
@@ -12142,19 +12142,19 @@ const DWORD * CSphIndex_VLN::FindDocinfo ( SphDocID_t uDocID ) const
 		{
 			// check if nothing found
 			if (
-				uDocID < DOCINFO2ID ( &m_pDocinfo [ iStart*iStride ] ) ||
-				uDocID > DOCINFO2ID ( &m_pDocinfo [ iEnd*iStride ] ) )
+				uDocID < DOCINFO2ID ( &m_pDocinfo [ (int64_t(iStart))*iStride ] ) ||
+				uDocID > DOCINFO2ID ( &m_pDocinfo [ (int64_t(iEnd))*iStride ] ) )
 					break;
-			assert ( uDocID > DOCINFO2ID ( &m_pDocinfo [ iStart*iStride ] ) );
-			assert ( uDocID < DOCINFO2ID ( &m_pDocinfo [ iEnd*iStride ] ) );
+			assert ( uDocID > DOCINFO2ID ( &m_pDocinfo [ (int64_t(iStart))*iStride ] ) );
+			assert ( uDocID < DOCINFO2ID ( &m_pDocinfo [ (int64_t(iEnd))*iStride ] ) );
 
 			int iMid = iStart + (iEnd-iStart)/2;
-			if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ iMid*iStride ] ) )
+			if ( uDocID==DOCINFO2ID ( &m_pDocinfo [ (int64_t(iMid))*iStride ] ) )
 			{
-				pFound = &m_pDocinfo [ iMid*iStride ];
+				pFound = &m_pDocinfo [ (int64_t(iMid))*iStride ];
 				break;
 			}
-			if ( uDocID<DOCINFO2ID ( &m_pDocinfo [ iMid*iStride ] ) )
+			if ( uDocID<DOCINFO2ID ( &m_pDocinfo [ (int64_t(iMid))*iStride ] ) )
 				iEnd = iMid;
 			else
 				iStart = iMid;
@@ -12426,8 +12426,8 @@ bool CSphIndex_VLN::MultiScan ( const CSphQuery * pQuery, CSphQueryResult * pRes
 		// row-level filtering
 		///////////////////////
 
-		const DWORD * pBlockStart = &m_pDocinfo [ uStride*uIndexEntry*DOCINFO_INDEX_FREQ ];
-		const DWORD * pBlockEnd = &m_pDocinfo [ uStride*( Min ( (uIndexEntry+1)*DOCINFO_INDEX_FREQ, m_uDocinfo ) - 1 ) ];
+		const DWORD * pBlockStart = &m_pDocinfo [ (int64_t(uIndexEntry))*uStride*DOCINFO_INDEX_FREQ ];
+		const DWORD * pBlockEnd = &m_pDocinfo [ (int64_t( Min ( (uIndexEntry+1)*DOCINFO_INDEX_FREQ, m_uDocinfo ) - 1 ))*uStride ];
 
 		for ( const DWORD * pDocinfo=pBlockStart; pDocinfo<=pBlockEnd; pDocinfo+=uStride )
 		{
@@ -13544,7 +13544,7 @@ bool CSphIndex_VLN::Preread ()
 	{
 		int iStride = DOCINFO_IDSIZE + m_tSchema.GetRowSize();
 		SphDocID_t uFirst = DOCINFO2ID ( &m_pDocinfo[0] );
-		SphDocID_t uRange = DOCINFO2ID ( &m_pDocinfo[(m_uDocinfo-1)*iStride] ) - uFirst;
+		SphDocID_t uRange = DOCINFO2ID ( &m_pDocinfo[(int64_t(m_uDocinfo-1))*iStride] ) - uFirst;
 		DWORD iShift = 0;
 		while ( uRange>=( 1 << DOCINFO_HASH_BITS ) )
 		{
@@ -13559,10 +13559,10 @@ bool CSphIndex_VLN::Preread ()
 
 		for ( DWORD i=1; i<m_uDocinfo; i++ )
 		{
-			assert ( DOCINFO2ID ( &m_pDocinfo[i*iStride] )>uFirst
-				&& DOCINFO2ID ( &m_pDocinfo[(i-1)*iStride] ) < DOCINFO2ID ( &m_pDocinfo[i*iStride] )
+			assert ( DOCINFO2ID ( &m_pDocinfo[(int64_t(i))*iStride] )>uFirst
+				&& DOCINFO2ID ( &m_pDocinfo[(int64_t(i-1))*iStride] ) < DOCINFO2ID ( &m_pDocinfo[(int64_t(i))*iStride] )
 				&& "descending document ID found" );
-			DWORD uHash = (DWORD)( ( DOCINFO2ID ( &m_pDocinfo[i*iStride] ) - uFirst ) >> iShift );
+			DWORD uHash = (DWORD)( ( DOCINFO2ID ( &m_pDocinfo[(int64_t(i))*iStride] ) - uFirst ) >> iShift );
 			if ( uHash==uLastHash )
 				continue;
 
