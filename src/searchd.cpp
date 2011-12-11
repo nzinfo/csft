@@ -789,9 +789,10 @@ bool IndexHash_c::Delete ( const CSphString & tKey )
 	// hence, we also need to acquire a lock on entry, and an exclusive one
 	Wlock();
 	bool bRes = false;
-	ServedIndex_t * pEntry = GetWlockedEntry ( tKey );
+	ServedIndex_t * pEntry = BASE::operator() ( tKey );
 	if ( pEntry )
 	{
+		pEntry->WriteLock();
 		pEntry->Unlock();
 		bRes = BASE::Delete ( tKey );
 	}
