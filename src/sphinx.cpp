@@ -1372,7 +1372,6 @@ private:
 
 private:
 	// common stuff
-	CSphString					m_sFilename;
 	int							m_iLockFD;
 
 	CSphMatch *					m_pMin;				///< min attribute values tracker
@@ -3260,6 +3259,8 @@ void CSphTokenizerTraits<IS_UTF8>::SetBufferPtr ( const char * sNewPtr )
 	m_pCur = Min ( m_pBufferMax, Max ( m_pBuffer, (BYTE*)sNewPtr ) );
 	m_iAccum = 0;
 	m_pAccum = m_sAccum;
+	m_pTokenStart = m_pTokenEnd = NULL;
+	m_pBlendStart = m_pBlendEnd = NULL;
 }
 
 
@@ -3804,6 +3805,9 @@ BYTE * CSphTokenizerTraits<IS_UTF8>::GetTokenSyn ()
 
 			iLastFolded = iFolded;
 
+			if ( m_iAccum==0 )
+				m_pTokenStart = pCur;
+
 			// handle specials at the very word start
 			if ( ( iFolded & FLAG_CODEPOINT_SPECIAL ) && m_iAccum==0 )
 			{
@@ -3876,7 +3880,7 @@ BYTE * CSphTokenizerTraits<IS_UTF8>::GetTokenSyn ()
 			// refine synonyms range
 			#define LOC_RETURN_SYNONYM(_idx) \
 			{ \
-				m_pTokenEnd = pCur; \
+				m_pTokenEnd = m_iAccum ? pCur : m_pCur; \
 				if ( bJustSpecial || ( iFolded & FLAG_CODEPOINT_SPECIAL )!=0 ) m_pCur = pCur; \
 				strncpy ( (char*)m_sAccum, m_dSynonyms[_idx].m_sTo.cstr(), sizeof(m_sAccum) ); \
 				m_iLastTokenLen = m_dSynonyms[_idx].m_iToLen; \
@@ -4226,6 +4230,8 @@ void CSphTokenizer_SBCS::SetBuffer ( BYTE * sBuffer, int iLength )
 	m_pBuffer = sBuffer;
 	m_pBufferMax = sBuffer + iLength;
 	m_pCur = sBuffer;
+	m_pTokenStart = m_pTokenEnd = NULL;
+	m_pBlendStart = m_pBlendEnd = NULL;
 
 	m_iOvershortCount = 0;
 	m_bBoundary = m_bTokenBoundary = false;
@@ -4471,6 +4477,8 @@ void CSphTokenizer_UTF8::SetBuffer ( BYTE * sBuffer, int iLength )
 	m_pBuffer = sBuffer;
 	m_pBufferMax = sBuffer + iLength;
 	m_pCur = sBuffer;
+	m_pTokenStart = m_pTokenEnd = NULL;
+	m_pBlendStart = m_pBlendEnd = NULL;
 
 	// fixup embedded zeroes with spaces
 	for ( BYTE * p = m_pBuffer; p < m_pBufferMax; p++ )
@@ -6000,7 +6008,10 @@ void CSphReader::GetBytes ( void * pData, int iSize )
 		{
 			UpdateCache ();
 			if ( !m_iBuffUsed )
+			{
+				memset ( pData, 0, iSize );
 				return; // unexpected io failure
+			}
 		}
 	}
 
@@ -6020,7 +6031,7 @@ void CSphReader::GetBytes ( void * pData, int iSize )
 		UpdateCache ();
 		if ( m_iBuffPos+iSize>m_iBuffUsed )
 		{
-			memset ( pOut, 0, iSize ); // unexpected io failure
+			memset ( pData, 0, iSize ); // unexpected io failure
 			return;
 		}
 	}
@@ -6142,7 +6153,7 @@ const CSphReader & CSphReader::operator = ( const CSphReader & rhs )
 
 DWORD CSphReader::GetDword ()
 {
-	DWORD uRes;
+	DWORD uRes = 0;
 	GetBytes ( &uRes, sizeof(DWORD) );
 	return uRes;
 }
@@ -6150,7 +6161,7 @@ DWORD CSphReader::GetDword ()
 
 SphOffset_t CSphReader::GetOffset ()
 {
-	SphOffset_t uRes;
+	SphOffset_t uRes = 0;
 	GetBytes ( &uRes, sizeof(SphOffset_t) );
 	return uRes;
 }
@@ -7301,7 +7312,6 @@ const char * sphArenaInit ( int iMaxBytes )
 
 CSphIndex::CSphIndex ( const char * sIndexName, const char * sFilename )
 	: m_iTID ( 0 )
-	, m_bEnableStar ( false )
 	, m_bExpandKeywords ( false )
 	, m_iExpansionLimit ( 0 )
 	, m_pProgress ( NULL )
@@ -7315,12 +7325,14 @@ CSphIndex::CSphIndex ( const char * sIndexName, const char * sFilename )
 	, m_bKeepFilesOpen ( false )
 	, m_bPreloadWordlist ( true )
 	, m_bStripperInited ( true )
+	, m_bEnableStar ( false )
 	, m_bId32to64 ( false )
 	, m_pTokenizer ( NULL )
 	, m_pDict ( NULL )
 	, m_iMaxCachedDocs ( 0 )
 	, m_iMaxCachedHits ( 0 )
 	, m_sIndexName ( sIndexName )
+	, m_sFilename ( sFilename )
 {
 }
 
@@ -15285,7 +15297,7 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 
 			if ( iDocs<=0 || iHits<=0 || iHits<iDocs )
 				LOC_FAIL(( fp, "invalid docs/hits (pos="INT64_FMT", word=%s, docs="INT64_FMT", hits="INT64_FMT")",
-					(int64_t)iDictPos, sWord, iDocs, iHits ));
+					(int64_t)iDictPos, sWord, (int64_t)iDocs, (int64_t)iHits ));
 
 			memcpy ( sLastWord, sWord, sizeof(sLastWord) );
 
@@ -15307,7 +15319,7 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 
 			if ( iDocs<=0 || iHits<=0 || iHits<iDocs )
 				LOC_FAIL(( fp, "invalid docs/hits (pos="INT64_FMT", wordid="UINT64_FMT", docs="INT64_FMT", hits="INT64_FMT")",
-					(int64_t)iDictPos, (uint64_t)uNewWordid, iDocs, iHits ));
+					(int64_t)iDictPos, (uint64_t)uNewWordid, (int64_t)iDocs, (int64_t)iHits ));
 		}
 
 		// update stats, add checkpoint
@@ -15806,7 +15818,7 @@ int CSphIndex_VLN::DebugCheck ( FILE * fp )
 							if ( uCur<=uPrev )
 							{
 								LOC_FAIL(( fp, "unsorted MVA values (row=%u, mvaattr=%d, docid expected="DOCID_FMT", got="DOCID_FMT", val[%u]=%u, val[%u]=%u)",
-									uRow, iItem, uLastID, uMvaID, ( iItem>=iMva64 ? uVal-2 : uVal-1 ), uPrev, uVal, uCur ));
+									uRow, iItem, uLastID, uMvaID, ( iItem>=iMva64 ? uVal-2 : uVal-1 ), (unsigned int)uPrev, uVal, (unsigned int)uCur ));
 								bIsMvaCorrect = false;
 							}
 
