@@ -40,7 +40,7 @@ public:
 	explicit				ExcerptGen_c ( bool bUtf8 );
 							~ExcerptGen_c () {}
 
-	char *	BuildExcerpt ( const ExcerptQuery_t & tQuery );
+	void	BuildExcerpt ( ExcerptQuery_t & tQuery );
 
 	void	TokenizeQuery ( const ExcerptQuery_t &, CSphDict * pDict, ISphTokenizer * pTokenizer, const CSphIndexSettings & tSettings );
 	void	TokenizeDocument ( char * pData, int iDataLen, CSphDict * pDict, ISphTokenizer * pTokenizer, bool bFillMasks, const ExcerptQuery_t & q, const CSphIndexSettings & tSettings );
@@ -403,7 +403,7 @@ struct SnippetsQword_ExactForm_c : public SnippetsQword_c<SnippetsQword_ExactFor
 		int iLen = m_sWord.Length()-1;
 		BYTE sTmp [ 3*SPH_MAX_WORD_LEN + 16 ];
 
-		assert ( iLen>0 && iLen<sizeof(sTmp) );
+		assert ( iLen>0 && iLen<(int)sizeof(sTmp) );
 		assert ( m_sWord.Begins ( "=" ) );
 		assert ( pDict && m_pTokenizer );
 
@@ -822,8 +822,8 @@ void ExcerptGen_c::TokenizeDocument ( char * pData, int iDataLen, CSphDict * pDi
 		{
 			BYTE sBuf [ 3*SPH_MAX_WORD_LEN+4 ];
 			int iBytes = pLastTokenEnd - pTokenStart;
-			if ( iBytes+2>sizeof(sBuf) )
-				iBytes = sizeof(sBuf)-2;
+			if ( iBytes+2>(int)sizeof(sBuf) )
+				iBytes = (int)sizeof(sBuf)-2;
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sBuf[iBytes+1] = '\0';
@@ -1000,7 +1000,7 @@ void ExcerptGen_c::SetExactPhrase ( const ExcerptQuery_t & tQuery )
 }
 
 
-char * ExcerptGen_c::BuildExcerpt ( const ExcerptQuery_t & tQuery )
+void ExcerptGen_c::BuildExcerpt ( ExcerptQuery_t & tQuery )
 {
 	m_iPassageId = tQuery.m_iPassageId;
 
@@ -1026,18 +1026,16 @@ char * ExcerptGen_c::BuildExcerpt ( const ExcerptQuery_t & tQuery )
 	{
 		if ( !( ExtractPassages ( tQuery ) && HighlightBestPassages ( tQuery ) ) )
 		{
-			if ( tQuery.m_bAllowEmpty )
+			if ( !tQuery.m_bAllowEmpty )
 				HighlightStart ( tQuery );
 		}
 	}
 
 	// alloc, fill and return the result
 	m_dResult.Add ( 0 );
-	char * pRes = new char [ m_dResult.GetLength() ];
-	memcpy ( pRes, &m_dResult[0], m_dResult.GetLength() );
-	m_dResult.Reset ();
 
-	return pRes;
+	tQuery.m_dRes.SwapData ( m_dResult );
+	return;
 }
 
 
@@ -2104,6 +2102,7 @@ public:
 	int		m_iStopwordStep;
 	bool	m_bIndexExactWords;
 	int		m_iDocLen;
+	int		m_iMatchesCount;
 
 	explicit TokenFunctorTraits_c ( SnippetsDocIndex_c & tContainer, ISphTokenizer * pTokenizer, CSphDict * pDict, const ExcerptQuery_t & tQuery, const CSphIndexSettings & tSettingsIndex, const char * sDoc, int iDocLen )
 		: m_tContainer ( tContainer )
@@ -2114,12 +2113,15 @@ public:
 		, m_iStopwordStep ( tSettingsIndex.m_iStopwordStep )
 		, m_bIndexExactWords ( tSettingsIndex.m_bIndexExactWords )
 		, m_iDocLen ( iDocLen )
+		, m_iMatchesCount ( 0 )
 	{
 		assert ( m_pTokenizer && m_pDict );
 		ExcerptQuery_t::operator = ( tQuery );
 		m_pTokenizer->SetBuffer ( (BYTE*)sDoc, m_iDocLen );
 		m_pDoc = m_pTokenizer->GetBufferPtr();
 	}
+
+	~TokenFunctorTraits_c () {}
 
 	void ResultEmit ( const char * pSrc, int iLen, bool bHasPassageMacro=false, int iPassageId=0, const char * pPost=NULL, int iPostLen=0 )
 	{
@@ -2284,7 +2286,10 @@ public:
 				bMatch = true;
 
 		if ( bMatch )
+		{
 			ResultEmit ( m_sBeforeMatch.cstr(), m_iBeforeLen, m_bHasBeforePassageMacro, m_iPassageId, m_sBeforeMatchPassage.cstr(), m_iBeforePostLen );
+			m_iMatchesCount++;
+		}
 
 		ResultEmit ( m_pDoc+iStart, iLen );
 
@@ -2337,7 +2342,10 @@ public:
 
 		// marker folding, emit "before" marker at span start only
 		if ( m_pHit<m_pHitEnd && uPosition==m_pHit->m_uPosition )
+		{
 			ResultEmit ( m_sBeforeMatch.cstr(), m_iBeforeLen, m_bHasBeforePassageMacro, m_iPassageId, m_sBeforeMatchPassage.cstr(), m_iBeforePostLen );
+			m_iMatchesCount++;
+		}
 
 		// emit token itself
 		ResultEmit ( m_pDoc+iStart, iLen );
@@ -2471,8 +2479,8 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 				if ( tFunctor.m_bHighlightQuery && tFunctor.m_bIndexExactWords )
 				{
 					int iLen = strlen ( (const char *)sWord );
-					if ( iLen+2>sizeof(sExactBuf) )
-						iLen = sizeof(sExactBuf)-2;
+					if ( iLen+2>(int)sizeof(sExactBuf) )
+						iLen = (int)sizeof(sExactBuf)-2;
 					memcpy ( sExactBuf + 1, sWord, iLen );
 					sExactBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 					sExactBuf[iLen+1] = '\0';
@@ -2585,8 +2593,8 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 		if ( tFunctor.m_bHighlightQuery && tFunctor.m_bIndexExactWords )
 		{
 			int iBytes = iWordLen;
-			if ( iBytes+2>sizeof(sExactBuf) )
-				iBytes = sizeof(sExactBuf)-2;
+			if ( iBytes+2>(int)sizeof(sExactBuf) )
+				iBytes = (int)sizeof(sExactBuf)-2;
 			memcpy ( sExactBuf + 1, sWord, iBytes );
 			sExactBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sExactBuf[iBytes+1] = '\0';
@@ -2594,7 +2602,7 @@ static void TokenizeDocument ( TokenFunctorTraits_c & tFunctor, const CSphHTMLSt
 		}
 
 		int iNonStemmedLen = iWordLen;
-		if ( iNonStemmedLen+1>sizeof(sNonStemmed) )
+		if ( iNonStemmedLen+1>(int)sizeof(sNonStemmed) )
 			iNonStemmedLen = sizeof(sNonStemmed)-1;
 
 		memcpy ( sNonStemmed, sWord, iNonStemmedLen );
@@ -2737,7 +2745,7 @@ inline bool operator < ( const SphHitMark_t & a, const SphHitMark_t & b )
 }
 
 
-static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
+static void HighlightAllFastpath ( ExcerptQuery_t & tQuerySettings,
 	const CSphIndexSettings & tIndexSettings,
 	const char * sDoc, int iDocLen,
 	CSphDict * pDict, ISphTokenizer * pTokenizer, const CSphHTMLStripper * pStripper,
@@ -2764,7 +2772,7 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 	// create query and hit lists container, parse query
 	SnippetsDocIndex_c tContainer ( tFixedSettings.m_bHighlightQuery );
 	if ( !tContainer.Parse ( tFixedSettings.m_sWords.cstr(), pQueryTokenizer, pDict, pSchema, sError, tIndexSettings.m_iStopwordStep ) )
-		return NULL;
+		return;
 
 	// do highlighting
 	if ( !tFixedSettings.m_bHighlightQuery )
@@ -2774,9 +2782,12 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		HighlightPlain_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen );
 		TokenizeDocument ( tHighlighter, NULL );
 
+		if ( !tHighlighter.m_iMatchesCount && tFixedSettings.m_bAllowEmpty )
+			tHighlighter.m_dResult.Reset();
+
 		// add trailing zero, and return
 		tHighlighter.m_dResult.Add ( 0 );
-		return (char*) tHighlighter.m_dResult.LeakData();
+		tQuerySettings.m_dRes.SwapData ( tHighlighter.m_dResult );
 
 	} else
 	{
@@ -2800,7 +2811,7 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 
 		CSphScopedPtr<CSphHitMarker> pMarker ( CSphHitMarker::Create ( tContainer.m_tQuery.m_pRoot, tQwordSetup ) );
 		if ( !pMarker.Ptr() )
-			return NULL;
+			return;
 
 		CSphVector<SphHitMark_t> dMarked;
 		pMarker->Mark ( dMarked );
@@ -2877,9 +2888,12 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 		HighlightQuery_c tHighlighter ( tContainer, pTokenizer, pDict, tFixedSettings, tIndexSettings, sDoc, iDocLen, dMarked );
 		TokenizeDocument ( tHighlighter, pStripper );
 
+		if ( !tHighlighter.m_iMatchesCount && tFixedSettings.m_bAllowEmpty )
+			tHighlighter.m_dResult.Reset();
+
 		// add trailing zero, and return
 		tHighlighter.m_dResult.Add ( 0 );
-		return (char*) tHighlighter.m_dResult.LeakData();
+		tQuerySettings.m_dRes.SwapData ( tHighlighter.m_dResult );
 	}
 }
 
@@ -2909,7 +2923,6 @@ ExcerptQuery_t::ExcerptQuery_t ()
 	, m_iSize ( 0 )
 	, m_iSeq ( 0 )
 	, m_iNext ( -2 )
-	, m_sRes ( NULL )
 	, m_bHasBeforePassageMacro ( false )
 	, m_bHasAfterPassageMacro ( false )
 {
@@ -2918,13 +2931,13 @@ ExcerptQuery_t::ExcerptQuery_t ()
 /////////////////////////////////////////////////////////////////////////////
 
 
-char * sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokenizer * pTokenizer, const CSphSchema * pSchema, CSphIndex * pIndex, CSphString & sError, const CSphHTMLStripper * pStripper, ISphTokenizer * pQueryTokenizer )
+void sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokenizer * pTokenizer, const CSphSchema * pSchema, CSphIndex * pIndex, CSphString & sError, const CSphHTMLStripper * pStripper, ISphTokenizer * pQueryTokenizer )
 {
 	if ( tOptions.m_sStripMode=="retain"
 		&& !( tOptions.m_iLimit==0 && tOptions.m_iLimitPassages==0 && tOptions.m_iLimitWords==0 ) )
 	{
 		sError = "html_strip_mode=retain requires that all limits are zero";
-		return NULL;
+		return;
 	}
 
 	if ( !tOptions.m_sWords.cstr()[0] )
@@ -2938,26 +2951,23 @@ char * sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokeni
 	{
 		CSphAutofile tFile;
 		if ( tFile.Open ( tOptions.m_sSource.cstr(), SPH_O_READ, sError )<0 )
-			return NULL;
+			return;
 
 		// will this ever trigger? time will tell; email me if it does!
 		if ( tFile.GetSize()+1>=(SphOffset_t)INT_MAX )
 		{
 			sError.SetSprintf ( "%s too big for snippet (over 2 GB)", pData );
-			return NULL;
+			return;
 		}
 
 		int iFileSize = (int)tFile.GetSize();
 		if ( iFileSize<=0 )
-		{
-			static char sEmpty[] = "";
-			return sEmpty;
-		}
+			return;
 
 		iDataLen = iFileSize+1;
 		pBuffer.Reset ( iDataLen );
 		if ( !tFile.Read ( pBuffer.Begin(), iFileSize, sError ) )
-			return NULL;
+			return;
 
 		pBuffer[iFileSize] = 0;
 		pData = pBuffer.Begin();
@@ -2979,7 +2989,8 @@ char * sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokeni
 		|| ( tOptions.m_iLimit && tOptions.m_iLimit<=iDataLen )
 		|| tOptions.m_bForceAllWords || tOptions.m_bUseBoundaries ))
 	{
-		return HighlightAllFastpath ( tOptions, pIndex->GetSettings(), pData, iDataLen, pDict, pTokenizer, pStripper, pSchema, sError, pQueryTokenizer );
+		HighlightAllFastpath ( tOptions, pIndex->GetSettings(), pData, iDataLen, pDict, pTokenizer, pStripper, pSchema, sError, pQueryTokenizer );
+		return;
 	}
 
 	if ( !tOptions.m_bHighlightQuery )
@@ -2989,14 +3000,15 @@ char * sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokeni
 		tGenerator.TokenizeQuery ( tOptions, pDict, pTokenizer, pIndex->GetSettings() );
 		tGenerator.SetExactPhrase ( tOptions );
 		tGenerator.TokenizeDocument ( pData, iDataLen, pDict, pTokenizer, true, tOptions, pIndex->GetSettings() );
-		return tGenerator.BuildExcerpt ( tOptions );
+		tGenerator.BuildExcerpt ( tOptions );
+		return;
 	}
 
 	XQQuery_t tQuery;
 	if ( !sphParseExtendedQuery ( tQuery, tOptions.m_sWords.cstr(), pQueryTokenizer, pSchema, pDict, pIndex->GetSettings().m_iStopwordStep ) )
 	{
 		sError = tQuery.m_sParseError;
-		return NULL;
+		return;
 	}
 	tQuery.m_pRoot->ClearFieldMask();
 
@@ -3017,11 +3029,11 @@ char * sphBuildExcerpt ( ExcerptQuery_t & tOptions, CSphDict * pDict, ISphTokeni
 	if ( !pMarker.Ptr() )
 	{
 		sError = sWarning;
-		return NULL;
+		return;
 	}
 
 	tGenerator.SetMarker ( pMarker.Ptr() );
-	return tGenerator.BuildExcerpt ( tOptions );
+	tGenerator.BuildExcerpt ( tOptions );
 }
 
 //
