@@ -2112,15 +2112,6 @@ static DWORD CopyMva ( const DWORD * pSrc, CSphTightVector<DWORD> & dDst )
 	return iLen;
 }
 
-
-void CopyDocid ( SphDocID_t uDocid, CSphTightVector<DWORD> & dDst )
-{
-	int iLen = dDst.GetLength();
-	dDst.Resize ( iLen + sizeof(uDocid) );
-	DOCINFOSETID ( dDst.Begin()+iLen, uDocid );
-}
-
-
 static void ExtractLocators ( const CSphSchema & tSchema, ESphAttr eAttrType, CSphVector<CSphAttrLocator> & dLocators )
 {
 	for ( int i=0; i<tSchema.GetAttrsCount(); i++ )
@@ -2237,10 +2228,7 @@ public:
 	}
 	const CSphVector<CSphAttrLocator> & GetLocators () const { return m_dLocators; }
 
-	void SetDocid ( SphDocID_t uDocid )
-	{
-		CopyDocid ( uDocid, m_dDst );
-	}
+	void SetDocid ( SphDocID_t ) {}
 
 	DWORD CopyAttr ( const DWORD * pSrc )
 	{
@@ -2269,7 +2257,7 @@ void CopyFixupStorageAttrs ( const CSphTightVector<SRC> & dSrc, STORAGE & tStora
 
 		assert ( uOff && uOff<dSrc.GetLength() );
 
-		if ( !bIdSet )
+		if ( !bIdSet ) // setting docid only on saving MVA to disk for plain index comparability
 		{
 			tStorage.SetDocid ( uDocid );
 			bIdSet = true;
@@ -2773,7 +2761,7 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 	typedef RtDoc_T<DOCID> RTDOC;
 	typedef RtWord_T<WORDID> RTWORD;
 
-	CSphString sName, sError;
+	CSphString sName, sError; // FIXME!!! report collected (sError) errors
 
 	CSphWriter wrHits, wrDocs, wrDict, wrRows;
 	sName.SetSprintf ( "%s.spp", sFilename ); wrHits.OpenFile ( sName.cstr(), sError );
@@ -3003,6 +2991,9 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 
 	// write checkpoints
 	SphOffset_t uOff = m_bKeywordDict ? 0 : wrDocs.GetPos() - uLastDocpos;
+	// FIXME!!! don't write to wrDict if iWords==0
+	// however plain index becomes m_bIsEmpty and full scan does not work there
+	// we'll get partly working RT ( RAM chunk works and disk chunks give empty result set )
 	wrDict.ZipInt ( 0 ); // indicate checkpoint
 	wrDict.ZipOffset ( uOff ); // store last doclist length
 
@@ -3098,7 +3089,7 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 #endif
 
 		// collect min-max data
-		tMinMaxBuilder.Collect ( pRow, pSegment->m_dMvas.Begin(), pSegment->m_dMvas.GetLength(), sError );
+		tMinMaxBuilder.Collect ( pRow, pSegment->m_dMvas.Begin(), pSegment->m_dMvas.GetLength(), sError, false );
 
 		if ( pSegment->m_dStrings.GetLength()>1 || pSegment->m_dMvas.GetLength()>1 ) // should be more then dummy zero elements
 		{
@@ -3128,9 +3119,10 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 	if ( tMinMaxBuilder.GetActualSize() )
 		wrRows.PutBytes ( dMinMaxBuffer.Begin(), sizeof(DWORD) * tMinMaxBuilder.GetActualSize() );
 
+	tMvaWriter.CloseFile();
 	tStrWriter.CloseFile ();
 
-	// write dummy string attributes, mva and kill-list files
+	// write dummy kill-list files
 	CSphWriter wrDummy;
 
 	// dump killlist
@@ -3144,8 +3136,6 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 	m_tKlist.Reset();
 	m_tKlist.KillListUnlock();
 	wrDummy.CloseFile ();
-
-	sName.SetSprintf ( "%s.spm", sFilename ); wrDummy.OpenFile ( sName.cstr(), sError ); wrDummy.CloseFile ();
 
 	// header
 	SaveDiskHeader ( sFilename, dCheckpoints.GetLength(), iCheckpointsPosition, uKlistSize, iTotalDocs*iStride, m_bId32to64 );
@@ -4686,7 +4676,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 					}
 				}
 
-				bool bIdSet = false;
 				ARRAY_FOREACH ( i, dMvaGetLoc )
 				{
 					const SphAttr_t uOff = tMatch.GetAttr ( dMvaGetLoc[i] );
@@ -4694,12 +4683,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 					{
 						assert ( uOff<( I64C(1)<<32 ) ); // should be 32 bit offset
 						assert ( !bSegmentMatch || (int)uOff<m_pSegments[iStorageSrc]->m_dMvas.GetLength() );
-
-						if ( !bIdSet )
-						{
-							CopyDocid ( tMatch.m_iDocID, dStorageMva );
-							bIdSet = true;
-						}
 
 						DWORD uAttr = CopyMva ( pBaseMva + uOff, dStorageMva );
 						tMatch.SetAttr ( dMvaSetLoc[i], uAttr );
