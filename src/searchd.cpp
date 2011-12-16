@@ -9791,14 +9791,17 @@ void HandleClientSphinx ( int iSock, const char * sClientIP, ThdDesc_t * pThd )
 			|| iLength<0 || iLength>g_iMaxPacketSize )
 		{
 			// unknown command, default response header
-			tBuf.SendErrorReply ( "unknown command (code=%d)", iCommand );
+			tBuf.SendErrorReply ( "invalid command (code=%d, len=%d)", iCommand, iLength );
 
 			// if request length is insane, low level comm is broken, so we bail out
 			if ( iLength<0 || iLength>g_iMaxPacketSize )
-			{
 				sphWarning ( "ill-formed client request (length=%d out of bounds)", iLength );
-				return;
-			}
+
+			// if command is insane, low level comm is broken, so we bail out
+			if ( iCommand<0 || iCommand>=SEARCHD_COMMAND_TOTAL )
+				sphWarning ( "ill-formed client request (command=%d, SEARCHD_COMMAND_TOTAL=%d)", iCommand, SEARCHD_COMMAND_TOTAL );
+
+			return;
 		}
 
 		// count commands
