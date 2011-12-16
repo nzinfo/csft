@@ -794,7 +794,7 @@ public:
 	/// resize
 	void Resize ( int iNewLength )
 	{
-		if ( iNewLength>=m_iLength )
+		if ( (unsigned int)iNewLength>=(unsigned int)m_iLength )
 			Reserve ( iNewLength );
 		m_iLength = iNewLength;
 	}
@@ -1464,6 +1464,12 @@ public:
 		}
 	}
 
+	CSphString ( const char * sValue, int iLen )
+		: m_sValue ( NULL )
+	{
+		SetBinary ( sValue, iLen );
+	}
+
 	const CSphString & operator = ( const CSphString & rhs )
 	{
 		if ( m_sValue==rhs.m_sValue )
@@ -2126,7 +2132,8 @@ private:
 	static const int iELEMBITS = sizeof(DWORD) * 8;
 	static const int iBYTESIZE = iTOTALBITS / 8;
 	static const int IELEMENTS = iTOTALBITS / iELEMBITS;
-	static const DWORD uALLBITS = ~(0UL);
+	static const DWORD uALLBITS = (DWORD)(~(0UL));
+
 	STATIC_ASSERT ( IELEMENTS>=1, 8_BITS_MINIMAL_SIZE_OF_VECTOR );
 
 public:
