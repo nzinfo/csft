@@ -4902,6 +4902,8 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 		return true;
 	}
 
+	m_tRwlock.ReadLock();
+
 	// do the update
 	int iUpdated = 0;
 	DWORD uUpdateMask = 0;
@@ -5052,6 +5054,8 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 	// bump the counter, binlog the update!
 	assert ( iIndex<0 );
 	g_pBinlog->BinlogUpdateAttributes ( m_sIndexName.cstr(), ++m_iTID, tUpd );
+
+	m_tRwlock.Unlock();
 
 	// all done
 	return iUpdated;

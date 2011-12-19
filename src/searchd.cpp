@@ -9260,7 +9260,7 @@ static void DoCommandUpdate ( const char * sIndex, const CSphAttrUpdate & tUpd,
 	int & iSuccesses, int & iUpdated,
 	SearchFailuresLog_c & dFails, const ServedIndex_t * pServed )
 {
-	if ( !pServed || !pServed->m_pIndex )
+	if ( !pServed || !pServed->m_pIndex || !pServed->m_bEnabled )
 	{
 		dFails.Submit ( sIndex, "index not available" );
 		return;
@@ -9280,6 +9280,19 @@ static void DoCommandUpdate ( const char * sIndex, const CSphAttrUpdate & tUpd,
 	}
 }
 
+static const ServedIndex_t * UpdateGetLockedIndex ( const CSphString & sName, bool bMvaUpdate )
+{
+	const ServedIndex_t * pLocked = g_pIndexes->GetRlockedEntry ( sName );
+	if ( !pLocked )
+		return NULL;
+
+	if ( !( bMvaUpdate && pLocked->m_bRT ) )
+		return pLocked;
+
+	pLocked->Unlock();
+	return g_pIndexes->GetWlockedEntry ( sName );
+}
+
 
 void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 {
@@ -9291,6 +9304,8 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 	CSphAttrUpdate tUpd;
 	CSphVector<DWORD> dMva;
 
+	bool bMvaUpdate = false;
+
 	tUpd.m_dAttrs.Resize ( tReq.GetDword() ); // FIXME! check this
 	ARRAY_FOREACH ( i, tUpd.m_dAttrs )
 	{
@@ -9299,8 +9314,13 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 
 		tUpd.m_dAttrs[i].m_eAttrType = SPH_ATTR_INTEGER;
 		if ( iVer>=0x102 )
+		{
 			if ( tReq.GetDword() )
+			{
 				tUpd.m_dAttrs[i].m_eAttrType = SPH_ATTR_UINT32SET;
+				bMvaUpdate = true;
+			}
+		}
 	}
 
 	int iNumUpdates = tReq.GetInt (); // FIXME! check this
@@ -9374,7 +9394,6 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 			if ( pDistIndex )
 			{
 				dDistributed[i] = *pDistIndex;
-				dDistributed[i].m_bToDelete = true; // our presence flag
 			}
 
 			g_tDistLock.Unlock();
@@ -9397,20 +9416,20 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 	ARRAY_FOREACH ( iIdx, dIndexNames )
 	{
 		const char * sReqIndex = dIndexNames[iIdx].m_sName.cstr();
-		const ServedIndex_t * pLocked = g_pIndexes->GetWlockedEntry ( sReqIndex );
+		const ServedIndex_t * pLocked = UpdateGetLockedIndex ( sReqIndex, bMvaUpdate );
 		if ( pLocked )
 		{
 			DoCommandUpdate ( sReqIndex, tUpd, iSuccesses, iUpdated, dFails, pLocked );
 			pLocked->Unlock();
 		} else
 		{
-			assert ( dDistributed[iIdx].m_bToDelete );
+			assert ( dDistributed[iIdx].m_dLocal.GetLength() || dDistributed[iIdx].m_dAgents.GetLength() );
 			CSphVector<CSphString>& dLocal = dDistributed[iIdx].m_dLocal;
 
 			ARRAY_FOREACH ( i, dLocal )
 			{
 				const char * sLocal = dLocal[i].cstr();
-				const ServedIndex_t * pServed = g_pIndexes->GetWlockedEntry ( sLocal );
+				const ServedIndex_t * pServed = UpdateGetLockedIndex ( sLocal, bMvaUpdate );
 				DoCommandUpdate ( sLocal, tUpd, iSuccesses, iUpdated, dFails, pServed );
 				if ( pServed )
 					pServed->Unlock();
@@ -9418,7 +9437,7 @@ void HandleCommandUpdate ( int iSock, int iVer, InputBuffer_c & tReq )
 		}
 
 		// update remote agents
-		if ( dDistributed[iIdx].m_bToDelete )
+		if ( dDistributed[iIdx].m_dAgents.GetLength() )
 		{
 			DistributedIndex_t & tDist = dDistributed[iIdx];
 
@@ -10864,7 +10883,6 @@ void HandleMysqlUpdate ( NetOutputBuffer_c & tOut, BYTE uPacketID, const SqlStmt
 			if ( pDistIndex )
 			{
 				dDistributed[i] = *pDistIndex;
-				dDistributed[i].m_bToDelete = true; // our presence flag
 			}
 
 			g_tDistLock.Unlock();
@@ -10886,28 +10904,35 @@ void HandleMysqlUpdate ( NetOutputBuffer_c & tOut, BYTE uPacketID, const SqlStmt
 	int iUpdated = 0;
 	int iWarns = 0;
 
+	bool bMvaUpdate = false;
+	ARRAY_FOREACH_COND ( i, tStmt.m_tUpdate.m_dAttrs, !bMvaUpdate )
+	{
+		bMvaUpdate = ( tStmt.m_tUpdate.m_dAttrs[i].m_eAttrType==SPH_ATTR_UINT32SET
+			|| tStmt.m_tUpdate.m_dAttrs[i].m_eAttrType==SPH_ATTR_UINT64SET );
+	}
+
 	ARRAY_FOREACH ( iIdx, dIndexNames )
 	{
 		const char * sReqIndex = dIndexNames[iIdx].m_sName.cstr();
-		const ServedIndex_t * pLocked = g_pIndexes->GetWlockedEntry ( sReqIndex );
+		const ServedIndex_t * pLocked = UpdateGetLockedIndex ( sReqIndex, bMvaUpdate );
 		if ( pLocked )
 		{
 			DoExtendedUpdate ( sReqIndex, tStmt, iSuccesses, iUpdated, bCommit, dFails, pLocked );
 		} else
 		{
-			assert ( dDistributed[iIdx].m_bToDelete );
+			assert ( dDistributed[iIdx].m_dLocal.GetLength() || dDistributed[iIdx].m_dAgents.GetLength() );
 			CSphVector<CSphString>& dLocal = dDistributed[iIdx].m_dLocal;
 
 			ARRAY_FOREACH ( i, dLocal )
 			{
 				const char * sLocal = dLocal[i].cstr();
-				const ServedIndex_t * pServed = g_pIndexes->GetWlockedEntry ( sLocal );
+				const ServedIndex_t * pServed = UpdateGetLockedIndex ( sLocal, bMvaUpdate );
 				DoExtendedUpdate ( sLocal, tStmt, iSuccesses, iUpdated, bCommit, dFails, pServed );
 			}
 		}
 
 		// update remote agents
-		if ( dDistributed[iIdx].m_bToDelete )
+		if ( dDistributed[iIdx].m_dAgents.GetLength() )
 		{
 			DistributedIndex_t & tDist = dDistributed[iIdx];
 
