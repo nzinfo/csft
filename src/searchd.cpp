@@ -10263,13 +10263,22 @@ void HandleMysqlInsert ( const SqlStmt_t & tStmt, NetOutputBuffer_c & tOut, BYTE
 					sError.SetSprintf ( "raw %d, column %d: MVA value specified for a non-MVA column", 1+c, 1+iQuerySchemaIdx ); // 1 for human base
 					break;
 				}
+				if ( ( tCol.m_eAttrType==SPH_ATTR_UINT32SET || tCol.m_eAttrType==SPH_ATTR_UINT64SET ) && tVal.m_iType!=TOK_CONST_MVA )
+				{
+					sError.SetSprintf ( "raw %d, column %d: non-MVA value specified for a MVA column", 1+c, 1+iQuerySchemaIdx ); // 1 for human base
+					break;
+				}
 
 				if ( tCol.m_eAttrType==SPH_ATTR_UINT32SET || tCol.m_eAttrType==SPH_ATTR_UINT64SET )
 				{
 					// collect data from scattered insvals
 					// FIXME! maybe remove this mess, and just have a single m_dMvas pool in parser instead?
-					tVal.m_pVals->Uniq();
-					int iLen = tVal.m_pVals->GetLength();
+					int iLen = 0;
+					if ( tVal.m_pVals.Ptr() )
+					{
+						tVal.m_pVals->Uniq();
+						iLen = tVal.m_pVals->GetLength();
+					}
 					if ( tCol.m_eAttrType==SPH_ATTR_UINT64SET )
 					{
 						dMvas.Add ( iLen*2 );
