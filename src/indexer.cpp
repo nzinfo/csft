@@ -1814,6 +1814,13 @@ int main ( int argc, char ** argv )
 			fprintf ( stdout, "WARNING: indices NOT rotated.\n" );
 	}
 
+#if USE_ICTCLAS
+#include "ICTCLAS2011.h"
+	{
+		bool bRet = ICTCLAS_Exit();
+	}
+#endif
+
 #if SPH_DEBUG_LEAKS
 	sphAllocsStats ();
 #endif

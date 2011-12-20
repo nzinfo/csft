@@ -27,8 +27,8 @@
 	#define USE_LIBXML		0	/// whether to compile libxml support
 	#define	USE_LIBSTEMMER	0	/// whether to compile libstemmber support
 	#define USE_WINDOWS		1	/// whether to compile for Windows
-	#define USE_MMSEG		1   /// enable mmseg
-	#define USE_ICTCLAS		0	/// enable ICTCLAS
+	#define USE_MMSEG		0   /// enable mmseg
+	#define USE_ICTCLAS		1	/// enable ICTCLAS
 	#define USE_SYSLOG		0	/// whether to use syslog for logging
 
 	#define UNALIGNED_RAM_ACCESS	1

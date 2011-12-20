@@ -2264,8 +2264,8 @@ public:
 		m_rstVec = NULL;
 		m_bReadyExit = true;
 		m_iStackTop = 0;
-		//m_segoffset = 0;
-		//printf("\ncalling ICTCLAS constructor.\n");
+
+		this->m_pICTCLAS = NULL;
 	}
 
 	CSphTokenizer_ICTCLAS(bool isClone): CSphTokenizer_UTF8(),m_segoffset(0) 
@@ -2292,8 +2292,8 @@ public:
 		m_rstVec = NULL;
 		m_bReadyExit = !isClone;
 		m_iStackTop = 0;
-
-		//printf("\ncalling ICTCLAS constructor.\n");
+		
+		this->m_pICTCLAS = new CICTCLAS();
 	}
 	
 	~CSphTokenizer_ICTCLAS();
@@ -2319,7 +2319,6 @@ protected:
 	virtual bool IsSegment(const BYTE *pCur);
 
 protected:
-	enum eCodeType m_eCT;
 	const char * m_sUserDict;
 	bool m_bInitOk;
 	CSphString m_dictpath;
@@ -2336,36 +2335,32 @@ protected:
 	BYTE * m_pAccumSeg;
 
 	size_t m_segoffset;
+
+	CICTCLAS * m_pICTCLAS;
 };
 
 void CSphTokenizer_ICTCLAS::setDictPath(const char * path)
 {
 	this->m_dictpath = path;
-	int ret = 0;
+	bool ret = 0;
 	ret = ::ICTCLAS_Init(path, UTF8_CODE);
-	if (! (ret == 0))
+
+	//ICTCLAS_SetPOSmap(PKU_POS_MAP_FIRST);
+	if (!ret)
 	{
-		//CSphString sError;
-		//sError.SetSprintf ( "failed to initialize the ICTCLAS Tokenizor (%d).", ret);
-		//printf(sError.cstr());
-		this->m_bInitOk = false;
-		return;
+		sphDie ( "failed to initialize the ICTCLAS Tokenizor (%d).", ret);
 	}
+
 	this->m_bInitOk = true;
 }
 
 CSphTokenizer_ICTCLAS::~CSphTokenizer_ICTCLAS()
 {
 	//printf("\ncalling ICTCLAS deconstructor.\n");
-	if (this->m_bHaveResults == true || !(m_rstVec == NULL))
-	{
-		///::ICTCLAS_ResultFree(m_rstVec);
-	}
+	if(m_pICTCLAS)
+		delete m_pICTCLAS;
 
-	if (this->m_bInitOk && this->m_bReadyExit) 
-	{
-		::ICTCLAS_Exit();
-	}
+	m_pICTCLAS = NULL;
 }
 
 bool CSphTokenizer_ICTCLAS::ImportUserDict(const char * sFilename, const int nLength)
@@ -2386,28 +2381,33 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 {
 	printf("\ncalling setbuffer.\n");
 	CSphTokenizer_UTF8::SetBuffer(sBuffer, iLength);
-
-	if (this->m_bHaveResults == true)
-	{
-		//::ICTCLAS_ResultFree(m_rstVec);
-		this->m_bHaveResults = false;
-	}
 	
 	int _iResultCount = 0;
+	
+	if(m_pICTCLAS) {
+		delete m_pICTCLAS;
+		m_pICTCLAS = new CICTCLAS(); 
+	}
 
-	this->m_rstVec = ::ICTCLAS_ParagraphProcessA(this->GetBufferPtr(), &_iResultCount);
-	this->m_iResultCount = _iResultCount;
+	if(!m_pICTCLAS)
+		m_pICTCLAS = new CICTCLAS(); 
 
+	result_t* results = new result_t[128];
+	
+	//void ParagraphProcessAW(int nCount,result_t * result);
+
+	this->m_iResultCount = m_pICTCLAS->GetParagraphProcessAWordCount(this->GetBufferPtr());
+	//this->m_rstVec = 
+		m_pICTCLAS->ParagraphProcessAW(m_iResultCount, results);
+	this->m_rstVec = results;
 	if (this->m_iResultCount > 0)
 	{
-		this->m_bHaveResults = true;
 		*m_sAccumSeg = 0;
 		m_pAccumSeg = m_sAccumSeg;
 		m_iStackTop = 0;
 	}
 	else
 	{
-		this->m_bHaveResults = false;
 		*m_sAccumSeg = 0;
 		m_pAccumSeg = m_sAccumSeg;
 		m_iStackTop = 0;
@@ -2422,18 +2422,18 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 {
 	len = 0;
 	
-	if (this->m_bHaveResults == true)
+	//if (this->m_bHaveResults == true)
 	{
 		if (this->m_iStackTop < this->m_iResultCount)
 		{
 			len = this->m_rstVec[this->m_iStackTop].length;
 
-			//char buff[1024];
-			//::memcpy(buff, (char *)&(this->m_pBuffer[this->m_rstVec[this->m_iStackTop].iStartPos]),len);
-			//buff[len] = 0;
-			//CSphString sError;
-			//sError.SetSprintf ( "[%s]", buff);
-			//printf(sError.cstr());
+			char buff[1024];
+			::memcpy(buff, (char *)&(this->m_pBuffer[this->m_rstVec[this->m_iStackTop].start]),len);
+			buff[len] = 0;
+			CSphString sError;
+			sError.SetSprintf ( "[(%d,%d):%s]", len, this->m_rstVec[this->m_iStackTop].start , buff);
+			printf(sError.cstr());
 		}
 	}
 	
@@ -2441,7 +2441,7 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 
 void CSphTokenizer_ICTCLAS::popToken ()
 {
-	if (this->m_bHaveResults == true)
+	//if (this->m_bHaveResults == true)
 	{
 		if (this->m_iStackTop < this->m_iResultCount)
 		{
@@ -2516,7 +2516,6 @@ ISphTokenizer * CSphTokenizer_ICTCLAS::Clone ( bool bEscaped ) const
 	CSphTokenizer_ICTCLAS * pClone = new CSphTokenizer_ICTCLAS (true);
 	pClone->CloneBase ( this, bEscaped );
 	pClone->m_dictpath = m_dictpath;
-	pClone->m_eCT = m_eCT;
 	return pClone;
 }
 
