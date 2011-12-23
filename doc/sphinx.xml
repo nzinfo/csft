@@ -5,7 +5,7 @@
 ]>
 <book lang="en">
 
-<title>Sphinx 2.0.2-beta reference manual</title>
+<title>Sphinx 2.0.3-release reference manual</title>
 <subtitle>Free open-source SQL full-text search engine</subtitle>
 
 <bookinfo>
@@ -11176,6 +11176,30 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 -->
 
 <appendix id="changelog"><title>Sphinx revision history</title>
+
+<sect1 id="rel203"><title>Version 2.0.3-release, 21 dec 2011</title>
+<bridgehead>Bug fixes</bridgehead>
+<itemizedlist>
+<listitem><para>fixed #1031, SphinxQL parsing syntax for MVA at insert \ replace statements</para></listitem>
+<listitem><para>fixed #1027, stalls on attribute update in high-concurrency load</para></listitem>
+<listitem><para>fixed #1026, daemon crash on malformed API command</para></listitem>
+<listitem><para>fixed #1021, <code>max_children</code> option has been ignored with <code>worker=threads</code></para></listitem>
+<listitem><para>fixed #1020, crash on large attribute files loading</para></listitem>
+<listitem><para>fixed #1014, crash on rotation when index has been removed from config file (<code>worker=threads</code>, *nix box)</para></listitem>
+<listitem><para>fixed #1001, broken MVA  files in RT index while saving disk chunk</para></listitem>
+<listitem><para>fixed #995, crash on empty MVA updates</para></listitem>
+<listitem><para>fixed #994, crash on daemon shutdown with <code>seamless_rotate=0</code> and <code>workers=threads</code></para></listitem>
+<listitem><para>fixed #993, #998, crash on replay <code>DELETE</code> statement vs RT index with <code>dict=keywords</code>, fixed sequential <code>INSERT</code> into <code>dict=keywords</code> index right after <code>INSERT</code> into <code>dict=crc</code> index</para></listitem>
+<listitem><para>fixed #991, crash on indexing mssql source with <code>mssql_unicode</code> enabled</para></listitem>
+<listitem><para>fixed #983, #950, crash on host name lookup (SphinxSE with MySQL 5.5)</para></listitem>
+<listitem><para>fixed #981, snippet inconsistency with <code>allow_empty=0</code></para></listitem>
+<listitem><para>fixed #980, broken index produced by index merge in rare cases</para></listitem>
+<listitem><para>fixed #971, absent error message at master on agent "maxed out"</para></listitem>
+<listitem><para>fixed #695, #815, #835, #866, malformed warnings in SphinxQL</para></listitem>
+<listitem><para>fixed build of SphinxSE with MySQL 5.1</para></listitem>
+<listitem><para>fixed crash log for “fork” and “prefork” workers</para></listitem>
+</itemizedlist>
+</sect1>
 
 <sect1 id="rel202"><title>Version 2.0.2-beta, 15 nov 2011</title>
 <bridgehead>Major new features</bridgehead>
