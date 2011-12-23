@@ -339,7 +339,7 @@ Table of Contents
       11.4.42. prefork_rotation_throttle
 
 A. Sphinx revision history
-   A.1. Version 2.0.3-release, 21 dec 2011
+   A.1. Version 2.0.3-release, 23 dec 2011
    A.2. Version 2.0.2-beta, 15 nov 2011
    A.3. Version 2.0.1-beta, 22 apr 2011
    A.4. Version 1.10-beta, 19 jul 2010
@@ -10284,7 +10284,7 @@ Appendix A. Sphinx revision history
 
 Table of Contents
 
-A.1. Version 2.0.3-release, 21 dec 2011
+A.1. Version 2.0.3-release, 23 dec 2011
 A.2. Version 2.0.2-beta, 15 nov 2011
 A.3. Version 2.0.1-beta, 22 apr 2011
 A.4. Version 1.10-beta, 19 jul 2010
@@ -10299,7 +10299,7 @@ A.12. Version 0.9.7-rc1, 26 oct 2006
 A.13. Version 0.9.6, 24 jul 2006
 A.14. Version 0.9.6-rc1, 26 jun 2006
 
-A.1. Version 2.0.3-release, 21 dec 2011
+A.1. Version 2.0.3-release, 23 dec 2011
 =======================================
 
 Bug fixes

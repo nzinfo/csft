@@ -11177,7 +11177,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 
 <appendix id="changelog"><title>Sphinx revision history</title>
 
-<sect1 id="rel203"><title>Version 2.0.3-release, 21 dec 2011</title>
+<sect1 id="rel203"><title>Version 2.0.3-release, 23 dec 2011</title>
 <bridgehead>Bug fixes</bridgehead>
 <itemizedlist>
 <listitem><para>fixed #1031, SphinxQL parsing syntax for MVA at insert \ replace statements</para></listitem>
