@@ -12016,7 +12016,8 @@ void HandleClientMySQL ( int iSock, const char * sClientIP, ThdDesc_t * pThd )
 
 	if ( sphSockSend ( iSock, g_sMysqlHandshake, g_iMysqlHandshake )!=g_iMysqlHandshake )
 	{
-		sphWarning ( "failed to send server version (client=%s)", sClientIP );
+		int iErrno = sphSockGetErrno ();
+		sphWarning ( "failed to send server version (client=%s, error: %d '%s')", sClientIP, iErrno, sphSockError ( iErrno ) );
 		return;
 	}
 
@@ -14680,8 +14681,22 @@ Listener_t * DoAccept ( int * pClientSock, char * sClientName )
 
 		// accepted!
 #if !USE_WINDOWS
+		// FIXME!!! either get git of select() or allocate list of FD (with dup2 back instead close for thouse FD)
+		// with threads workers to prevent dup2 closes valid FD
+
 		if ( SPH_FDSET_OVERFLOW ( iClientSock ) )
-			iClientSock = dup2 ( iClientSock, g_iClientFD );
+		{
+			if ( ( g_eWorkers==MPM_FORK || g_eWorkers==MPM_PREFORK ) )
+			{
+				iClientSock = dup2 ( iClientSock, g_iClientFD );
+			} else
+			{
+				FailClient ( iClientSock, SEARCHD_RETRY, "server maxed out, retry in a second" );
+				sphWarning ( "maxed out, dismissing client (socket=%d)", iClientSock );
+				sphSockClose ( iClientSock );
+				return NULL;
+			}
+		}
 #endif
 
 		*pClientSock = iClientSock;
