@@ -14588,6 +14588,25 @@ void ShowProgress ( const CSphIndexProgress * pProgress, bool bPhaseEnd )
 }
 
 
+void FailClient ( int iSock, SearchdStatus_e eStatus, const char * sMessage )
+{
+	assert ( eStatus==SEARCHD_RETRY || eStatus==SEARCHD_ERROR );
+
+	int iRespLen = 4 + strlen(sMessage);
+
+	NetOutputBuffer_c tOut ( iSock );
+	tOut.SendInt ( SPHINX_SEARCHD_PROTO );
+	tOut.SendWord ( (WORD)eStatus );
+	tOut.SendWord ( 0 ); // version doesn't matter
+	tOut.SendInt ( iRespLen );
+	tOut.SendString ( sMessage );
+	tOut.Flush ();
+
+	// FIXME? without some wait, client fails to receive the response on windows
+	sphSockClose ( iSock );
+}
+
+
 Listener_t * DoAccept ( int * pClientSock, char * sClientName )
 {
 	int iMaxFD = 0;
@@ -14738,25 +14757,6 @@ void TickPreforked ( CSphProcessSharedMutex * pAcceptMutex )
 		HandleClient ( pListener->m_eProto, iClientSock, sClientIP, NULL );
 		sphSockClose ( iClientSock );
 	}
-}
-
-
-void FailClient ( int iSock, SearchdStatus_e eStatus, const char * sMessage )
-{
-	assert ( eStatus==SEARCHD_RETRY || eStatus==SEARCHD_ERROR );
-
-	int iRespLen = 4 + strlen(sMessage);
-
-	NetOutputBuffer_c tOut ( iSock );
-	tOut.SendInt ( SPHINX_SEARCHD_PROTO );
-	tOut.SendWord ( (WORD)eStatus );
-	tOut.SendWord ( 0 ); // version doesn't matter
-	tOut.SendInt ( iRespLen );
-	tOut.SendString ( sMessage );
-	tOut.Flush ();
-
-	// FIXME? without some wait, client fails to receive the response on windows
-	sphSockClose ( iSock );
 }
 
 
