@@ -31,6 +31,13 @@
 	#include <unistd.h>
 #endif
 
+#if USE_ICTCLAS
+	#if USE_WINDOWS
+	#else
+		#define OS_LINUX 1 //required by ictclas.
+	#endif
+	#include "ICTCLAS2011.h"
+#endif
 /////////////////////////////////////////////////////////////////////////////
 
 bool			g_bQuiet		= false;
@@ -1815,7 +1822,6 @@ int main ( int argc, char ** argv )
 	}
 
 #if USE_ICTCLAS
-#include "ICTCLAS2011.h"
 	{
 		bool bRet = ICTCLAS_Exit();
 	}

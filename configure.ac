@@ -327,14 +327,14 @@ AM_CONDITIONAL(USE_MMSEG, test x$ac_cv_use_mmseg != xno)
 dnl ---
 # check if we should complie with lib(ICTCLAS50.lib) (a ICTCLAS Chinese Segmenter) support
 AC_ARG_WITH([ictclas],
-            AC_HELP_STRING([--with-ictclas], [compile with ictclas50.lib, a ICTCLAS Chinese Segmenter support (default is enabled)]),
+            AC_HELP_STRING([--with-ictclas], [compile with ictclas2011.lib, a ICTCLAS Chinese Segmenter support (default is enabled)]),
             [ac_cv_use_ictclas=$withval], [ac_cv_use_ictclas=yes]
 )
-AC_MSG_CHECKING([whether to compile with ICTCLAS50.LIB support])
+AC_MSG_CHECKING([whether to compile with ICTCLAS2011.LIB support])
 if test x$ac_cv_use_ictclas != xno; then
 	AC_MSG_RESULT([yes])
-    AC_CHECK_MMSEG([$ac_cv_use_ictclas])
-    AC_DEFINE(USE_ICTCLAS,1,[Define to 1 if you want to compile with ICTCLAS50.LIB support])
+    AC_CHECK_ICTCLAS([$ac_cv_use_ictclas])
+    AC_DEFINE(USE_ICTCLAS,1,[Define to 1 if you want to compile with ICTCLAS2011.LIB support])
     AC_SUBST([ICTCLAS_LIBS])
     AC_SUBST([ICTCLAS_CFLAGS])
 else

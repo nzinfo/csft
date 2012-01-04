@@ -387,6 +387,104 @@ fi
 
 ])
 
+
+dnl ---------------------------------------------------------------------------
+dnl Macro: AC_CHECK_ICTCLAS
+dnl First check for custom PostgreSQL paths in --with-ictclas-* options.
+dnl If some paths are missing,  check if pg_config exists. 
+dnl ---------------------------------------------------------------------------
+
+AC_DEFUN([AC_CHECK_ICTCLAS],[
+
+# if there's nothing from mysql_config, check well-known include paths
+# explicit overrides will be applied later
+if test [ -z "$ICTCLAS_CFLAGS" ]
+then
+	for CANDIDATE in "$user_ictclas_includes" "/usr/local/include/" "/usr/include/" "/usr/local/include/ictclas" "/usr/include/ictclas"
+	do
+		if test [ -n "$CANDIDATE" -a -r "$CANDIDATE/ICTCLAS2011.h" ]
+		then
+			ICTCLAS_CFLAGS="-I$CANDIDATE"
+			break
+		fi
+	done
+fi
+
+
+# if there's nothing from mysql_config, check well-known library paths
+# explicit overrides will be applied later
+if test [ -z "$ICTCLAS_LIBS" ]
+then
+	for CANDIDATE in "$user_ictclas_libs" "/usr/lib64" \
+		"/usr/local/lib" "/usr/local/ictclas/lib" \
+		"/usr/local/lib/ictclas" "/usr/lib" \
+		"/opt/ictclas/lib"
+	do
+		if test [ -n "$CANDIDATE" -a -d "$CANDIDATE" ]
+		then
+			ICTCLAS_LIBS="-L$CANDIDATE -lICTCLAS2011"
+			break
+		fi
+	done
+fi
+
+
+
+# apply explicit include path overrides
+AC_ARG_WITH([ictclas-includes],
+	AC_HELP_STRING([--with-ictclas-includes], [path to libictclas2011 header files]),
+	[ac_cv_ictclas_includes=$withval])
+if test [ -n "$ac_cv_ictclas_includes" ]
+then
+	ICTCLAS_CFLAGS="-I$ac_cv_ictclas_includes"
+fi
+
+
+# apply explicit lib path overrides
+AC_ARG_WITH([ictclas-libs], 
+	AC_HELP_STRING([--with-ictclas-libs], [path to libictclas libraries]),
+	[ac_cv_ictclas_libs=$withval])
+if test [ -n "$ac_cv_ictclas_libs" ]
+then
+	# Trim trailing '.libs' if user passed it in --with-mysql-libs option
+	ac_cv_ictclas_libs=`echo ${ac_cv_ictclas_libs} | sed -e 's/.libs$//' \
+		-e 's+.libs/$++'`
+	ICTCLAS_LIBS="-L$ac_cv_ictclas_libs -lICTCLAS2011"
+fi
+
+# now that we did all we could, perform final checks
+AC_MSG_CHECKING([libictclas include files])
+if test [ -z "$ICTCLAS_CFLAGS" ]
+then
+	AC_MSG_ERROR([missing include files.
+
+******************************************************************************
+ERROR: cannot find libICTCLAS2011 include files.
+
+To disable libICTCLAS2011 support, use --without-ictclas option.
+******************************************************************************
+])
+else
+	AC_MSG_RESULT([$ICTCLAS_CFLAGS])
+fi
+
+AC_MSG_CHECKING([libICTCLAS2011 libraries])
+if test [ -z "$ICTCLAS_LIBS" ]
+then
+	AC_MSG_ERROR([missing libraries.
+
+******************************************************************************
+ERROR: cannot find libICTCLAS2011 libraries.
+
+To disable libICTCLAS2011 support, use --without-ictclas option.
+******************************************************************************
+])
+else
+	AC_MSG_RESULT([$ICTCLAS_LIBS])
+fi
+
+])
+
 dnl ---------------------------------------------------------------------------
 dnl Macro: SPHINX_CONFIGURE_PART
 dnl

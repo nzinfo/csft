@@ -30,6 +30,9 @@
 
 /// haifeng.fang
 #if USE_ICTCLAS
+#if !USE_WINDOWS
+	#define OS_LINUX 1 //required by ictclas.
+#endif
 #include "ICTCLAS2011.h"
 #endif
 
