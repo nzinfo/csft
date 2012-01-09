@@ -1092,7 +1092,7 @@ be made available to search in a matter of minutes.
 </para>
 <para>
 Specifying which documents should go to what index and
-reindexing main index could also be made fully automatical.
+reindexing main index could also be made fully automatic.
 One option would be to make a counter table which would track
 the ID which would split the documents, and update it
 whenever the main index is reindexed.
