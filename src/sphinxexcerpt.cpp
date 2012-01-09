@@ -313,7 +313,7 @@ struct SnippetsQword_Exact_c: public ISnippetsQword
 		while ( m_iToken < m_dTokens->GetLength() )
 		{
 			Token_t & tToken = (*m_dTokens)[m_iToken++];
-			if ( tToken.m_eType!=ExcerptGen_c::TOK_WORD )
+			if ( !( tToken.m_eType==ExcerptGen_c::TOK_WORD || tToken.m_eType==ExcerptGen_c::TOK_SPZ ) )
 				continue;
 
 			if ( tToken.m_iWordID==m_iWordID || tToken.m_iBlendID==m_iWordID )
@@ -739,9 +739,17 @@ void ExcerptGen_c::TokenizeDocument ( char * pData, int iDataLen, CSphDict * pDi
 
 			if ( iSPZ && *sWord>=iSPZ && ( m_dTokens.GetLength()==0 || m_dTokens.Last().m_eType!=TOK_SPZ ) )
 			{
+				BYTE * sWordSPZ = sWord;
+				if ( (*sWord)==MAGIC_CODE_SENTENCE )
+					sWordSPZ = (BYTE *)MAGIC_WORD_SENTENCE;
+				else if ( (*sWord)==MAGIC_CODE_PARAGRAPH )
+					sWordSPZ = (BYTE *)MAGIC_WORD_PARAGRAPH;
+
 				Token_t & tLast = m_dTokens.Add();
 				tLast.Reset();
 				tLast.m_eType = TOK_SPZ;
+				tLast.m_iWordID = pDict->GetWordID ( sWordSPZ );
+				tLast.m_uPosition = uPosition;
 
 				if ( *sWord==MAGIC_CODE_SENTENCE )
 				{
