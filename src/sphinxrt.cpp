@@ -1227,7 +1227,7 @@ void RtIndex_t::CheckRamFlush ()
 	m_tRwlock.Unlock();
 
 	// save if delta-ram runs over maximum value of ram-threshold or 1/3 of index size
-	if ( iDeltaRam < Max ( SPH_THRESHOLD_SAVE_RAM, m_iRamSize/3 ) )
+	if ( iDeltaRam < Max ( m_iRamSize/3, SPH_THRESHOLD_SAVE_RAM ) )
 		return;
 
 	ForceRamFlush ( true );
@@ -2360,9 +2360,17 @@ RtSegment_t * RtIndex_t::MergeSegments ( const RtSegment_t * pSeg1, const RtSegm
 	{
 		while ( pWords1 && pWords2 )
 		{
-			int64_t iCmp = ( m_bKeywordDict
-				? sphDictCmpStrictly ( (const char *)pWords1->m_sWord+1, *pWords1->m_sWord, (const char *)pWords2->m_sWord+1, *pWords2->m_sWord )
-				: ( pWords1->m_uWordID<pWords2->m_uWordID ? I64C(-1) : pWords1->m_uWordID-pWords2->m_uWordID ) );
+			int iCmp = 0;
+			if ( m_bKeywordDict )
+			{
+				iCmp = sphDictCmpStrictly ( (const char *)pWords1->m_sWord+1, *pWords1->m_sWord, (const char *)pWords2->m_sWord+1, *pWords2->m_sWord );
+			} else
+			{
+				if ( pWords1->m_uWordID<pWords2->m_uWordID )
+					iCmp = -1;
+				else if ( pWords1->m_uWordID>pWords2->m_uWordID )
+					iCmp = 1;
+			}
 
 			if ( iCmp==0 )
 				break;
@@ -2499,7 +2507,7 @@ void RtIndex_t::CommitReplayable ( RtSegment_t * pNewSeg, CSphVector<SphDocID_t>
 	// enforce RAM usage limit
 	int64_t iRamLeft = m_iRamSize;
 	ARRAY_FOREACH ( i, dSegments )
-		iRamLeft = Max ( 0, iRamLeft - dSegments[i]->GetUsedRam() );
+		iRamLeft = Max ( iRamLeft - dSegments[i]->GetUsedRam(), 0 );
 
 	// skip merging if no rows were added or no memory left
 	bool bDump = ( iRamLeft==0 );
@@ -2531,7 +2539,9 @@ void RtIndex_t::CommitReplayable ( RtSegment_t * pNewSeg, CSphVector<SphDocID_t>
 			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dWords ) ) +
 			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dDocs ) ) +
 			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dHits ) ) +
-			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dStrings ) );
+			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dStrings ) +
+			CSphTightVectorPolicy<DWORD>::Relimit ( 0, LOC_ESTIMATE ( m_dMvas ) ) +
+			CSphTightVectorPolicy<BYTE>::Relimit ( 0, LOC_ESTIMATE ( m_dKeywordCheckpoints ) ) );
 
 #undef LOC_ESTIMATE
 #undef LOC_ESTIMATE1
@@ -3704,16 +3714,64 @@ void RtIndex_t::PostSetup()
 	}
 }
 
+
+#define LOC_FAIL(_args) \
+	if ( ++iFails<=FAILS_THRESH ) \
+{ \
+	fprintf ( fp, "FAILED, " ); \
+	fprintf _args; \
+	fprintf ( fp, "\n" ); \
+	iFailsPrinted++; \
+	\
+	if ( iFails==FAILS_THRESH ) \
+	fprintf ( fp, "(threshold reached; suppressing further output)\n" ); \
+}
+
 int RtIndex_t::DebugCheck ( FILE * fp )
 {
+	const int FAILS_THRESH = 100;
 	int iFails = 0;
+	int iFailsPrinted = 0;
+	int iFailsPlain = 0;
+
+	int64_t tmCheck = sphMicroTimer();
+
+	ARRAY_FOREACH ( i, m_pSegments )
+	{
+		SphWordID_t uPrevWordID = 0;
+		RtWordReader_t tSeg ( m_pSegments[i], false, m_iWordsCheckpoint );
+		const RtWord_t * pWord = NULL;
+		int iWord = 0;
+
+		while ( ( pWord = tSeg.UnzipWord() )!=NULL )
+		{
+			if ( pWord->m_uWordID<=uPrevWordID )
+			{
+				LOC_FAIL(( fp, "wordid decreased (segment=%d, word=%d, wordid="UINT64_FMT", previd="UINT64_FMT")",
+					i, iWord, (uint64_t)pWord->m_uWordID, (uint64_t)uPrevWordID ));
+			}
+			uPrevWordID = pWord->m_uWordID;
+			iWord++;
+		}
+	}
+
 	ARRAY_FOREACH ( i, m_pDiskChunks )
 	{
 		fprintf ( fp, "checking disk chunk %d(%d)...\n", i, m_pDiskChunks.GetLength() );
-		iFails += m_pDiskChunks[i]->DebugCheck ( fp );
+		iFailsPlain += m_pDiskChunks[i]->DebugCheck ( fp );
 	}
 
-	return iFails;
+	tmCheck = sphMicroTimer() - tmCheck;
+	if ( ( iFails+iFailsPlain )==0 )
+		fprintf ( fp, "check passed" );
+	else if ( iFails!=iFailsPrinted )
+		fprintf ( fp, "check FAILED, %d of %d failures reported", iFailsPrinted, iFails+iFailsPlain );
+	else
+		fprintf ( fp, "check FAILED, %d failures reported", iFails+iFailsPlain );
+
+	fprintf ( fp, ", %d.%d sec elapsed\n", (int)(tmCheck/1000000), (int)((tmCheck/100000)%10) );
+
+	return iFails + iFailsPlain;
 }
 
 void RtIndex_t::SetEnableStar ( bool bEnableStar )
@@ -3959,9 +4017,18 @@ bool RtIndex_t::RtQwordSetupSegment ( RtQword_t * pQword, RtSegment_t * pCurSeg,
 	const RtWord_t * pWord = NULL;
 	while ( ( pWord = tReader.UnzipWord() )!=NULL )
 	{
-		int64_t iCmp = ( bWordDict
-			? sphDictCmpStrictly ( (const char *)pWord->m_sWord+1, pWord->m_sWord[0], sWord, iWordLen )
-			: ( pWord->m_uWordID<uWordID ? I64C(-1) : pWord->m_uWordID-uWordID ) );
+		int iCmp = 0;
+		if ( bWordDict )
+		{
+			iCmp = sphDictCmpStrictly ( (const char *)pWord->m_sWord+1, pWord->m_sWord[0], sWord, iWordLen );
+		} else
+		{
+			if ( pWord->m_uWordID<uWordID )
+				iCmp = -1;
+			else if ( pWord->m_uWordID>uWordID )
+				iCmp = 1;
+		}
+
 		if ( iCmp==0 )
 		{
 			pQword->m_iDocs += pWord->m_uDocs;
