@@ -1902,6 +1902,7 @@ public:
 	int			FindWord ( SphWordID_t iWordID, const BYTE * sWord, int iWordLen ) const;
 	void		AddHits ( SphWordID_t iWordID, const BYTE * sWord, int iWordLen, DWORD uPosition );
 	bool		Parse ( const char * sQuery, ISphTokenizer * pTokenizer, CSphDict * pDict, const CSphSchema * pSchema, CSphString & sError, int iStopwordStep );
+	int			GetSPZ () const;
 
 protected:
 	bool		MatchStar ( const ExcerptGen_c::Keyword_t & tTok, const BYTE * sWord, int iWordLen ) const;
@@ -2044,6 +2045,24 @@ bool SnippetsDocIndex_c::Parse ( const char * sQuery, ISphTokenizer * pTokenizer
 	m_dQueryWords.Uniq();
 	assert ( !m_dStarWords.GetLength() || m_dStarBuffer.GetLength() );
 	return true;
+}
+
+
+int SnippetsDocIndex_c::GetSPZ () const
+{
+	// with sentence in query we should consider SENTECE, PARAGRAPH, ZONE
+	// with paragraph in query we should consider PARAGRAPH, ZONE
+	// with zone in query we should consider ZONE
+	if ( m_bSentence )
+		return MAGIC_CODE_SENTENCE;
+
+	if ( m_bParagraph )
+		return MAGIC_CODE_PARAGRAPH;
+
+	if ( m_tQuery.m_dZones.GetLength() )
+		return MAGIC_CODE_ZONE;
+
+	return 0;
 }
 
 
@@ -2783,6 +2802,10 @@ static char * HighlightAllFastpath ( const ExcerptQuery_t & tQuerySettings,
 	SnippetsDocIndex_c tContainer ( tFixedSettings.m_bHighlightQuery );
 	if ( !tContainer.Parse ( tFixedSettings.m_sWords.cstr(), pQueryTokenizer, pDict, pSchema, sError, tIndexSettings.m_iStopwordStep ) )
 		return NULL;
+
+	// fast-path collects no passages but that flag says what SPZ should we collect
+	if ( tFixedSettings.m_bHighlightQuery && !tFixedSettings.m_iPassageBoundary )
+		tFixedSettings.m_iPassageBoundary = tContainer.GetSPZ();
 
 	// do highlighting
 	if ( !tFixedSettings.m_bHighlightQuery )

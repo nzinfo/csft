@@ -144,6 +144,16 @@ $docs = array ( 'Ultra long stuff is going here then store sales, which were goi
 $results[] = $client->BuildExcerpts ( $docs, 'test', '(store SENTENCE closes)', array ( 'query_mode'=>1, 'passage_boundary'=>'sentence', 'limit'=>90 ) );
 $results[] = $client->BuildExcerpts ( $docs, 'test', '(store SENTENCE closes)', array ( 'query_mode'=>1, 'passage_boundary'=>'sentence', 'limit'=>0 ) );
 
+// regression fast path SPZ vs html_strip_mode = retain
+$docs = array ( 'Ultra long stuff is going here then store sales, which were going before of store closes. Same store sales for the quarter increased as ultra long dust was here since univerce was born. And again store closes as usual ' );
+$results[] = $client->BuildExcerpts ( $docs, 'test', '(store SENTENCE closes)', array ( 'query_mode'=>1, 'html_strip_mode'=>'retain', 'limit'=>0 ) );
+$results[] = $client->BuildExcerpts ( $docs, 'test', '(store PARAGRAPH closes)', array ( 'query_mode'=>1, 'html_strip_mode'=>'retain', 'limit'=>0 ) );
+
+$docs = array ( 'Ultra long stuff is going here then store sales, which were going before of store closes. <p> Same store sales for the quarter increased as ultra long dust was here since univerce was born. <p> And again store closes as usual ' );
+$results[] = $client->BuildExcerpts ( $docs, 'test', '(store SENTENCE closes)', array ( 'query_mode'=>1, 'html_strip_mode'=>'retain', 'limit'=>0 ) );
+$results[] = $client->BuildExcerpts ( $docs, 'test', '(store PARAGRAPH closes)', array ( 'query_mode'=>1, 'html_strip_mode'=>'retain', 'limit'=>0 ) );
+
+
 ]]></custom_test>
 
 
