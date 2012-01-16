@@ -2412,7 +2412,7 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 	{ delete[] this->m_rstVec; this->m_rstVec = NULL; }
 	
 	//void ParagraphProcessAW(int nCount,result_t * result);
-
+	printf("INPUT: %s\n", this->GetBufferPtr());
 	this->m_iResultCount = m_pICTCLAS->GetParagraphProcessAWordCount(this->GetBufferPtr());
 	result_t* results = new result_t[m_iResultCount+1];
 	
@@ -2420,13 +2420,25 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 		m_pICTCLAS->ParagraphProcessAW(m_iResultCount, results);
 	this->m_rstVec = results;
 
+	
 	//debug use only
 	{
 		for(int i=0; i< m_iResultCount; i++) {
 			printf("[%d,%d],  ", m_rstVec[i].start, m_rstVec[i].length);
 		}
 	}
-
+	{
+		int nCount = 0;
+		const result_t *pResult=m_pICTCLAS->ParagraphProcessA(this->GetBufferPtr(),&nCount);
+		
+		for(int i=0;i<nCount;i++)
+		{
+ 			printf("=== No.%d:start:%d, length:%d,POS_ID:%d,Word_ID:%d\n",
+ 				i+1, pResult[i].start, pResult[i].length, pResult[i].iPOS, pResult[i].word_ID);
+		}
+	}
+	//sphDie("cc");
+	
 	m_iStackTop = 0; 
 
 	if (this->m_iResultCount > 0)
@@ -2456,7 +2468,7 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 		if (this->m_iStackTop < this->m_iResultCount)
 		{
 			len = this->m_rstVec[this->m_iStackTop].length;
-			/*
+			
 			char buff[1024];
 			::memcpy(buff, (char *)&(this->m_pBuffer[this->m_rstVec[this->m_iStackTop].start]),len);
 			buff[len] = 0;
@@ -2465,7 +2477,7 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 				sError.SetSprintf ( "[(%d,%d):%s]", len, this->m_rstVec[this->m_iStackTop].start , buff);
 				printf(sError.cstr());
 			}
-			*/
+			
 		}
 	}
 }
