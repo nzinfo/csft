@@ -3341,6 +3341,7 @@ CSphIndex * RtIndex_t::LoadDiskChunk ( int iChunk )
 		sphDie ( "disk chunk %s: alloc failed", sChunk.cstr() );
 
 	pDiskChunk->SetWordlistPreload ( m_bPreloadWordlist );
+	pDiskChunk->m_iExpansionLimit = m_iExpansionLimit;
 
 	if ( !pDiskChunk->Prealloc ( false, m_bPathStripped, sWarning ) )
 		sphDie ( "disk chunk %s: prealloc failed: %s", sChunk.cstr(), pDiskChunk->GetLastError().cstr() );
@@ -4275,6 +4276,9 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 
 	CSphVector<CSphString> dWrongWords;
 	SmallStringHash_T<CSphQueryResultMeta::WordStat_t> hDiskStats;
+	int64_t tmMaxTimer = 0;
+	if ( pQuery->m_uMaxQueryMsec>0 )
+		tmMaxTimer = sphMicroTimer() + pQuery->m_uMaxQueryMsec*1000; // max_query_time
 
 	assert ( dExtra.GetLength()==m_pDiskChunks.GetLength() );
 	CSphVector<const BYTE *> dDiskStrings ( m_pDiskChunks.GetLength() );
@@ -4324,6 +4328,12 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 		// keep last chunk statistics to check vs rt settings
 		if ( iChunk==m_pDiskChunks.GetLength()-1 )
 			hDiskStats = hSrcStats;
+
+		if ( (iChunk+1)!=m_pDiskChunks.GetLength() && tmMaxTimer>0 && sphMicroTimer()>=tmMaxTimer )
+		{
+			pResult->m_sWarning = "query time exceeded max_query_time";
+			break;
+		}
 	}
 
 	if ( m_bKlistLocked )
@@ -4445,6 +4455,8 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 		return true;
 	}
 
+	// search segments no looking to max_query_time
+	// FIXME!!! move searching at segments before disk chunks as result set is safe with kill-lists
 	if ( m_pSegments.GetLength() )
 	{
 		// setup filters
