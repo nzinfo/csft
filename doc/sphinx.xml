@@ -5993,6 +5993,9 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 	with remote agents. The source files for snippets could be distributed among different agents, and the main daemon will merge
 	together all non-erroneous results. So, if one agent of the distributed index has 'file1.txt', another has 'file2.txt' and you call for the snippets
 	with both these files, the sphinx will merge results from the agents together, so you will get the snippets from both 'file1.txt' and 'file2.txt'.
+	This option works by sending the whole bunch of snippet tasks to all agents. Each of them returns the snippets for the files it has, and the empty
+	lines to the one it hasn't. The master then combines all the answers and collect together non-empty snippets. Since the working with scattered files
+	is depends from the empty snippets - it will forcibly reset the "allow_empty" option.
 	</para></listitem>
 </varlistentry>
 <varlistentry>
@@ -6013,7 +6016,8 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 	returned as highlighting result when a snippet could not be generated
 	(no keywords match, or no passages fit the limit). By default,
 	the beginning of original text would be returned instead of an empty
-	string. Boolean, default is false.
+	string. Boolean, default is false. This option is not compatible with the "load_files_scattered".
+	If both of them are set, then the "allow_empty" will be forcibly reset without a prompt.
 	</para></listitem>
 </varlistentry>
 <varlistentry>

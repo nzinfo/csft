@@ -9034,6 +9034,9 @@ void HandleCommandExcerpt ( int iSock, int iVer, InputBuffer_c & tReq )
 	q.m_bAllowEmpty = ( iFlags & EXCERPT_FLAG_ALLOW_EMPTY )!=0;
 	q.m_bEmitZones = ( iFlags & EXCERPT_FLAG_EMIT_ZONES )!=0;
 
+	if ( bScattered )
+		q.m_bAllowEmpty = false;
+
 	int iCount = tReq.GetInt ();
 	if ( iCount<0 || iCount>EXCERPT_MAX_ENTRIES )
 	{
@@ -10450,6 +10453,10 @@ void HandleMysqlCallSnippets ( NetOutputBuffer_c & tOut, BYTE uPacketID, SqlStmt
 			sError.SetSprintf ( "unknown option %s", sOpt.cstr() );
 			break;
 		}
+
+		// FIXME! Do we need to warn a user also? Or just note it in the documentation?
+		if ( q.m_iLoadFiles & 2 )
+			q.m_bAllowEmpty = false;
 
 		// post-conf type check
 		if ( iExpType!=v.m_iType )
