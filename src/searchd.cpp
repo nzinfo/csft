@@ -9038,7 +9038,7 @@ void HandleCommandExcerpt ( int iSock, int iVer, InputBuffer_c & tReq )
 		q.m_bAllowEmpty = false;
 
 	int iCount = tReq.GetInt ();
-	if ( iCount<0 || iCount>EXCERPT_MAX_ENTRIES )
+	if ( iCount<=0 || iCount>EXCERPT_MAX_ENTRIES )
 	{
 		tReq.SendErrorReply ( "invalid entries count %d", iCount );
 		return;
