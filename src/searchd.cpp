@@ -9817,7 +9817,7 @@ void HandleClientSphinx ( int iSock, const char * sClientIP, ThdDesc_t * pThd )
 		assert ( iLength>=0 && iLength<=g_iMaxPacketSize );
 		if ( iLength && !tBuf.ReadFrom ( iLength ) )
 		{
-			sphWarning ( "failed to receive client request body (client=%s, exp=%d)", sClientIP, iLength );
+			sphWarning ( "failed to receive client request body (client=%s, exp=%d, error='%s')", sClientIP, iLength, sphSockError() );
 			return;
 		}
 
@@ -10040,7 +10040,8 @@ void SendMysqlOkPacket ( NetOutputBuffer_c & tOut, BYTE uPacketID, int iAffected
 	tOut.SendBytes ( sVarLen, iLen );	// packed affected rows & insert_id
 	if ( iWarns<0 ) iWarns = 0;
 	if ( iWarns>65535 ) iWarns = 65535;
-	tOut.SendLSBDword ( iWarns );		// N warnings, 0 status
+	DWORD uWarnStatus = iWarns<<16;
+	tOut.SendLSBDword ( uWarnStatus );		// N warnings, 0 status
 	if ( iMsgLen > 0 )
 		tOut.SendBytes ( sMessage, iMsgLen );
 }

@@ -1451,7 +1451,7 @@ public:
 
 	CSphString ( const char * sString ) // NOLINT
 	{
-		if ( sString )
+		if ( sString && *sString )
 		{
 			int iLen = 1+strlen(sString);
 			m_sValue = new char [ iLen+SAFETY_GAP ];
@@ -1649,8 +1649,8 @@ public:
 	/// ctor from C string
 	CSphVariant ( const char * sString ) // NOLINT desired implicit conversion
 		: CSphString ( sString )
-		, m_iValue ( atoi ( m_sValue ) )
-		, m_fValue ( (float)atof ( m_sValue ) )
+		, m_iValue ( m_sValue ? atoi ( m_sValue ) : 0 )
+		, m_fValue ( m_sValue ? (float)atof ( m_sValue ) : 0.0f )
 		, m_pNext ( NULL )
 	{
 	}
