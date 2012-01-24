@@ -1451,7 +1451,7 @@ public:
 
 	CSphString ( const char * sString ) // NOLINT
 	{
-		if ( sString && *sString )
+		if ( sString )
 		{
 			int iLen = 1+strlen(sString);
 			m_sValue = new char [ iLen+SAFETY_GAP ];

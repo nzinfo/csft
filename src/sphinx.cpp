@@ -18248,7 +18248,7 @@ void CSphHTMLStripper::UpdateTags ()
 
 bool CSphHTMLStripper::SetIndexedAttrs ( const char * sConfig, CSphString & sError )
 {
-	if ( !sConfig )
+	if ( !sConfig || !*sConfig )
 		return true;
 
 	char sTag[256], sAttr[256];
@@ -18341,7 +18341,7 @@ bool CSphHTMLStripper::SetIndexedAttrs ( const char * sConfig, CSphString & sErr
 
 bool CSphHTMLStripper::SetRemovedElements ( const char * sConfig, CSphString & )
 {
-	if ( !sConfig )
+	if ( !sConfig || !*sConfig )
 		return true;
 
 	const char * p = sConfig;
@@ -18421,7 +18421,7 @@ bool CSphHTMLStripper::SetZones ( const char * sZones, CSphString & sError )
 {
 	// yet another mini parser!
 	// index_zones = {tagname | prefix*} [, ...]
-	if ( !sZones )
+	if ( !sZones || !*sZones )
 		return true;
 
 	const char * s = sZones;
