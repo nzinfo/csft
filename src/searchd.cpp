@@ -63,6 +63,7 @@
 	// UNIX-specific headers and calls
 	#include <unistd.h>
 	#include <netinet/in.h>
+	#include <netinet/tcp.h>
 	#include <sys/file.h>
 	#include <sys/socket.h>
 	#include <sys/time.h>
@@ -3264,7 +3265,13 @@ int QueryRemoteAgents ( CSphVector<AgentConn_t> & dAgents, int iTimeout, const I
 				// send request
 				NetOutputBuffer_c tOut ( tAgent.m_iSock );
 				tBuilder.BuildRequest ( tAgent.m_sIndexes.cstr(), tOut, i );
-				tOut.Flush (); // FIXME! handle flush failure?
+				bool bFlushed = tOut.Flush (); // FIXME! handle flush failure?
+
+#ifdef	TCP_NODELAY
+				int iDisable = 1;
+				if ( bFlushed && tAgent.m_iFamily==AF_INET )
+					setsockopt ( tAgent.m_iSock, IPPROTO_TCP, TCP_NODELAY, (char*)&iDisable, sizeof(iDisable) );
+#endif
 
 				tAgent.m_eState = AGENT_QUERY;
 				iAgents++;
