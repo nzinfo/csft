@@ -24234,7 +24234,7 @@ CSphQueryResultMeta::CSphQueryResultMeta ()
 }
 
 
-void CSphQueryResultMeta::AddStat ( const CSphString & sWord, int iDocs, int iHits, bool bExpanded )
+void CSphQueryResultMeta::AddStat ( const CSphString & sWord, int64_t iDocs, int64_t iHits, bool bExpanded )
 {
 	CSphString sFixed;
 	const CSphString * pFixed = &sWord;
