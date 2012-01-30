@@ -2257,12 +2257,13 @@ public:
 	explicit	NetOutputBuffer_c ( int iSock );
 
 	bool		SendInt ( int iValue )			{ return SendT<int> ( htonl ( iValue ) ); }
-	bool		SendInt64AsInt ( int64_t iValue ) ///< sends the 32bit MAX_UINT if the value is greater than it.
+	bool		SendAsDword ( int64_t iValue ) ///< sends the 32bit MAX_UINT if the value is greater than it.
 		{
-			if ( iValue > (unsigned int)-1 )
-				return SendInt ( -1 );
-			else
-				return SendInt ( iValue );
+			if ( iValue < 0 )
+				return SendDword ( 0 );
+			if ( iValue > UINT_MAX )
+				return SendDword ( UINT_MAX );
+			return SendDword ( DWORD(iValue) );
 		}
 	bool		SendDword ( DWORD iValue )		{ return SendT<DWORD> ( htonl ( iValue ) ); }
 	bool		SendLSBDword ( DWORD v )		{ SendByte ( (BYTE)( v&0xff ) ); SendByte ( (BYTE)( (v>>8)&0xff ) ); SendByte ( (BYTE)( (v>>16)&0xff ) ); return SendByte ( (BYTE)( (v>>24)&0xff) ); }
@@ -5276,7 +5277,7 @@ void SendResult ( int iVer, NetOutputBuffer_c & tOut, const CSphQueryResult * pR
 		}
 	}
 	tOut.SendInt ( pRes->m_dMatches.GetLength() );
-	tOut.SendInt64AsInt ( pRes->m_iTotalMatches );
+	tOut.SendAsDword ( pRes->m_iTotalMatches );
 	tOut.SendInt ( Max ( pRes->m_iQueryTime, 0 ) );
 	tOut.SendInt ( pRes->m_hWordStats.GetLength() );
 
@@ -5285,8 +5286,8 @@ void SendResult ( int iVer, NetOutputBuffer_c & tOut, const CSphQueryResult * pR
 	{
 		const CSphQueryResultMeta::WordStat_t & tStat = pRes->m_hWordStats.IterateGet();
 		tOut.SendString ( pRes->m_hWordStats.IterateGetKey().cstr() );
-		tOut.SendInt64AsInt ( tStat.m_iDocs );
-		tOut.SendInt64AsInt ( tStat.m_iHits );
+		tOut.SendAsDword ( tStat.m_iDocs );
+		tOut.SendAsDword ( tStat.m_iHits );
 		if ( bExtendedStat )
 			tOut.SendByte ( tStat.m_bExpanded );
 	}
@@ -5395,9 +5396,8 @@ void RemapResult ( CSphSchema * pTarget, AggrResult_t * pRes, bool bMultiSchema=
 				);
 		}
 		int iLimit = bMultiSchema
-			? ( iCur + pRes->m_dMatchCounts[iSchema] )
-			: pRes->m_iTotalMatches;
-		iLimit = Min ( iLimit, pRes->m_dMatches.GetLength() );
+			? (int)Min ( iCur + pRes->m_dMatchCounts[iSchema], pRes->m_dMatches.GetLength() )
+			: (int)Min ( pRes->m_iTotalMatches, pRes->m_dMatches.GetLength() );
 		for ( int i=iCur; i<iLimit; i++ )
 		{
 			CSphMatch & tMatch = pRes->m_dMatches[i];
