@@ -572,15 +572,26 @@ static CSphMutex g_tFlushMutex;
 
 //////////////////////////////////////////////////////////////////////////
 
+/// available uservar types
 enum Uservar_e
 {
 	USERVAR_INT_SET
 };
 
+/// value container for the intset uservar type
+class UservarIntSet_c : public CSphVector<SphAttr_t>, public ISphRefcountedMT
+{};
+
+/// uservar name to value binding
 struct Uservar_t
 {
-	Uservar_e						m_eType;
-	CSphVector<SphAttr_t> *			m_pVal;
+	Uservar_e			m_eType;
+	UservarIntSet_c *	m_pVal;
+
+	Uservar_t ()
+		: m_eType ( USERVAR_INT_SET )
+		, m_pVal ( NULL )
+	{}
 };
 
 static CSphStaticMutex				g_tUservarsMutex;
@@ -7546,6 +7557,7 @@ struct SqlStmt_t
 
 	// SELECT specific
 	CSphQuery				m_tQuery;
+	CSphVector < CSphRefcountedPtr<UservarIntSet_c> > m_dRefs;
 
 	// used by INSERT, DELETE, CALL, DESC, ATTACH
 	CSphString				m_sIndex;
@@ -8170,11 +8182,10 @@ bool SqlParser_c::AddUintRangeFilter ( const CSphString & sAttr, DWORD uMin, DWO
 
 bool SqlParser_c::AddUservarFilter ( const CSphString & sCol, const CSphString & sVar, bool bExclude )
 {
-	g_tUservarsMutex.Lock();
+	CSphScopedLock<CSphStaticMutex> tLock ( g_tUservarsMutex );
 	Uservar_t * pVar = g_hUservars ( sVar );
 	if ( !pVar )
 	{
-		g_tUservarsMutex.Unlock();
 		yyerror ( this, "undefined global variable in IN clause" );
 		return false;
 	}
@@ -8185,10 +8196,16 @@ bool SqlParser_c::AddUservarFilter ( const CSphString & sCol, const CSphString &
 		return false;
 	pFilter->m_bExclude = bExclude;
 
-	// INT_SET uservars must get sorted on SET once
-	// FIXME? maybe we should do a readlock instead of copying?
-	pFilter->m_dValues = *pVar->m_pVal;
-	g_tUservarsMutex.Unlock();
+	// tricky black magic
+	// we want to avoid copying the data, hence external values in the filter
+	// we need to guarantee the data (uservar value) lifetime, then
+	// suddenly, enter mutex-protected refcounted value objects
+	// suddenly, we need to track those values in the statement object, too
+	assert ( pVar->m_pVal );
+	CSphRefcountedPtr<UservarIntSet_c> & tRef = m_pStmt->m_dRefs.Add();
+	tRef = pVar->m_pVal; // take over semantics, and thus NO (!) automatic addref
+	pVar->m_pVal->AddRef(); // so do that addref manually
+	pFilter->SetExternalValues ( pVar->m_pVal->Begin(), pVar->m_pVal->GetLength() );
 	return true;
 }
 
@@ -11598,21 +11615,36 @@ void HandleMysqlSet ( NetOutputBuffer_c & tOut, BYTE & uPacketID, SqlStmt_t & tS
 			return;
 		}
 
+		// INT_SET type must be sorted
+		tStmt.m_dSetValues.Sort();
+
+		// create or update the variable
 		g_tUservarsMutex.Lock();
 		Uservar_t * pVar = g_hUservars ( tStmt.m_sSetName );
 		if ( pVar )
 		{
+			// variable exists, release previous value
+			// actual destruction of the value (aka data) might happen later
+			// as the concurrent queries might still be using and holding that data
+			// from here, the old value becomes nameless, though
 			assert ( pVar->m_eType==USERVAR_INT_SET );
-			pVar->m_pVal->SwapData ( tStmt.m_dSetValues );
+			assert ( pVar->m_pVal );
+			pVar->m_pVal->Release();
+			pVar->m_pVal = NULL;
 		} else
 		{
+			// create a shiny new variable
 			Uservar_t tVar;
-			tVar.m_eType = USERVAR_INT_SET;
-			tVar.m_pVal = new CSphVector<SphAttr_t>;
-			tVar.m_pVal->SwapData ( tStmt.m_dSetValues );
-			tVar.m_pVal->Sort();
-			g_hUservars.Add ( tVar, tStmt.m_sSetName ); // FIXME? free those on shutdown?
+			g_hUservars.Add ( tVar, tStmt.m_sSetName );
+			pVar = g_hUservars ( tStmt.m_sSetName );
 		}
+
+		// swap in the new value
+		assert ( pVar );
+		assert ( !pVar->m_pVal );
+		pVar->m_eType = USERVAR_INT_SET;
+		pVar->m_pVal = new UservarIntSet_c();
+		pVar->m_pVal->SwapData ( tStmt.m_dSetValues );
 		g_tUservarsMutex.Unlock();
 		break;
 	}
@@ -15963,7 +15995,7 @@ bool UservarsHook ( const CSphString & sUservar, CSphVector<SphAttr_t> & dVals )
 	if ( pVar )
 	{
 		assert ( pVar->m_eType==USERVAR_INT_SET );
-		dVals = *pVar->m_pVal;
+		dVals = *pVar->m_pVal; // OPTIMIZE! full copy.. not very efficient, duh
 	}
 	g_tUservarsMutex.Unlock();
 	return ( pVar!=NULL );

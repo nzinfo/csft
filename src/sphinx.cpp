@@ -6489,32 +6489,6 @@ CSphIndexSettings::CSphIndexSettings ()
 }
 
 //////////////////////////////////////////////////////////////////////////
-// PROCESS-SHARED MUTEX
-//////////////////////////////////////////////////////////////////////////
-
-/// scoped mutex lock
-template < typename T >
-class CSphScopedLock : ISphNoncopyable
-{
-public:
-	/// lock on creation
-	explicit CSphScopedLock ( T & tMutex )
-		: m_tMutexRef ( tMutex )
-	{
-		m_tMutexRef.Lock();
-	}
-
-	/// unlock on going out of scope
-	~CSphScopedLock ()
-	{
-		m_tMutexRef.Unlock ();
-	}
-
-protected:
-	T &	m_tMutexRef;
-};
-
-//////////////////////////////////////////////////////////////////////////
 // GLOBAL MVA STORAGE ARENA
 //////////////////////////////////////////////////////////////////////////
 
