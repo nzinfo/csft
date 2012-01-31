@@ -528,8 +528,8 @@ public:
 	/// get original tokenized multiform (if any); NULL means there was none
 	virtual BYTE *					GetTokenizedMultiform () { return NULL; }
 
-	virtual bool					TokenIsBlended () { return m_bBlended; }
-	virtual bool					TokenIsBlendedPart () { return m_bBlendedPart; }
+	virtual bool					TokenIsBlended () const { return m_bBlended; }
+	virtual bool					TokenIsBlendedPart () const { return m_bBlendedPart; }
 	virtual int						SkipBlended () { return 0; }
 
 public:
