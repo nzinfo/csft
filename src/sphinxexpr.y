@@ -147,12 +147,15 @@ function:
 		}
 	| TOK_FUNC_IN '(' attr ',' TOK_USERVAR ')'
 		{
-			int iConstlist = pParser->ConstlistFromUservar ( $5 );
-			if ( iConstlist<0 )
-				YYERROR;
-			$$ = pParser->AddNodeFunc ( $1, $3, iConstlist );
+			$$ = pParser->AddNodeUservar ( $5 );
+			$$ = pParser->AddNodeFunc ( $1, $3, $$ );
 		}
-	| TOK_HOOK_FUNC '(' arglist ')'	{ $$ = pParser->AddNodeHookFunc ( $1, $3 ); if ( $$<0 ) YYERROR; }
+	| TOK_HOOK_FUNC '(' arglist ')'
+		{
+			$$ = pParser->AddNodeHookFunc ( $1, $3 );
+			if ( $$<0 )
+				YYERROR;
+		}
 	;
 
 %%

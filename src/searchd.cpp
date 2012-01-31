@@ -578,10 +578,6 @@ enum Uservar_e
 	USERVAR_INT_SET
 };
 
-/// value container for the intset uservar type
-class UservarIntSet_c : public CSphVector<SphAttr_t>, public ISphRefcountedMT
-{};
-
 /// uservar name to value binding
 struct Uservar_t
 {
@@ -15991,19 +15987,19 @@ bool DieCallback ( const char * sMessage )
 }
 
 
-extern bool ( *g_pUservarsHook )( const CSphString & sUservar, CSphVector<SphAttr_t> & dVals );
+extern UservarIntSet_c * ( *g_pUservarsHook )( const CSphString & sUservar );
 
-bool UservarsHook ( const CSphString & sUservar, CSphVector<SphAttr_t> & dVals )
+UservarIntSet_c * UservarsHook ( const CSphString & sUservar )
 {
-	g_tUservarsMutex.Lock();
+	CSphScopedLock<CSphStaticMutex> tLock ( g_tUservarsMutex );
+
 	Uservar_t * pVar = g_hUservars ( sUservar );
-	if ( pVar )
-	{
-		assert ( pVar->m_eType==USERVAR_INT_SET );
-		dVals = *pVar->m_pVal; // OPTIMIZE! full copy.. not very efficient, duh
-	}
-	g_tUservarsMutex.Unlock();
-	return ( pVar!=NULL );
+	if ( !pVar )
+		return NULL;
+
+	assert ( pVar->m_eType==USERVAR_INT_SET );
+	pVar->m_pVal->AddRef();
+	return pVar->m_pVal;
 }
 
 

@@ -362,7 +362,7 @@ static const unsigned char yyrline[] =
       84,    85,    86,    87,    88,    89,    90,    91,    92,    93,
       94,    95,    96,    97,    98,   102,   103,   104,   105,   106,
      110,   111,   115,   116,   117,   118,   122,   123,   124,   125,
-     126,   130,   134,   138,   143,   148,   155
+     126,   130,   134,   138,   143,   148,   153
 };
 #endif
 
@@ -1426,16 +1426,18 @@ yyreduce:
   case 55:
 
     {
-			int iConstlist = pParser->ConstlistFromUservar ( yyvsp[-1].iNode );
-			if ( iConstlist<0 )
-				YYERROR;
-			yyval.iNode = pParser->AddNodeFunc ( yyvsp[-5].iFunc, yyvsp[-3].iNode, iConstlist );
+			yyval.iNode = pParser->AddNodeUservar ( yyvsp[-1].iNode );
+			yyval.iNode = pParser->AddNodeFunc ( yyvsp[-5].iFunc, yyvsp[-3].iNode, yyval.iNode );
 		;}
     break;
 
   case 56:
 
-    { yyval.iNode = pParser->AddNodeHookFunc ( yyvsp[-3].iNode, yyvsp[-1].iNode ); if ( yyval.iNode<0 ) YYERROR; ;}
+    {
+			yyval.iNode = pParser->AddNodeHookFunc ( yyvsp[-3].iNode, yyvsp[-1].iNode );
+			if ( yyval.iNode<0 )
+				YYERROR;
+		;}
     break;
 
 
