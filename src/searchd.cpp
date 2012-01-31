@@ -4136,8 +4136,13 @@ void PrepareQueryEmulation ( CSphQuery * pQuery )
 	while ( ( c = *szQuery++ )!=0 )
 	{
 		// must be in sync with EscapeString (php api)
-		if ( c=='(' || c==')' || c=='|' || c=='-' || c=='!' || c=='@' || c=='~' || c=='\"' || c=='&' || c=='/' || c=='<' || c=='\\' )
+		const char sMagics[] = "<\\()|-!@~\"&/^$=";
+		for ( const char * s = sMagics; *s; s++ )
+			if ( c==*s )
+		{
 			*szRes++ = '\\';
+			break;
+		}
 
 		*szRes++ = c;
 	}
