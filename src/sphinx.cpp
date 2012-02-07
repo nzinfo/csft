@@ -2326,7 +2326,7 @@ public:
 	
 protected:
 	bool m_bReadyExit;
-	void peekToken (int & len);
+	void peekToken (int & len, int & offset);
 	void popToken ();
 	virtual bool IsSegment(const BYTE *pCur);
 
@@ -2394,7 +2394,7 @@ bool CSphTokenizer_ICTCLAS::ImportUserDict(const char * sFilename, const int nLe
 
 void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 {
-	printf("\ncalling setbuffer.\n");
+	//printf("\ncalling setbuffer.\n");
 	CSphTokenizer_UTF8::SetBuffer(sBuffer, iLength);
 	
 	int _iResultCount = 0;
@@ -2412,7 +2412,7 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 	{ delete[] this->m_rstVec; this->m_rstVec = NULL; }
 	
 	//void ParagraphProcessAW(int nCount,result_t * result);
-	printf("INPUT: %s\n", this->GetBufferPtr());
+	//printf("INPUT: %s\n", this->GetBufferPtr());
 	this->m_iResultCount = m_pICTCLAS->GetParagraphProcessAWordCount(this->GetBufferPtr());
 	result_t* results = new result_t[m_iResultCount+1];
 	
@@ -2422,11 +2422,15 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 
 	
 	//debug use only
+	/*
 	{
 		for(int i=0; i< m_iResultCount; i++) {
 			printf("[%d,%d],  ", m_rstVec[i].start, m_rstVec[i].length);
 		}
 	}
+	*/
+
+	/*
 	{
 		int nCount = 0;
 		const result_t *pResult=m_pICTCLAS->ParagraphProcessA(this->GetBufferPtr(),&nCount);
@@ -2436,7 +2440,10 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
  			printf("=== No.%d:start:%d, length:%d,POS_ID:%d,Word_ID:%d\n",
  				i+1, pResult[i].start, pResult[i].length, pResult[i].iPOS, pResult[i].word_ID);
 		}
+		
 	}
+	*/
+
 	//sphDie("cc");
 	
 	m_iStackTop = 0; 
@@ -2459,7 +2466,7 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 }
 
 
-void CSphTokenizer_ICTCLAS::peekToken (int & len)
+void CSphTokenizer_ICTCLAS::peekToken (int & len, int & offset)
 {
 	len = 0;
 	
@@ -2468,7 +2475,8 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 		if (this->m_iStackTop < this->m_iResultCount)
 		{
 			len = this->m_rstVec[this->m_iStackTop].length;
-			
+			offset = this->m_rstVec[this->m_iStackTop].start;
+			/*
 			char buff[1024];
 			::memcpy(buff, (char *)&(this->m_pBuffer[this->m_rstVec[this->m_iStackTop].start]),len);
 			buff[len] = 0;
@@ -2477,7 +2485,7 @@ void CSphTokenizer_ICTCLAS::peekToken (int & len)
 				sError.SetSprintf ( "[(%d,%d):%s]", len, this->m_rstVec[this->m_iStackTop].start , buff);
 				printf(sError.cstr());
 			}
-			
+			*/
 		}
 	}
 }
@@ -2498,13 +2506,17 @@ bool CSphTokenizer_ICTCLAS::IsSegment(const BYTE * pCur)
 	size_t offset = pCur - m_pBuffer;
 
 	int len = 0;
+	int ict_offset = 0;
 	//printf("%d:%d:", offset,m_segoffset); 
 	while(m_segoffset < offset) 
 	{
-			this->peekToken(len);
+			this->peekToken(len, ict_offset);
 			this->popToken();
 
-			m_segoffset += len;
+			//printf("%d:%d:%d;\n", m_segoffset, len, ict_offset);
+			//m_segoffset += len;
+
+			m_segoffset = ict_offset  + len;
 			if(len==0)
 			{
 				break; 
@@ -2516,7 +2528,7 @@ bool CSphTokenizer_ICTCLAS::IsSegment(const BYTE * pCur)
 
 BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 {
-	printf("\ncalling gettoken.\n");
+	//printf("\ncalling gettoken.\n");
 	m_iLastTokenLen_ICTCLAS = 0;
 	while (!this->IsSegment(m_pCur) || m_pAccumSeg == m_sAccumSeg)
 	{
@@ -2531,6 +2543,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 		
 		if(tok[0] < 128) {
 			m_segToken = (char*)m_pTokenStart;
+			//printf("tok: %s\t", tok);
 			return tok;
 		}
 
@@ -2547,6 +2560,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 		m_pAccumSeg = m_sAccumSeg;
 		
 		//m_segToken = (char*)(m_pTokenEnd-m_iLastTokenBufferLen);
+		//printf("tok: %s\t", m_sAccumSeg);
 		return m_sAccumSeg;
 	}
 	//return NULL;
@@ -2555,7 +2569,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 
 ISphTokenizer * CSphTokenizer_ICTCLAS::Clone ( bool bEscaped ) const
 {
-	printf("\ncalling clone.\n");
+	//printf("\ncalling clone.\n");
 	CSphTokenizer_ICTCLAS * pClone = new CSphTokenizer_ICTCLAS (true);
 	pClone->CloneBase ( this, bEscaped );
 	pClone->m_dictpath = m_dictpath;
