@@ -913,8 +913,8 @@ public:
 	RtBinlog_c ();
 	~RtBinlog_c ();
 
-	void	BinlogCommit ( const char * sIndexName, int64_t iTID, const RtSegment_t * pSeg, const CSphVector<SphDocID_t> & dKlist, bool bKeywordDict );
-	void	BinlogUpdateAttributes ( const char * sIndexName, int64_t iTID, const CSphAttrUpdate & tUpd );
+	void	BinlogCommit ( int64_t * pTID, const char * sIndexName, const RtSegment_t * pSeg, const CSphVector<SphDocID_t> & dKlist, bool bKeywordDict );
+	void	BinlogUpdateAttributes ( int64_t * pTID, const char * sIndexName, const CSphAttrUpdate & tUpd );
 	void	NotifyIndexFlush ( const char * sIndexName, int64_t iTID, bool bShutdown );
 
 	void	Configure ( const CSphConfigSection & hSearchd, bool bTestMode );
@@ -2480,7 +2480,7 @@ void RtIndex_t::CommitReplayable ( RtSegment_t * pNewSeg, CSphVector<SphDocID_t>
 	Verify ( m_tWriterMutex.Lock() );
 
 	// first of all, binlog txn data for recovery
-	g_pRtBinlog->BinlogCommit ( m_sIndexName.cstr(), ++m_iTID, pNewSeg, dAccKlist, m_bKeywordDict );
+	g_pRtBinlog->BinlogCommit ( &m_iTID, m_sIndexName.cstr(), pNewSeg, dAccKlist, m_bKeywordDict );
 
 	// let merger know that existing segments are subject to additional, TLS K-list filter
 	// safe despite the readers, flag must only be used by writer
@@ -5132,7 +5132,7 @@ int RtIndex_t::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, CSphS
 
 	// bump the counter, binlog the update!
 	assert ( iIndex<0 );
-	g_pBinlog->BinlogUpdateAttributes ( m_sIndexName.cstr(), ++m_iTID, tUpd );
+	g_pBinlog->BinlogUpdateAttributes ( &m_iTID, m_sIndexName.cstr(), tUpd );
 
 	m_tRwlock.Unlock();
 
@@ -5441,7 +5441,7 @@ RtBinlog_c::~RtBinlog_c ()
 }
 
 
-void RtBinlog_c::BinlogCommit ( const char * sIndexName, int64_t iTID, const RtSegment_t * pSeg, const CSphVector<SphDocID_t> & dKlist, bool bKeywordDict )
+void RtBinlog_c::BinlogCommit ( int64_t * pTID, const char * sIndexName, const RtSegment_t * pSeg, const CSphVector<SphDocID_t> & dKlist, bool bKeywordDict )
 {
 	if ( m_bReplayMode || m_bDisabled )
 		return;
@@ -5449,6 +5449,7 @@ void RtBinlog_c::BinlogCommit ( const char * sIndexName, int64_t iTID, const RtS
 	MEMORY ( SPH_MEM_BINLOG );
 	Verify ( m_tWriteLock.Lock() );
 
+	int64_t iTID = ++(*pTID);
 	const int64_t tmNow = sphMicroTimer();
 	const int uIndex = GetWriteIndexID ( sIndexName, iTID, tmNow );
 
@@ -5504,7 +5505,7 @@ void RtBinlog_c::BinlogCommit ( const char * sIndexName, int64_t iTID, const RtS
 	Verify ( m_tWriteLock.Unlock() );
 }
 
-void RtBinlog_c::BinlogUpdateAttributes ( const char * sIndexName, int64_t iTID, const CSphAttrUpdate & tUpd )
+void RtBinlog_c::BinlogUpdateAttributes ( int64_t * pTID, const char * sIndexName, const CSphAttrUpdate & tUpd )
 {
 	if ( m_bReplayMode || m_bDisabled )
 		return;
@@ -5512,6 +5513,7 @@ void RtBinlog_c::BinlogUpdateAttributes ( const char * sIndexName, int64_t iTID,
 	MEMORY ( SPH_MEM_BINLOG );
 	Verify ( m_tWriteLock.Lock() );
 
+	int64_t iTID = ++(*pTID);
 	const int64_t tmNow = sphMicroTimer();
 	const int uIndex = GetWriteIndexID ( sIndexName, iTID, tmNow );
 

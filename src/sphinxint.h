@@ -1200,7 +1200,8 @@ public:
 
 /// value container for the intset uservar type
 class UservarIntSet_c : public CSphVector<SphAttr_t>, public ISphRefcountedMT
-{};
+{
+};
 
 //////////////////////////////////////////////////////////////////////////
 // BINLOG INTERNALS
@@ -1212,7 +1213,7 @@ class ISphBinlog : ISphNoncopyable
 public:
 	virtual				~ISphBinlog () {}
 
-	virtual void		BinlogUpdateAttributes ( const char * sIndexName, int64_t iTID, const CSphAttrUpdate & tUpd ) = 0;
+	virtual void		BinlogUpdateAttributes ( int64_t * pTID, const char * sIndexName, const CSphAttrUpdate & tUpd ) = 0;
 	virtual void		NotifyIndexFlush ( const char * sIndexName, int64_t iTID, bool bShutdown ) = 0;
 };
 

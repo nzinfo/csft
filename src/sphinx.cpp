@@ -7306,7 +7306,7 @@ int CSphIndex_VLN::UpdateAttributes ( const CSphAttrUpdate & tUpd, int iIndex, C
 		return 0;
 
 	if ( g_pBinlog )
-		g_pBinlog->BinlogUpdateAttributes ( m_sIndexName.cstr(), ++m_iTID, tUpd );
+		g_pBinlog->BinlogUpdateAttributes ( &m_iTID, m_sIndexName.cstr(), tUpd );
 
 	// remap update schema to index schema
 	CSphVector<CSphAttrLocator> dLocators;
@@ -20986,7 +20986,7 @@ const char * CSphSource_SQL::SqlUnpackColumn ( int iFieldIndex, ESphUnpackFormat
 	{
 		case SPH_UNPACK_MYSQL_COMPRESS:
 		{
-			if ( iPackedLen <= 4 )
+			if ( iPackedLen<=4 )
 			{
 				if ( !m_bUnpackFailed )
 				{
