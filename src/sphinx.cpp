@@ -514,6 +514,7 @@ static void GetFileStats ( const char * szFilename, CSphSavedFile & tInfo );
 CSphAutofile::CSphAutofile ()
 	: m_iFD ( -1 )
 	, m_bTemporary ( false )
+	, m_bWouldTemporary ( false )
 	, m_pProgress ( NULL )
 	, m_pStat ( NULL )
 {
@@ -523,6 +524,7 @@ CSphAutofile::CSphAutofile ()
 CSphAutofile::CSphAutofile ( const CSphString & sName, int iMode, CSphString & sError, bool bTemp )
 	: m_iFD ( -1 )
 	, m_bTemporary ( false )
+	, m_bWouldTemporary ( false )
 	, m_pProgress ( NULL )
 	, m_pStat ( NULL )
 {
@@ -547,7 +549,10 @@ int CSphAutofile::Open ( const CSphString & sName, int iMode, CSphString & sErro
 	if ( m_iFD<0 )
 		sError.SetSprintf ( "failed to open %s: %s", sName.cstr(), strerror(errno) );
 	else
+	{
 		m_bTemporary = bTemp; // only if we managed to actually open it
+		m_bWouldTemporary = true; // if a shit happen - we could delete the file.
+	}
 
 	return m_iFD;
 }
@@ -565,6 +570,12 @@ void CSphAutofile::Close ()
 	m_iFD = -1;
 	m_sFilename = "";
 	m_bTemporary = false;
+	m_bWouldTemporary = false;
+}
+
+void CSphAutofile::SetTemporary()
+{
+	m_bTemporary = m_bWouldTemporary;
 }
 
 
@@ -5456,6 +5467,20 @@ void CSphWriter::CloseFile ( bool bTruncate )
 	}
 }
 
+void CSphWriter::UnlinkFile()
+{
+	if ( m_bOwnFile )
+	{
+		if ( m_iFD>=0 )
+			::close ( m_iFD );
+
+		m_iFD = -1;
+		::unlink ( m_sName.cstr() );
+		m_sName = "";
+	}
+	SafeDeleteArray ( m_pBuffer );
+}
+
 
 void CSphWriter::PutByte ( int data )
 {
@@ -9561,6 +9586,42 @@ static bool sphTruncate ( int iFD )
 #endif
 }
 
+class DeleteOnFail : public ISphNoncopyable
+{
+public:
+	DeleteOnFail() : m_bShitHappened ( true )
+	{}
+	inline ~DeleteOnFail()
+	{
+		if ( m_bShitHappened )
+		{
+			ARRAY_FOREACH ( i, m_dWriters )
+				m_dWriters[i]->UnlinkFile();
+
+			ARRAY_FOREACH ( i, m_dAutofiles )
+				m_dAutofiles[i]->SetTemporary();
+		}
+	}
+	inline void AddWriter ( CSphWriter* pWr )
+	{
+		if ( pWr )
+			m_dWriters.Add ( pWr );
+	}
+	inline void AddAutofile ( CSphAutofile* pAf )
+	{
+		if ( pAf )
+			m_dAutofiles.Add ( pAf );
+	}
+	inline void AllIsDone()
+	{
+		m_bShitHappened = false;
+	}
+private:
+	bool	m_bShitHappened;
+	CSphVector<CSphWriter*> m_dWriters;
+	CSphVector<CSphAutofile*> m_dAutofiles;
+};
+
 
 int CSphIndex_VLN::Build ( const CSphVector<CSphSource*> & dSources, int iMemoryLimit, int iWriteBuffer )
 {
@@ -9794,6 +9855,16 @@ int CSphIndex_VLN::Build ( const CSphVector<CSphSource*> & dSources, int iMemory
 	if ( !tStrWriter.OpenFile ( GetIndexFileName("sps"), m_sLastError ) )
 		return 0;
 	tStrWriter.PutByte ( 0 ); // dummy byte, to reserve magic zero offset
+
+	DeleteOnFail dFileWatchdog;
+
+	if ( m_bInplaceSettings )
+	{
+		dFileWatchdog.AddAutofile ( &fdHits );
+		dFileWatchdog.AddAutofile ( &fdDocinfos );
+	}
+
+	dFileWatchdog.AddWriter ( &tStrWriter );
 
 	if ( fdLock.GetFD()<0 || fdHits.GetFD()<0 || fdDocinfos.GetFD()<0 || fdTmpFieldMVAs.GetFD ()<0 )
 		return 0;
@@ -10407,7 +10478,7 @@ int CSphIndex_VLN::Build ( const CSphVector<CSphSource*> & dSources, int iMemory
 	// initialize MVA reader
 	CSphAutoreader rdMva;
 	if ( !rdMva.Open ( GetIndexFileName("spm"), m_sLastError ) )
-		return false;
+		return 0;
 
 	SphDocID_t uMvaID = rdMva.GetDocid();
 
@@ -10928,6 +10999,7 @@ int CSphIndex_VLN::Build ( const CSphVector<CSphSource*> & dSources, int iMemory
 
 	PROFILER_DONE ();
 	PROFILE_SHOW ();
+	dFileWatchdog.AllIsDone();
 	return 1;
 } // NOLINT function length
 

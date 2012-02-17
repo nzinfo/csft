@@ -81,6 +81,7 @@ public:
 	bool			OpenFile ( const CSphString & sName, CSphString & sErrorBuffer );
 	void			SetFile ( int iFD, SphOffset_t * pSharedOffset );
 	void			CloseFile ( bool bTruncate = false );	///< note: calls Flush(), ie. IsError() might get true after this call
+	void			UnlinkFile (); /// some shit happened (outside) and the file is no more actual.
 
 	void			PutByte ( int uValue );
 	void			PutBytes ( const void * pData, int iSize );
@@ -131,6 +132,7 @@ protected:
 	int			m_iFD;			///< my file descriptior
 	CSphString	m_sFilename;	///< my file name
 	bool		m_bTemporary;	///< whether to unlink this file on Close()
+	bool		m_bWouldTemporary; ///< backup of the m_bTemporary
 
 	CSphIndex::ProgressCallback_t *		m_pProgress; ///< for displaying progress
 	CSphIndexProgress *					m_pStat;
@@ -142,6 +144,7 @@ public:
 
 	int				Open ( const CSphString & sName, int iMode, CSphString & sError, bool bTemp=false );
 	void			Close ();
+	void			SetTemporary(); ///< would be set if a shit happened and the file is not actual.
 
 public:
 	int				GetFD () const { return m_iFD; }
