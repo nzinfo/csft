@@ -3571,7 +3571,7 @@ int CSphTokenizerTraits<IS_UTF8>::CodepointArbitration ( int iCode, bool bWasEsc
 	{
 		if ( iCode & FLAG_CODEPOINT_DUAL )
 			iCode &= ~( FLAG_CODEPOINT_SPECIAL | FLAG_CODEPOINT_DUAL );
-		else if ( bDashInside )
+		else if ( bDashInside && ( iCode & FLAG_CODEPOINT_SYNONYM ) )
 			// if we return zero here, we will break the tokens like 'Ms-Dos'
 			iCode &= ~( FLAG_CODEPOINT_SPECIAL );
 		else
