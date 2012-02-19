@@ -7822,7 +7822,21 @@ Syntax fully matches that of <link linkend="conf-sql-attr-uint">sql_attr_uint</l
 </para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
-xmlpipe_attr_uint = author
+xmlpipe_attr_uint = author_id
+</programlisting>
+</sect2>
+
+
+<sect2 id="conf-xmlpipe-attr-bigint"><title>xmlpipe_attr_bigint</title>
+<para>
+xmlpipe signed 64-bit integer attribute declaration.
+Multi-value, optional.
+Applies to <option>xmlpipe2</option> source type only.
+Syntax fully matches that of <link linkend="conf-sql-attr-bigint">sql_attr_bigint</link>.
+</para>
+<bridgehead>Example:</bridgehead>
+<programlisting>
+xmlpipe_attr_bigint = my_bigint_id
 </programlisting>
 </sect2>
 
