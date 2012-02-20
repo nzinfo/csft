@@ -14213,10 +14213,7 @@ static XQNode_t * CloneKeyword ( const XQNode_t * pNode )
 {
 	assert ( pNode );
 
-	XQNode_t * pRes = new XQNode_t;
-	pRes->m_bFieldSpec = pNode->m_bFieldSpec;
-	pRes->m_dFieldMask = pNode->m_dFieldMask;
-	pRes->m_iFieldMaxPos = pNode->m_iFieldMaxPos;
+	XQNode_t * pRes = new XQNode_t ( pNode->m_dSpec );
 	pRes->m_dWords = pNode->m_dWords;
 	return pRes;
 }
@@ -14224,7 +14221,9 @@ static XQNode_t * CloneKeyword ( const XQNode_t * pNode )
 
 static XQNode_t * ExpandKeyword ( XQNode_t * pNode, const CSphIndexSettings & tSettings )
 {
-	XQNode_t * pExpand = new XQNode_t;
+	assert ( pNode );
+
+	XQNode_t * pExpand = new XQNode_t ( pNode->m_dSpec );
 	pExpand->SetOp ( SPH_QUERY_OR, pNode );
 
 	if ( tSettings.m_iMinInfixLen>0 )
@@ -14269,7 +14268,7 @@ static XQNode_t * ExpandKeywords ( XQNode_t * pNode, const CSphIndexSettings & t
 		assert ( pNode->m_dWords.GetLength()>1 );
 		ARRAY_FOREACH ( i, pNode->m_dWords )
 		{
-			XQNode_t * pWord = new XQNode_t;
+			XQNode_t * pWord = new XQNode_t ( pNode->m_dSpec );
 			pWord->m_dWords.Add ( pNode->m_dWords[i] );
 			pNode->m_dChildren.Add ( ExpandKeyword ( pWord, tSettings ) );
 			pNode->m_dChildren.Last()->m_iAtomPos = pNode->m_dWords[i].m_iAtomPos;
@@ -14310,7 +14309,7 @@ static void TransformQuorum ( XQNode_t ** ppNode )
 	CSphVector<XQNode_t*> dArgs;
 	ARRAY_FOREACH ( i, pNode->m_dWords )
 	{
-		XQNode_t * pAnd = new XQNode_t();
+		XQNode_t * pAnd = new XQNode_t ( pNode->m_dSpec );
 		pAnd->m_dWords.Add ( pNode->m_dWords[i] );
 		dArgs.Add ( pAnd );
 	}
@@ -14414,7 +14413,7 @@ XQNode_t * sphExpandXQNode ( XQNode_t * pNode, ExpansionContext_t & tCtx )
 		assert ( pNode->m_dWords.GetLength()>1 );
 		ARRAY_FOREACH ( i, pNode->m_dWords )
 		{
-			XQNode_t * pWord = new XQNode_t;
+			XQNode_t * pWord = new XQNode_t ( pNode->m_dSpec );
 			pWord->m_dWords.Add ( pNode->m_dWords[i] );
 			pNode->m_dChildren.Add ( sphExpandXQNode ( pWord, tCtx ) );
 			pNode->m_dChildren.Last()->m_iAtomPos = pNode->m_dWords[i].m_iAtomPos;

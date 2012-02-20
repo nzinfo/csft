@@ -787,11 +787,11 @@ CSphString ReconstructNode ( const XQNode_t * pNode, const CSphSchema & tSchema 
 			default:					assert ( 0 && "unexpected op in ReconstructNode()" ); break;
 		}
 
-		if ( !pNode->m_dFieldMask.TestAll(true) )
+		if ( !pNode->m_dSpec.m_dFieldMask.TestAll(true) )
 		{
 			CSphString sFields ( "" );
 			for ( int i=0; i<CSphSmallBitvec::iTOTALBITS; i++ )
-				if ( pNode->m_dFieldMask.Test(i) )
+				if ( pNode->m_dSpec.m_dFieldMask.Test(i) )
 					sFields.SetSprintf ( "%s,%s", sFields.cstr(), tSchema.m_dFields[i].m_sName.cstr() );
 
 			sRes.SetSprintf ( "( @%s: %s )", sFields.cstr()+1, sRes.cstr() );
