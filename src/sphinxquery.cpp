@@ -860,6 +860,12 @@ XQNode_t * XQParser_t::AddOp ( XQOperator_e eOp, XQNode_t * pLeft, XQNode_t * pR
 	// eg. '@title hello' vs 'world'
 	pRight->CopySpecs ( pLeft );
 
+	XQNode_t * pDonor = pRight;
+	if ( pRight->m_dSpec.m_bInvisible )
+		pDonor = pLeft;
+
+	m_dStateSpec = pDonor->m_dSpec;
+
 	// build a new node
 	XQNode_t * pResult = NULL;
 	if ( pLeft->m_dChildren.GetLength() && pLeft->GetOp()==eOp && pLeft->m_iOpArg==iOpArg )
@@ -875,7 +881,7 @@ XQNode_t * XQParser_t::AddOp ( XQOperator_e eOp, XQNode_t * pLeft, XQNode_t * pR
 	{
 		// however, it's right (!) spec which is chosen for the resulting node,
 		// eg. '@title hello' + 'world @body program'
-		XQNode_t * pNode = new XQNode_t ( pRight->m_dSpec );
+		XQNode_t * pNode = new XQNode_t ( pDonor->m_dSpec );
 		pNode->SetOp ( eOp, pLeft, pRight );
 		pNode->m_iOpArg = iOpArg;
 		m_dSpawned.Add ( pNode );

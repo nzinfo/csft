@@ -54,9 +54,8 @@ query:
 	;
 
 expr:
-	// beforelist						{ $$ = $1; }
-	tok_limiter beforelist				{ $$ = $2; }
-	| expr tok_limiter beforelist					{ $$ = pParser->AddOp ( SPH_QUERY_AND, $1, $3 ); }
+	beforelist						{ $$ = $1; }
+	| expr beforelist					{ $$ = pParser->AddOp ( SPH_QUERY_AND, $1, $2 ); }
 	;
 
 tok_limiter:
@@ -73,12 +72,12 @@ beforelist:
 
 orlistf:
 	orlist								{ $$ = $1; }
-	| '-' orlist						{ $$ = pParser->AddOp ( SPH_QUERY_NOT, $2, NULL ); }
+	| tok_limiter '-' orlist					{ $$ = pParser->AddOp ( SPH_QUERY_NOT, $3, NULL ); }
 	;
 
 orlist:
-	atom								{ $$ = $1; }
-	| orlist '|' atom					{ $$ = pParser->AddOp ( SPH_QUERY_OR, $1, $3 ); }
+	tok_limiter atom								{ $$ = $2; }
+	| orlist '|' tok_limiter atom					{ $$ = pParser->AddOp ( SPH_QUERY_OR, $1, $4 ); }
 	;
 
 atom:
@@ -91,7 +90,7 @@ atom:
 	| '"' phrase '"'					{ $$ = $2; if ( $$ ) { assert ( $$->m_dWords.GetLength() ); $$->SetOp ( SPH_QUERY_PHRASE); } }
 	| '"' phrase '"' '~' TOK_INT		{ $$ = $2; if ( $$ ) { assert ( $$->m_dWords.GetLength() ); $$->SetOp ( SPH_QUERY_PROXIMITY ); $$->m_iOpArg = $5.iValue; } }
 	| '"' phrase '"' '/' TOK_INT		{ $$ = $2; if ( $$ ) { assert ( $$->m_dWords.GetLength() ); $$->SetOp ( SPH_QUERY_QUORUM ); $$->m_iOpArg = $5.iValue; } }
-	| '(' expr ')'						{ $$ = $2; if ( $$ ) pParser->m_dStateSpec.Reset(); }
+	| '(' expr ')'						{ $$ = $2; if ( $$ ) $$->m_dSpec.Hide(); pParser->m_dStateSpec.Reset(); }
 
 	;
 

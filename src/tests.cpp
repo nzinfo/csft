@@ -906,8 +906,11 @@ void TestQueryParser ()
 		sphParseExtendedQuery ( tQuery, dTest[i].m_sQuery, pTokenizer.Ptr(), &tSchema, pDict.Ptr(), 1 );
 
 		CSphString sReconst = ReconstructNode ( tQuery.m_pRoot, tSchema );
-		assert ( sReconst==dTest[i].m_sReconst );
-
+		if ( sReconst!=dTest[i].m_sReconst )
+		{
+			printf ( "failed!\n Expected '%s',\n got '%s'", dTest[i].m_sReconst, sReconst.cstr() );
+			assert ( sReconst==dTest[i].m_sReconst );
+		}
 		printf ( "ok\n" );
 	}
 }
