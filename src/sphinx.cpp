@@ -12479,71 +12479,94 @@ bool CSphIndex_VLN::MultiScan ( const CSphQuery * pQuery, CSphQueryResult * pRes
 	if ( !tCtx.SetupOverrides ( pQuery, pResult, m_tSchema ) )
 		return false;
 
-	// do scan
+	// prepare to work them rows
 	bool bRandomize = ppSorters[0]->m_bRandomize;
-	int iCutoff = pQuery->m_iCutoff;
-	if ( iCutoff<=0 )
-		iCutoff = -1;
 
 	CSphMatch tMatch;
 	tMatch.Reset ( pResult->m_tSchema.GetDynamicSize() );
 	tMatch.m_iWeight = pQuery->GetIndexWeight ( m_sIndexName.cstr() );
+	tMatch.m_iTag = tCtx.m_dCalcFinal.GetLength() ? -1 : iTag;
 
-	DWORD uStride = DOCINFO_IDSIZE + m_tSchema.GetRowSize();
-	DWORD uStart = pQuery->m_bReverseScan ? ( m_uDocinfoIndex-1 ) : 0;
-	int iStep = pQuery->m_bReverseScan ? -1 : 1;
-	int iMyTag = tCtx.m_dCalcFinal.GetLength() ? -1 : iTag;
-	for ( DWORD uIndexEntry=uStart; uIndexEntry<m_uDocinfoIndex; uIndexEntry+=iStep )
+	// optimize direct lookups by id
+	// run full scan with block and row filtering for everything else
+	if ( pQuery->m_dFilters.GetLength()==1
+		&& pQuery->m_dFilters[0].m_eType==SPH_FILTER_VALUES
+		&& pQuery->m_dFilters[0].m_bExclude==false
+		&& pQuery->m_dFilters[0].m_sAttrName=="@id"
+		&& !pExtraFilters )
 	{
-		/////////////////////////
-		// block-level filtering
-		/////////////////////////
-
-		const DWORD * pMin = &m_pDocinfoIndex[2*uIndexEntry*uStride];
-		const DWORD * pMax = pMin + uStride;
-
-		// check applicable filters
-		if ( tCtx.m_pFilter && !tCtx.m_pFilter->EvalBlock ( pMin, pMax ) )
-			continue;
-
-		///////////////////////
-		// row-level filtering
-		///////////////////////
-
-		const DWORD * pBlockStart = &m_pDocinfo [ ( int64_t ( uIndexEntry ) )*uStride*DOCINFO_INDEX_FREQ ];
-		const DWORD * pBlockEnd = &m_pDocinfo [ ( int64_t ( Min ( ( uIndexEntry+1 )*DOCINFO_INDEX_FREQ, m_uDocinfo ) - 1 ) )*uStride ];
-
-		for ( const DWORD * pDocinfo=pBlockStart; pDocinfo<=pBlockEnd; pDocinfo+=uStride )
+		// run id lookups
+		for ( int i=0; i<pQuery->m_dFilters[0].GetNumValues(); i++ )
 		{
-			tMatch.m_iDocID = DOCINFO2ID ( pDocinfo );
-			CopyDocinfo ( &tCtx, tMatch, pDocinfo );
-
-			// early filter only (no late filters in full-scan because of no @weight)
-			tCtx.CalcFilter ( tMatch );
-			if ( tCtx.m_pFilter && !tCtx.m_pFilter->Eval ( tMatch ) )
+			SphDocID_t uDocid = (SphDocID_t) pQuery->m_dFilters[0].GetValue(i);
+			const DWORD * pRow = FindDocinfo ( uDocid );
+			if ( !pRow )
 				continue;
+
+			assert ( uDocid==DOCINFO2ID(pRow) );
+			tMatch.m_iDocID = uDocid;
+			CopyDocinfo ( &tCtx, tMatch, pRow );
 
 			// submit match to sorters
 			tCtx.CalcSort ( tMatch );
 			if ( bRandomize )
 				tMatch.m_iWeight = ( sphRand() & 0xffff );
 
-			tMatch.m_iTag = iMyTag;
-
-			bool bNewMatch = false;
 			for ( int iSorter=0; iSorter<iSorters; iSorter++ )
-				bNewMatch |= ppSorters[iSorter]->Push ( tMatch );
+				ppSorters[iSorter]->Push ( tMatch );
+		}
+	} else
+	{
+		// do scan
+		DWORD uStride = DOCINFO_IDSIZE + m_tSchema.GetRowSize();
+		DWORD uStart = pQuery->m_bReverseScan ? ( m_uDocinfoIndex-1 ) : 0;
+		int iStep = pQuery->m_bReverseScan ? -1 : 1;
 
-			// handle cutoff
-			if ( bNewMatch )
-				if ( --iCutoff==0 )
+		int iCutoff = pQuery->m_iCutoff;
+		if ( iCutoff<=0 )
+			iCutoff = -1;
+
+		for ( DWORD uIndexEntry=uStart; uIndexEntry<m_uDocinfoIndex; uIndexEntry+=iStep )
+		{
+			// block-level filtering
+			const DWORD * pMin = &m_pDocinfoIndex[2*uIndexEntry*uStride];
+			const DWORD * pMax = pMin + uStride;
+
+			// check applicable filters
+			if ( tCtx.m_pFilter && !tCtx.m_pFilter->EvalBlock ( pMin, pMax ) )
+				continue;
+
+			// row-level filtering
+			const DWORD * pBlockStart = &m_pDocinfo [ ( int64_t ( uIndexEntry ) )*uStride*DOCINFO_INDEX_FREQ ];
+			const DWORD * pBlockEnd = &m_pDocinfo [ ( int64_t ( Min ( ( uIndexEntry+1 )*DOCINFO_INDEX_FREQ, m_uDocinfo ) - 1 ) )*uStride ];
+
+			for ( const DWORD * pDocinfo=pBlockStart; pDocinfo<=pBlockEnd; pDocinfo+=uStride )
+			{
+				tMatch.m_iDocID = DOCINFO2ID ( pDocinfo );
+				CopyDocinfo ( &tCtx, tMatch, pDocinfo );
+
+				// early filter only (no late filters in full-scan because of no @weight)
+				tCtx.CalcFilter ( tMatch );
+				if ( tCtx.m_pFilter && !tCtx.m_pFilter->Eval ( tMatch ) )
+					continue;
+
+				// submit match to sorters
+				tCtx.CalcSort ( tMatch );
+				if ( bRandomize )
+					tMatch.m_iWeight = ( sphRand() & 0xffff );
+
+				bool bNewMatch = false;
+				for ( int iSorter=0; iSorter<iSorters; iSorter++ )
+					bNewMatch |= ppSorters[iSorter]->Push ( tMatch );
+
+				// handle cutoff
+				if ( bNewMatch && --iCutoff==0 )
 				{
 					uIndexEntry = m_uDocinfoIndex; // outer break
 					break;
 				}
+			}
 		}
-		if ( iCutoff==0 )
-			break;
 	}
 
 	// do final expression calculations

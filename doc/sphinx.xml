@@ -4686,8 +4686,8 @@ except for strings can be updated. Previously, some of the types were not
 supported.
 </para>
 <para>
-<code>where_condition</code> uses the same syntax as the SELECT statement
-(see <xref linkend="sphinxql-select"/> for details).
+<code>where_condition</code> (also added in 2.0.2-beta) has the same syntax
+as in the SELECT statement (see <xref linkend="sphinxql-select"/> for details).
 </para>
 <para>
 When assigning the out-of-range values to 32-bit attributes, they
