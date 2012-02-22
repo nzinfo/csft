@@ -1000,9 +1000,6 @@ private:
 	int							m_iLockFD;
 	mutable RtDiskKlist_t		m_tKlist;
 
-	CSphSchema					m_tOutboundSchema;
-	CSphVector<LocatorPair_t>	m_dDynamize;
-
 	int64_t						m_iSavedTID;
 	int64_t						m_iSavedRam;
 	int64_t						m_tmSaved;
@@ -1045,7 +1042,6 @@ private:
 	bool						LoadRamChunk ( DWORD uVersion );
 	bool						SaveRamChunk ();
 
-	void						ComputeOutboundSchema();
 	virtual void				GetPrefixedWords ( const char * sWord, int iWordLen, CSphVector<CSphNamedInt> & dPrefixedWords, BYTE * pDictBuf, int iFD ) const;
 
 public:
@@ -1100,7 +1096,7 @@ public:
 	CSphDict *					SetupExactDict ( CSphScopedPtr<CSphDict> & tContainer, CSphDict * pPrevDict, ISphTokenizer * pTokenizer ) const;
 	CSphDict *					SetupStarDict ( CSphScopedPtr<CSphDict> & tContainer, CSphDict * pPrevDict, ISphTokenizer * pTokenizer ) const;
 
-	virtual const CSphSchema &	GetMatchSchema () const { return m_tOutboundSchema; }
+	virtual const CSphSchema &	GetMatchSchema () const { return m_tSchema; }
 	virtual const CSphSchema &	GetInternalSchema () const { return m_tSchema; }
 	int64_t						GetUsedRam () const;
 
@@ -1111,31 +1107,6 @@ protected:
 	CSphSourceStats				m_tStats;
 };
 
-
-void RtIndex_t::ComputeOutboundSchema()
-{
-	m_tOutboundSchema.ResetAttrs();
-	for ( int i=0; i<m_tSchema.GetAttrsCount(); i++ )
-	{
-		CSphColumnInfo tCol = m_tSchema.GetAttr(i);
-		bool bDynamic = tCol.m_tLocator.m_bDynamic;
-		if ( ( tCol.m_eAttrType==SPH_ATTR_STRING || tCol.m_eAttrType==SPH_ATTR_UINT32SET || tCol.m_eAttrType==SPH_ATTR_UINT64SET )
-			&& !tCol.m_tLocator.m_bDynamic )
-		{
-			tCol.m_eStage = SPH_EVAL_OVERRIDE;
-			bDynamic = true;
-		}
-
-		m_tOutboundSchema.AddAttr ( tCol, bDynamic );
-
-		if ( bDynamic )
-		{
-			LocatorPair_t & tPair = m_dDynamize.Add();
-			tPair.m_tFrom = tCol.m_tLocator;
-			tPair.m_tTo = m_tOutboundSchema.GetAttr(i).m_tLocator;
-		}
-	}
-}
 
 #define SPH_RT_WORDS_PER_CHECKPOINT_v3 1024
 #define SPH_RT_WORDS_PER_CHECKPOINT_v5 48
@@ -1157,19 +1128,6 @@ RtIndex_t::RtIndex_t ( const CSphSchema & tSchema, const char * sIndexName, int6
 	MEMORY ( SPH_MEM_IDX_RT );
 
 	m_tSchema = tSchema;
-
-	// schemes strings attributes fix up
-	bool bReplaceSchema = false;
-	for ( int i=0; i<tSchema.GetAttrsCount() && !bReplaceSchema; i++ )
-	{
-		const CSphColumnInfo & tCol = tSchema.GetAttr(i);
-		bReplaceSchema = ( ( tCol.m_eAttrType==SPH_ATTR_STRING || tCol.m_eAttrType==SPH_ATTR_UINT32SET || tCol.m_eAttrType==SPH_ATTR_UINT64SET )
-							&& !tCol.m_tLocator.m_bDynamic );
-	}
-
-	m_tOutboundSchema = m_tSchema;
-	if ( bReplaceSchema )
-		ComputeOutboundSchema();
 
 #ifndef NDEBUG
 	// check that index cols are static
@@ -1367,14 +1325,14 @@ bool RtIndex_t::AddDocument ( int iFields, const char ** ppFields, const CSphMat
 
 	CSphScopedPtr<ISphTokenizer> pTokenizer ( m_pTokenizer->Clone ( false ) ); // avoid race
 
-	CSphSource_StringVector tSrc ( iFields, ppFields, m_tOutboundSchema );
+	CSphSource_StringVector tSrc ( iFields, ppFields, m_tSchema );
 	tSrc.Setup ( m_tSettings );
 	tSrc.SetTokenizer ( pTokenizer.Ptr() );
 	tSrc.SetDict ( pAcc->m_pDict );
 	if ( !tSrc.Connect ( m_sLastError ) )
 		return false;
 
-	tSrc.m_tDocInfo.Clone ( tDoc, m_tOutboundSchema.GetRowSize() );
+	tSrc.m_tDocInfo.Clone ( tDoc, m_tSchema.GetRowSize() );
 
 	if ( !tSrc.IterateStart ( sError ) || !tSrc.IterateDocument ( sError ) )
 		return false;
@@ -1424,7 +1382,7 @@ bool RtIndex_t::AddDocument ( ISphHits * pHits, const CSphMatch & tDoc, const ch
 
 	RtAccum_t * pAcc = AcquireAccum ( &sError );
 	if ( pAcc )
-		pAcc->AddDocument ( pHits, tDoc, m_tOutboundSchema.GetRowSize(), ppStr, dMvas );
+		pAcc->AddDocument ( pHits, tDoc, m_tSchema.GetRowSize(), ppStr, dMvas );
 
 	return ( pAcc!=NULL );
 }
@@ -2438,10 +2396,10 @@ void RtIndex_t::Commit ()
 	// phase 0, build a new segment
 	// accum and segment are thread local; so no locking needed yet
 	// segment might be NULL if we're only killing rows this txn
-	pAcc->CleanupDuplacates ( m_tOutboundSchema.GetRowSize() );
+	pAcc->CleanupDuplacates ( m_tSchema.GetRowSize() );
 	pAcc->Sort();
 
-	RtSegment_t * pNewSeg = pAcc->CreateSegment ( m_tOutboundSchema.GetRowSize(), m_iWordsCheckpoint );
+	RtSegment_t * pNewSeg = pAcc->CreateSegment ( m_tSchema.GetRowSize(), m_iWordsCheckpoint );
 	assert ( !pNewSeg || pNewSeg->m_iRows>0 );
 	assert ( !pNewSeg || pNewSeg->m_iAliveRows>0 );
 	assert ( !pNewSeg || pNewSeg->m_bTlsKlist==false );
@@ -3349,11 +3307,6 @@ CSphIndex * RtIndex_t::LoadDiskChunk ( int iChunk )
 	if ( !pDiskChunk->Preread() )
 		sphDie ( "disk chunk %s: preread failed: %s", sChunk.cstr(), pDiskChunk->GetLastError().cstr() );
 
-	ISphIndex_VLN * pChunk = dynamic_cast<ISphIndex_VLN*> ( pDiskChunk );
-	if ( !pChunk )
-		sphDie ( "disk chunk %s: internal error on load, dynamic_cast failed", sChunk.cstr() );
-	pChunk->SetDynamize ( m_dDynamize );
-
 	return pDiskChunk;
 }
 
@@ -3466,8 +3419,6 @@ bool RtIndex_t::Prealloc ( bool, bool bStripPath, CSphString & )
 			return false;
 
 		// update schema
-		m_tOutboundSchema = m_tSchema;
-		ComputeOutboundSchema();
 		m_iStride = DOCINFO_IDSIZE + m_tSchema.GetRowSize();
 	}
 
@@ -3904,9 +3855,6 @@ bool RtIndex_t::EarlyReject ( CSphQueryContext * pCtx, CSphMatch & tMatch ) cons
 	// might be needed even when we do not have a filter!
 	if ( pCtx->m_bLookupFilter || pCtx->m_bLookupSort )
 		CopyDocinfo ( tMatch, FindDocinfo ( (RtSegment_t*)pCtx->m_pIndexData, tMatch.m_iDocID ) );
-
-	ARRAY_FOREACH ( i, m_dDynamize )
-		tMatch.SetAttr ( m_dDynamize[i].m_tTo, tMatch.GetAttr ( m_dDynamize[i].m_tFrom ) );
 
 	pCtx->CalcFilter ( tMatch );
 	return pCtx->m_pFilter ? !pCtx->m_pFilter->Eval ( tMatch ) : false;
@@ -4376,11 +4324,11 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 	int iIndexWeight = pQuery->GetIndexWeight ( m_sIndexName.cstr() );
 
 	// bind weights
-	tCtx.BindWeights ( pQuery, m_tOutboundSchema, iIndexWeight );
+	tCtx.BindWeights ( pQuery, m_tSchema, iIndexWeight );
 
 	// parse query
 	XQQuery_t tParsed;
-	if ( !sphParseExtendedQuery ( tParsed, pQuery->m_sQuery.cstr(), pTokenizer.Ptr(), &m_tOutboundSchema, pDict, m_tSettings.m_iStopwordStep ) )
+	if ( !sphParseExtendedQuery ( tParsed, pQuery->m_sQuery.cstr(), pTokenizer.Ptr(), &m_tSchema, pDict, m_tSettings.m_iStopwordStep ) )
 	{
 		pResult->m_sError = tParsed.m_sParseError;
 		m_tRwlock.Unlock ();
@@ -4519,8 +4467,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 
 					tMatch.m_iDocID = DOCINFO2ID(pRow);
 					tMatch.m_pStatic = DOCINFO2ATTRS(pRow); // FIXME! overrides
-					ARRAY_FOREACH ( j, m_dDynamize )
-						tMatch.SetAttr ( m_dDynamize[j].m_tTo, tMatch.GetAttr ( m_dDynamize[j].m_tFrom ) );
 
 					tCtx.CalcFilter ( tMatch );
 					if ( tCtx.m_pFilter && !tCtx.m_pFilter->Eval ( tMatch ) )
@@ -4580,9 +4526,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 						if ( tCtx.m_bLookupSort )
 							CopyDocinfo ( pMatch[i], FindDocinfo ( m_pSegments[iSeg], pMatch[i].m_iDocID ) );
 
-						ARRAY_FOREACH ( j, m_dDynamize )
-							pMatch[i].SetAttr ( m_dDynamize[j].m_tTo, pMatch[i].GetAttr ( m_dDynamize[j].m_tFrom ) );
-
 						tCtx.CalcSort ( pMatch[i] );
 						tCtx.CalcFinal ( pMatch[i] ); // OPTIMIZE? could be possibly done later
 
@@ -4618,72 +4561,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 	// coping match's attributes to external storage in result set
 	//////////////////////
 
-	const int iSegmentsTotal = m_pSegments.GetLength();
-	const int iStaticSize = m_tSchema.GetStaticSize() + DWSIZEOF ( SphDocID_t );
-	if ( iStaticSize>0 && iSegmentsTotal>0 )
-	{
-		MEMORY ( SPH_MEM_IDX_RT_RES_MATCHES );
-
-		// we need to count matches for allocating arena
-		// as we are going to fix match's m_pStatic pointers later
-		// and copy real match's data to arena
-
-		int iFixupCount = 0;
-
-		ARRAY_FOREACH ( iSorter, dSorters )
-		{
-			ISphMatchSorter * pSorter = dSorters[iSorter];
-
-			const CSphMatch * pMatches = pSorter->Finalize();
-			const int iMatchesCount = pSorter->GetLength();
-
-			for ( int i=0; i<iMatchesCount; i++ )
-			{
-				const int iMatchSegment = pMatches[i].m_iTag-1;
-				if ( iMatchSegment>=0 && iMatchSegment< iSegmentsTotal )
-					iFixupCount++;
-			}
-		}
-
-		if ( iFixupCount>0 )
-		{
-			CSphRowitem * pAttr = new CSphRowitem [ iFixupCount * iStaticSize ];
-			pResult->m_dStorage2Free.Add ( (BYTE*)pAttr );
-#ifndef NDEBUG
-			CSphRowitem * pEnd = pAttr + iFixupCount * iStaticSize;
-#endif
-
-			ARRAY_FOREACH ( iSorter, dSorters )
-			{
-				ISphMatchSorter * pSorter = dSorters[iSorter];
-
-				CSphMatch * pMatches = pSorter->Finalize();
-				const int iMatchesCount = pSorter->GetLength();
-
-				for ( int i=0; i<iMatchesCount; i++ )
-				{
-					const int iMatchSegment = pMatches[i].m_iTag-1;
-					if ( iMatchSegment>=0 && iMatchSegment< iSegmentsTotal )
-					{
-						assert ( pAttr+iStaticSize<=pEnd );
-
-						memcpy ( pAttr, STATIC2DOCINFO ( pMatches[i].m_pStatic ), sizeof(CSphRowitem)*iStaticSize );
-						pMatches[i].m_pStatic = DOCINFO2ATTRS ( pAttr );
-						DOCINFOSETID ( pAttr, (SphDocID_t)0 ); // the zero docid will show that the data was copied
-						pAttr += iStaticSize;
-					}
-				}
-			}
-		}
-	}
-
-
-	//////////////////////
-	// fixing string offset and data in resulting matches
-	//////////////////////
-
-	MEMORY ( SPH_MEM_IDX_RT_RES_STRINGS );
-
 	CSphVector<CSphAttrLocator> dStringGetLoc;
 	CSphVector<CSphAttrLocator> dStringSetLoc;
 	CSphVector<CSphAttrLocator> dMvaGetLoc;
@@ -4706,11 +4583,83 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 			dMvaGetLoc.Add ( m_tSchema.GetAttr ( iInLocator ).m_tLocator );
 			dMvaSetLoc.Add ( tSetInfo.m_tLocator );
 		}
-
-		assert ( ( tSetInfo.m_eAttrType!=SPH_ATTR_STRING && tSetInfo.m_eAttrType!=SPH_ATTR_UINT32SET && tSetInfo.m_eAttrType!=SPH_ATTR_UINT64SET )
-			|| tSetInfo.m_tLocator.m_bDynamic );
 	}
-	if ( dStringGetLoc.GetLength() || dMvaGetLoc.GetLength() )
+
+	bool bHasArenaAttrs = ( dStringSetLoc.GetLength()>0 || dMvaSetLoc.GetLength()>0 );
+	const int iSegmentsTotal = m_pSegments.GetLength();
+	bool bSegmentMatchesFixup = ( m_tSchema.GetStaticSize()>0 && iSegmentsTotal>0 );
+	if ( bSegmentMatchesFixup || bHasArenaAttrs )
+	{
+		MEMORY ( SPH_MEM_IDX_RT_RES_MATCHES );
+
+		// we need to count matches for allocating arena
+		// as we are going to fix match's m_pStatic pointers later
+		// and copy real match's data to arena
+
+		int iFixupCount = 0;
+
+		ARRAY_FOREACH ( iSorter, dSorters )
+		{
+			ISphMatchSorter * pSorter = dSorters[iSorter];
+
+			const CSphMatch * pMatches = pSorter->Finalize();
+			const int iMatchesCount = pSorter->GetLength();
+
+			if ( bHasArenaAttrs )
+			{
+				iFixupCount += iMatchesCount;
+				continue;
+			}
+
+			for ( int i=0; i<iMatchesCount; i++ )
+			{
+				const int iMatchSegment = pMatches[i].m_iTag-1;
+				if ( iMatchSegment>=0 && iMatchSegment< iSegmentsTotal )
+					iFixupCount++;
+			}
+		}
+
+		if ( iFixupCount>0 || bHasArenaAttrs )
+		{
+			const int iStaticSize = m_tSchema.GetStaticSize() + DWSIZEOF ( SphDocID_t );
+			CSphRowitem * pAttr = new CSphRowitem [ iFixupCount * iStaticSize ];
+			pResult->m_dStorage2Free.Add ( (BYTE*)pAttr );
+#ifndef NDEBUG
+			CSphRowitem * pEnd = pAttr + iFixupCount * iStaticSize;
+#endif
+
+			ARRAY_FOREACH ( iSorter, dSorters )
+			{
+				ISphMatchSorter * pSorter = dSorters[iSorter];
+
+				CSphMatch * pMatches = pSorter->Finalize();
+				const int iMatchesCount = pSorter->GetLength();
+
+				for ( int i=0; i<iMatchesCount; i++ )
+				{
+					const int iMatchSegment = pMatches[i].m_iTag-1;
+					if ( ( iMatchSegment>=0 && iMatchSegment< iSegmentsTotal ) || bHasArenaAttrs )
+					{
+						assert ( pAttr+iStaticSize<=pEnd );
+
+						memcpy ( pAttr, STATIC2DOCINFO ( pMatches[i].m_pStatic ), sizeof(CSphRowitem)*iStaticSize );
+						pMatches[i].m_pStatic = DOCINFO2ATTRS ( pAttr );
+						DOCINFOSETID ( pAttr, (SphDocID_t)0 ); // the zero docid will show that the data was copied
+						pAttr += iStaticSize;
+					}
+				}
+			}
+		}
+	}
+
+
+	//////////////////////
+	// fixing string offset and data in resulting matches
+	//////////////////////
+
+	MEMORY ( SPH_MEM_IDX_RT_RES_STRINGS );
+
+	if ( bHasArenaAttrs )
 	{
 		assert ( !pResult->m_pStrings && !pResult->m_pMva );
 		CSphTightVector<BYTE> dStorageString;
@@ -4731,7 +4680,6 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 
 				const int iSegCount = m_pSegments.GetLength();
 				assert ( tMatch.m_iTag>=1 && tMatch.m_iTag<iSegCount+dDiskStrings.GetLength()+1 );
-				assert ( tMatch.m_pDynamic );
 
 				const int iStorageSrc = tMatch.m_iTag-1;
 				bool bSegmentMatch = ( iStorageSrc < iSegCount );
@@ -4740,35 +4688,36 @@ bool RtIndex_t::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pResult
 
 				ARRAY_FOREACH ( i, dStringGetLoc )
 				{
+					DWORD uAttr = 0;
 					const SphAttr_t uOff = tMatch.GetAttr ( dStringGetLoc[i] );
 					if ( uOff>0 ) // have to fix up only existed attribute
 					{
 						assert ( uOff<( I64C(1)<<32 ) ); // should be 32 bit offset
 						assert ( !bSegmentMatch || (int)uOff<m_pSegments[iStorageSrc]->m_dStrings.GetLength() );
 
-						DWORD uAttr = CopyPackedString ( pBaseString + uOff, dStorageString );
-						tMatch.SetAttr ( dStringSetLoc[i], uAttr );
-
-					} else
-					{
-						tMatch.SetAttr ( dStringSetLoc[i], 0 );
+						uAttr = CopyPackedString ( pBaseString + uOff, dStorageString );
 					}
+
+					const CSphAttrLocator & tSet = dStringSetLoc[i];
+					assert ( !tSet.m_bDynamic || tSet.GetMaxRowitem() < (int)tMatch.m_pDynamic[-1] );
+					sphSetRowAttr ( tSet.m_bDynamic ? tMatch.m_pDynamic : const_cast<CSphRowitem*>( tMatch.m_pStatic ), tSet, uAttr );
 				}
 
 				ARRAY_FOREACH ( i, dMvaGetLoc )
 				{
+					DWORD uAttr = 0;
 					const SphAttr_t uOff = tMatch.GetAttr ( dMvaGetLoc[i] );
 					if ( uOff>0 ) // have to fix up only existed attribute
 					{
 						assert ( uOff<( I64C(1)<<32 ) ); // should be 32 bit offset
 						assert ( !bSegmentMatch || (int)uOff<m_pSegments[iStorageSrc]->m_dMvas.GetLength() );
 
-						DWORD uAttr = CopyMva ( pBaseMva + uOff, dStorageMva );
-						tMatch.SetAttr ( dMvaSetLoc[i], uAttr );
-					} else
-					{
-						tMatch.SetAttr ( dMvaSetLoc[i], 0 );
+						uAttr = CopyMva ( pBaseMva + uOff, dStorageMva );
 					}
+
+					const CSphAttrLocator & tSet = dMvaSetLoc[i];
+					assert ( !tSet.m_bDynamic || tSet.GetMaxRowitem() < (int)tMatch.m_pDynamic[-1] );
+					sphSetRowAttr ( tSet.m_bDynamic ? tMatch.m_pDynamic : const_cast<CSphRowitem*>( tMatch.m_pStatic ), tSet, uAttr );
 				}
 			}
 		}
@@ -5193,9 +5142,7 @@ bool RtIndex_t::AttachDiskIndex ( CSphIndex * pIndex, CSphString & sError )
 
 	// copy schema from chunk0 schema
 	m_tSchema = pIndex->GetMatchSchema();
-	m_tOutboundSchema = m_tSchema;
 	m_tStats = pIndex->GetStats();
-	ComputeOutboundSchema();
 	m_iStride = DOCINFO_IDSIZE + m_tSchema.GetRowSize();
 
 	// copy tokenizer, dict etc settings from chunk0

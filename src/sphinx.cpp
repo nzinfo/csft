@@ -1313,7 +1313,7 @@ private:
 
 
 /// this is my actual VLN-compressed phrase index implementation
-class CSphIndex_VLN : public ISphIndex_VLN
+class CSphIndex_VLN : public CSphIndex
 {
 	friend class DiskIndexQwordSetup_c;
 	friend class CSphMerger;
@@ -1367,8 +1367,6 @@ public:
 	virtual bool				HasDocid ( SphDocID_t uDocid ) const;
 
 	virtual const CSphSourceStats &		GetStats () const { return m_tStats; }
-
-	virtual void				SetDynamize ( const CSphVector<LocatorPair_t> & dDynamize );
 
 private:
 
@@ -1449,8 +1447,6 @@ private:
 	static int					m_iIndexTagSeq;			///< static ids sequence
 
 	bool						m_bIsEmpty;				///< do we have actually indexed documents (m_iTotalDocuments is just fetched documents, not indexed!)
-
-	CSphVector<LocatorPair_t>	m_dDynamize;			///< string attributes that my parent RT index wants dynamized
 
 private:
 	CSphString					GetIndexFileName ( const char * sExt ) const;
@@ -7249,7 +7245,7 @@ CSphIndex * sphCreateIndexPhrase ( const char* szIndexName, const char * sFilena
 
 
 CSphIndex_VLN::CSphIndex_VLN ( const char* sIndexName, const char * sFilename )
-	: ISphIndex_VLN ( sIndexName, sFilename )
+	: CSphIndex ( sIndexName, sFilename )
 	, m_iLockFD ( -1 )
 {
 	m_sFilename = sFilename;
@@ -12267,16 +12263,6 @@ void CSphIndex_VLN::CopyDocinfo ( CSphQueryContext * pCtx, CSphMatch & tMatch, c
 			? pEntry->m_uValue
 			: sphGetRowAttr ( tMatch.m_pStatic, pCtx->m_dOverrideIn[i] ) );
 	}
-
-	// dynamize if necessary
-	ARRAY_FOREACH ( j, m_dDynamize )
-		tMatch.SetAttr ( m_dDynamize[j].m_tTo, tMatch.GetAttr ( m_dDynamize[j].m_tFrom ) );
-}
-
-
-void CSphIndex_VLN::SetDynamize ( const CSphVector<LocatorPair_t> & dDynamize )
-{
-	m_dDynamize = dDynamize;
 }
 
 
