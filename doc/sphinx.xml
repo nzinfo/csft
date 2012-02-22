@@ -5997,14 +5997,18 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 </varlistentry>
 <varlistentry>
 	<term>"load_files_scattered":</term>
-	<listitem><para>Added in version 2.0.2-beta. It assumes "load_files" option, and works only with distributed snippets generation
+	<listitem><para>Added in version 2.0.2-beta. It works only with distributed snippets generation
 	with remote agents. The source files for snippets could be distributed among different agents, and the main daemon will merge
 	together all non-erroneous results. So, if one agent of the distributed index has 'file1.txt', another has 'file2.txt' and you call for the snippets
 	with both these files, the sphinx will merge results from the agents together, so you will get the snippets from both 'file1.txt' and 'file2.txt'.
-	This option works by sending the whole bunch of snippet tasks to all agents. Each of them returns the snippets for the files it has, and the empty
-	lines to the one it hasn't. The master then combines all the answers and collect together non-empty snippets. Since the working with scattered files
-	is depends from the empty snippets - it will forcibly reset the "allow_empty" option.
-	</para></listitem>
+	Boolean, default is false.
+	</para>
+	<para>If the "load_files" is also set, the request will return the error in case if any of the files is not available anywhere. Otherwise (if "load_files" is not set)
+	it will just return the empty strings for all absent files. The master instance reset this flag when distributes the snippets among agents. So, for agents the absence of a file
+	is not critical error, but for the master it might be so. If you want to be sure that all snippets are actually created, set both "load_files_scattered" and "load_files". If the
+	absense of some snippets caused by some agents is not critical for you - set just "load_files_scattered", leaving "load_files" not set.
+	</para>
+</listitem>
 </varlistentry>
 <varlistentry>
 	<term>"html_strip_mode":</term>
@@ -6024,8 +6028,7 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 	returned as highlighting result when a snippet could not be generated
 	(no keywords match, or no passages fit the limit). By default,
 	the beginning of original text would be returned instead of an empty
-	string. Boolean, default is false. This option is not compatible with the "load_files_scattered".
-	If both of them are set, then the "allow_empty" will be forcibly reset without a prompt.
+	string. Boolean, default is false.
 	</para></listitem>
 </varlistentry>
 <varlistentry>
