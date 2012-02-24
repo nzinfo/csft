@@ -6974,7 +6974,8 @@ bool SearchHandler_c::RunLocalSearch ( int iLocal, ISphMatchSorter ** ppSorters,
 
 	CSphVector<int> dLocked;
 
-	// setup kill-lists
+	// setup kill-lists 
+	// change here to fix kill list, be care about MT!
 	CSphVector<CSphFilterSettings> dKlists;
 	for ( int i=iLocal+1; i<m_dLocal.GetLength (); i++ )
 	{

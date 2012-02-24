@@ -2411,8 +2411,8 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 	if( this->m_rstVec )
 	{ delete[] this->m_rstVec; this->m_rstVec = NULL; }
 	
-	//void ParagraphProcessAW(int nCount,result_t * result);
-	//printf("INPUT: %s\n", this->GetBufferPtr());
+        //void ParagraphProcessAW(int nCount,result_t * result);
+	printf("INPUT: %s\n", this->GetBufferPtr());
 	this->m_iResultCount = m_pICTCLAS->GetParagraphProcessAWordCount(this->GetBufferPtr());
 	result_t* results = new result_t[m_iResultCount+1];
 	
@@ -2422,13 +2422,13 @@ void CSphTokenizer_ICTCLAS::SetBuffer(BYTE * sBuffer, int iLength)
 
 	
 	//debug use only
-	/*
+	
 	{
 		for(int i=0; i< m_iResultCount; i++) {
 			printf("[%d,%d],  ", m_rstVec[i].start, m_rstVec[i].length);
 		}
 	}
-	*/
+	
 
 	/*
 	{
@@ -2543,7 +2543,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 		
 		if(tok[0] < 128) {
 			m_segToken = (char*)m_pTokenStart;
-			//printf("tok: %s\t", tok);
+			printf("tok: %s\t", tok);
 			return tok;
 		}
 
@@ -2560,7 +2560,7 @@ BYTE *	CSphTokenizer_ICTCLAS::GetToken ()
 		m_pAccumSeg = m_sAccumSeg;
 		
 		//m_segToken = (char*)(m_pTokenEnd-m_iLastTokenBufferLen);
-		//printf("tok: %s\t", m_sAccumSeg);
+		printf("tok: %s\t", m_sAccumSeg);
 		return m_sAccumSeg;
 	}
 	//return NULL;
