@@ -1017,9 +1017,9 @@ public:
 	virtual void				Commit ();
 	virtual void				RollBack ();
 	void						CommitReplayable ( RtSegment_t * pNewSeg, CSphVector<SphDocID_t> & dAccKlist ); // FIXME? protect?
-	virtual void				DumpToDisk ( const char * sFilename );
 	virtual void				CheckRamFlush ();
 	virtual void				ForceRamFlush ( bool bPeriodic=false );
+	virtual void				ForceDiskChunk ();
 	virtual bool				AttachDiskIndex ( CSphIndex * pIndex, CSphString & sError );
 
 private:
@@ -2711,16 +2711,17 @@ struct Checkpoint_t
 };
 
 
-void RtIndex_t::DumpToDisk ( const char * sFilename )
+void RtIndex_t::ForceDiskChunk ()
 {
 	MEMORY ( SPH_MEM_IDX_RT );
 
 	Verify ( m_tWriterMutex.Lock() );
 	Verify ( m_tRwlock.WriteLock() );
-	SaveDiskData ( sFilename );
+	SaveDiskChunk();
 	Verify ( m_tRwlock.Unlock() );
 	Verify ( m_tWriterMutex.Unlock() );
 }
+
 
 // Here is the devil of saving id32 chunk from id64 binary daemon
 template < typename DOCID, typename WORDID >
@@ -2987,8 +2988,11 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 		}
 	}
 
+	////////////////////
 	// write attributes
-	// the new, template-param aligned iStride instead of index-wide.
+	////////////////////
+
+	// the new, template-param aligned iStride instead of index-wide
 	int iStride = DWSIZEOF(DOCID) + m_tSchema.GetRowSize();
 	CSphVector<RtRowIterator_T<DOCID>*> pRowIterators ( m_pSegments.GetLength() );
 	ARRAY_FOREACH ( i, m_pSegments )
@@ -3000,8 +3004,19 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 
 	// prepare to build min-max index for attributes too
 	int iTotalDocs = 0;
+#if 1
+	// FIXME! slow but working; and m_iAliveRows shows discrepancies sometimes
+	ARRAY_FOREACH ( i, m_pSegments )
+	{
+		RtRowIterator_T<DOCID> tIt ( m_pSegments[i], iStride, false, NULL );
+		while ( tIt.GetNextAliveRow() )
+			iTotalDocs++;
+	}
+#else
 	ARRAY_FOREACH ( i, m_pSegments )
 		iTotalDocs += m_pSegments[i]->m_iAliveRows;
+#endif
+
 	AttrIndexBuilder_t<DOCID> tMinMaxBuilder ( m_tSchema );
 	CSphVector<DWORD> dMinMaxBuffer ( tMinMaxBuilder.GetExpectedSize ( iTotalDocs ) );
 	tMinMaxBuilder.Prepare ( dMinMaxBuffer.Begin(), dMinMaxBuffer.Begin() + dMinMaxBuffer.GetLength() );
