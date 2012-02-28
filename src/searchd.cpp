@@ -15566,6 +15566,8 @@ int WINAPI ServiceMain ( int argc, char **argv )
 		if ( !g_bOptNoLock )
 			OpenDaemonLog ( hConf["searchd"]["searchd"] );
 		bVisualLoad = SetWatchDog ( iDevNull );
+		close ( g_iLogFile ); // just the 'IT Happens' magic - switch off, then on.
+		OpenDaemonLog ( hConf["searchd"]["searchd"] );
 	}
 #endif
 
