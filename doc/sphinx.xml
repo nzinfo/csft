@@ -3143,7 +3143,7 @@ source distribution provides a sample file,
 that defines a few simple functions showing how to work with integer,
 string, and MVA arguments; you can use that one as a foundation for
 your new functions. It includes the UDF interface header file,
-<ulink url="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/udfexample.c">src/sphinxudf.h</ulink>,
+<ulink url="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/sphinxudf.h">src/sphinxudf.h</ulink>,
 that defines the required types and structures. <filename>sphinxudf.h</filename>
 header is standalone, that is, does not require any other parts of Sphinx
 source to compile.
@@ -10899,8 +10899,8 @@ but puts RT index data at risk.
 </para>
 <para>
 WARNING! It is strongly recommended to always explicitly define 'binlog_path' option in your config.
-Otherwise, the default path, which is in most cases is the same as working folder, may point to the 
-folder with no write access (for example, to the /usr/bin). In this case, the searchd
+Otherwise, the default path, which in most cases is the same as working folder, may point to the 
+folder with no write access (for example, /usr/local/var/data). In this case, the searchd
 will not start at all.
 </para>
 <bridgehead>Example:</bridgehead>
