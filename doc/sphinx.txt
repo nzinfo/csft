@@ -1,4 +1,4 @@
-Sphinx 2.0.3-release reference manual
+Sphinx 2.0.4-release reference manual
 =====================================
 
 Free open-source SQL full-text search engine
@@ -212,19 +212,20 @@ Table of Contents
       11.1.36. xmlpipe_field_string
       11.1.37. xmlpipe_field_wordcount
       11.1.38. xmlpipe_attr_uint
-      11.1.39. xmlpipe_attr_bool
-      11.1.40. xmlpipe_attr_timestamp
-      11.1.41. xmlpipe_attr_str2ordinal
-      11.1.42. xmlpipe_attr_float
-      11.1.43. xmlpipe_attr_multi
-      11.1.44. xmlpipe_attr_multi_64
-      11.1.45. xmlpipe_attr_string
-      11.1.46. xmlpipe_fixup_utf8
-      11.1.47. mssql_winauth
-      11.1.48. mssql_unicode
-      11.1.49. unpack_zlib
-      11.1.50. unpack_mysqlcompress
-      11.1.51. unpack_mysqlcompress_maxsize
+      11.1.39. xmlpipe_attr_bigint
+      11.1.40. xmlpipe_attr_bool
+      11.1.41. xmlpipe_attr_timestamp
+      11.1.42. xmlpipe_attr_str2ordinal
+      11.1.43. xmlpipe_attr_float
+      11.1.44. xmlpipe_attr_multi
+      11.1.45. xmlpipe_attr_multi_64
+      11.1.46. xmlpipe_attr_string
+      11.1.47. xmlpipe_fixup_utf8
+      11.1.48. mssql_winauth
+      11.1.49. mssql_unicode
+      11.1.50. unpack_zlib
+      11.1.51. unpack_mysqlcompress
+      11.1.52. unpack_mysqlcompress_maxsize
 
    11.2. Index configuration options
       11.2.1. type
@@ -339,20 +340,21 @@ Table of Contents
       11.4.42. prefork_rotation_throttle
 
 A. Sphinx revision history
-   A.1. Version 2.0.3-release, 23 dec 2011
-   A.2. Version 2.0.2-beta, 15 nov 2011
-   A.3. Version 2.0.1-beta, 22 apr 2011
-   A.4. Version 1.10-beta, 19 jul 2010
-   A.5. Version 0.9.9-release, 02 dec 2009
-   A.6. Version 0.9.9-rc2, 08 apr 2009
-   A.7. Version 0.9.9-rc1, 17 nov 2008
-   A.8. Version 0.9.8.1, 30 oct 2008
-   A.9. Version 0.9.8, 14 jul 2008
-   A.10. Version 0.9.7, 02 apr 2007
-   A.11. Version 0.9.7-rc2, 15 dec 2006
-   A.12. Version 0.9.7-rc1, 26 oct 2006
-   A.13. Version 0.9.6, 24 jul 2006
-   A.14. Version 0.9.6-rc1, 26 jun 2006
+   A.1. Version 2.0.4-release, 01 mar 2012
+   A.2. Version 2.0.3-release, 23 dec 2011
+   A.3. Version 2.0.2-beta, 15 nov 2011
+   A.4. Version 2.0.1-beta, 22 apr 2011
+   A.5. Version 1.10-beta, 19 jul 2010
+   A.6. Version 0.9.9-release, 02 dec 2009
+   A.7. Version 0.9.9-rc2, 08 apr 2009
+   A.8. Version 0.9.9-rc1, 17 nov 2008
+   A.9. Version 0.9.8.1, 30 oct 2008
+   A.10. Version 0.9.8, 14 jul 2008
+   A.11. Version 0.9.7, 02 apr 2007
+   A.12. Version 0.9.7-rc2, 15 dec 2006
+   A.13. Version 0.9.7-rc1, 26 oct 2006
+   A.14. Version 0.9.6, 24 jul 2006
+   A.15. Version 0.9.6-rc1, 26 jun 2006
 
 List of Examples
 
@@ -644,7 +646,7 @@ Currently known systems Sphinx has been successfully running on are:
 CPU architectures known to work include i386 (aka x86), amd64 (aka x86_64),
 SPARC64, and ARM.
 
-Chance are good that Sphinx should work on other Unix platforms and/or CPU
+Chances are good that Sphinx should work on other Unix platforms and/or CPU
 architectures just as well. Please report any other platforms that worked
 for you!
 
@@ -1428,7 +1430,7 @@ index. Delta index could then be reindexed very frequently, and the
 documents can be made available to search in a matter of minutes.
 
 Specifying which documents should go to what index and reindexing main
-index could also be made fully automatical. One option would be to make
+index could also be made fully automatic. One option would be to make
 a counter table which would track the ID which would split the documents,
 and update it whenever the main index is reindexed.
 
@@ -1735,11 +1737,12 @@ for recovery after an unclean shutdown. On clean shutdown, RAM chunks are
 saved to disk, and then all the binlog files are unlinked.
 
 During normal operation, a new binlog file will be opened every time when
-binlog_max_log_size limit (which defaults to 128M) is reached. Older,
-already closed binlog files are kept until all of the transactions stored
-in them (from all indexes) are flushed as a disk chunk. Setting the limit
-to 0 pretty much prevents binlog from being unlinked at all while searchd
-is running; however, it will still be unlinked on clean shutdown.
+binlog_max_log_size limit is reached. Older, already closed binlog files
+are kept until all of the transactions stored in them (from all indexes)
+are flushed as a disk chunk. Setting the limit to 0 pretty much prevents
+binlog from being unlinked at all while searchd is running; however, it
+will still be unlinked on clean shutdown. (This is the default case as of
+2.0.3-release, binlog_max_log_size defaults to 0.)
 
 There are 3 different binlog flushing strategies, controlled by
 binlog_flush directive which takes the values of 0, 1, or 2. 0 means to
@@ -1992,11 +1995,11 @@ The full meaning of this search is:
      a document;
 
    * Additionally, the same document must also contain the words 'example'
-     and 'program' in the title field, with up to, but not including, 10
-     words between the words in question; (E.g. "example PHP program" would
-     be matched however "example script to introduce outside data into the
-     correct context for your program" would not because two terms have 10
-     or more words between them)
+     and 'program' in the title field, with up to, but not including,
+     5 words between the words in question; (E.g. "example PHP program"
+     would be matched however "example script to introduce outside data
+     into the correct context for your program" would not because two terms
+     have 5 or more words between them)
 
    * Additionally, the same document must contain the word 'python' in the
      body field, but not contain either 'php' or 'perl';
@@ -3213,11 +3216,11 @@ properly.
 
 Second, we additionally need to know the language-specific string sorting
 rules. For instance, when sorting according to US rules in en_US locale,
-the accented character '�' (small letter i with diaeresis) should be placed
-somewhere after 'z'. However, when sorting with French rules and fr_FR
-locale in mind, it should be placed between 'i' and 'j'. And some other set
-of rules might choose to ignore accents at all, allowing '�' and 'i' to be
-mixed arbitrarily.
+the accented character '&iuml;' (small letter i with diaeresis) should be
+placed somewhere after 'z'. However, when sorting with French rules and
+fr_FR locale in mind, it should be placed between 'i' and 'j'. And some
+other set of rules might choose to ignore accents at all, allowing '&iuml;'
+and 'i' to be mixed arbitrarily.
 
 Third, but not least, we might need case-sensitive sorting in some
 scenarios and case-insensitive sorting in some others.
@@ -4666,8 +4669,8 @@ As of version 2.0.2-beta, all atributes types (int, bigint, float, MVA)
 except for strings can be updated. Previously, some of the types were not
 supported.
 
-where_condition uses the same syntax as the SELECT statement (see
-Section 7.1, <<SELECT syntax>> for details).
+where_condition (also added in 2.0.2-beta) has the same syntax as in the
+SELECT statement (see Section 7.1, <<SELECT syntax>> for details).
 
 When assigning the out-of-range values to 32-bit attributes, they will be
 trimmed to their lower 32 bits without a prompt. For example, if you try to
@@ -5319,7 +5322,7 @@ in quotes, that syntax specifies a string and is incorrect:
 8.3.2. SetRankingMode
 ---------------------
 
-Prototype: function SetRankingMode ( $ranker )
+Prototype: function SetRankingMode ( $ranker, $rankexpr="" )
 
 Sets ranking mode (aka ranker). Only available in SPH_MATCH_EXTENDED
 matching mode. Parameter must be a constant specifying one of the known
@@ -5337,6 +5340,10 @@ avoid computing it at all for performance reasons because you're sorting
 the result set by something else anyway. This can be accomplished by
 setting the appropriate ranking mode. The list of the modes is available in
 Section 5.4, <<Search results ranking>>.
+
+$rankexpr argument was added in version 2.0.2-beta. It lets you specify
+a ranking formula to use with the expression based ranker, that is, when
+$ranker is set to SPH_RANK_EXPR. In all other cases, $rankexpr is ignored.
 
 8.3.3. SetSortMode
 ------------------
@@ -5866,14 +5873,25 @@ additional optional highlighting parameters:
    only one(!) first(!) local agent and several remotes.
 
 "load_files_scattered":
-   Added in version 2.0.2-beta. It assumes "load_files" option, and works
-   only with distributed snippets generation with remote agents. The source
-   files for snippets could be distributed among different agents, and the
-   main daemon will merge together all non-erroneous results. So, if one
-   agent of the distributed index has 'file1.txt', another has 'file2.txt'
-   and you call for the snippets with both these files, the sphinx will
-   merge results from the agents together, so you will get the snippets
-   from both 'file1.txt' and 'file2.txt'.
+   Added in version 2.0.2-beta. It works only with distributed snippets
+   generation with remote agents. The source files for snippets could be
+   distributed among different agents, and the main daemon will merge
+   together all non-erroneous results. So, if one agent of the distributed
+   index has 'file1.txt', another has 'file2.txt' and you call for the
+   snippets with both these files, the sphinx will merge results from the
+   agents together, so you will get the snippets from both 'file1.txt' and
+   'file2.txt'. Boolean, default is false.
+
+   If the "load_files" is also set, the request will return the error in
+   case if any of the files is not available anywhere. Otherwise (if
+   "load_files" is not set) it will just return the empty strings for all
+   absent files. The master instance reset this flag when distributes the
+   snippets among agents. So, for agents the absence of a file is not
+   critical error, but for the master it might be so. If you want to be
+   sure that all snippets are actually created, set both
+   "load_files_scattered" and "load_files". If the absense of some snippets
+   caused by some agents is not critical for you - set just
+   "load_files_scattered", leaving "load_files" not set.
 
 "html_strip_mode":
    Added in version 1.10-beta. HTML stripping mode setting. Defaults to
@@ -6108,8 +6126,6 @@ framework (autoconf, automake and libtool) installed to do that.
 9.2.1. Compiling MySQL 5.0.x with SphinxSE
 ------------------------------------------
 
-Skips steps 1-3 if using already prepared delta tarball.
-
    1. copy sphinx.5.0.yy.diff patch file into MySQL sources directory and
       run
 
@@ -6139,8 +6155,6 @@ Skips steps 1-3 if using already prepared delta tarball.
 
 9.2.2. Compiling MySQL 5.1.x with SphinxSE
 ------------------------------------------
-
-Skip steps 1-2 if using already prepared delta tarball.
 
    1. in MySQL sources directory, create storage/sphinx directory in and
       copy all files in mysqlse directory from Sphinx sources there.
@@ -6613,19 +6627,20 @@ Table of Contents
    11.1.36. xmlpipe_field_string
    11.1.37. xmlpipe_field_wordcount
    11.1.38. xmlpipe_attr_uint
-   11.1.39. xmlpipe_attr_bool
-   11.1.40. xmlpipe_attr_timestamp
-   11.1.41. xmlpipe_attr_str2ordinal
-   11.1.42. xmlpipe_attr_float
-   11.1.43. xmlpipe_attr_multi
-   11.1.44. xmlpipe_attr_multi_64
-   11.1.45. xmlpipe_attr_string
-   11.1.46. xmlpipe_fixup_utf8
-   11.1.47. mssql_winauth
-   11.1.48. mssql_unicode
-   11.1.49. unpack_zlib
-   11.1.50. unpack_mysqlcompress
-   11.1.51. unpack_mysqlcompress_maxsize
+   11.1.39. xmlpipe_attr_bigint
+   11.1.40. xmlpipe_attr_bool
+   11.1.41. xmlpipe_attr_timestamp
+   11.1.42. xmlpipe_attr_str2ordinal
+   11.1.43. xmlpipe_attr_float
+   11.1.44. xmlpipe_attr_multi
+   11.1.45. xmlpipe_attr_multi_64
+   11.1.46. xmlpipe_attr_string
+   11.1.47. xmlpipe_fixup_utf8
+   11.1.48. mssql_winauth
+   11.1.49. mssql_unicode
+   11.1.50. unpack_zlib
+   11.1.51. unpack_mysqlcompress
+   11.1.52. unpack_mysqlcompress_maxsize
 
 11.2. Index configuration options
    11.2.1. type
@@ -7206,7 +7221,8 @@ instead.
 
 Example:
 
-   | sql_attr_timestamp = UNIX_TIMESTAMP(added_datetime) AS added_ts
+   | # sql_query = ... UNIX_TIMESTAMP(added_datetime) AS added_ts ...
+   | sql_attr_timestamp = added_ts
 
 11.1.21. sql_attr_str2ordinal
 -----------------------------
@@ -7557,9 +7573,20 @@ xmlpipe2 source type only. Syntax fully matches that of sql_attr_uint.
 
 Example:
 
-   | xmlpipe_attr_uint = author
+   | xmlpipe_attr_uint = author_id
 
-11.1.39. xmlpipe_attr_bool
+11.1.39. xmlpipe_attr_bigint
+----------------------------
+
+xmlpipe signed 64-bit integer attribute declaration. Multi-value, optional.
+Applies to xmlpipe2 source type only. Syntax fully matches that of
+sql_attr_bigint.
+
+Example:
+
+   | xmlpipe_attr_bigint = my_bigint_id
+
+11.1.40. xmlpipe_attr_bool
 --------------------------
 
 xmlpipe boolean attribute declaration. Multi-value, optional. Applies to
@@ -7569,7 +7596,7 @@ Example:
 
    | xmlpipe_attr_bool = is_deleted # will be packed to 1 bit
 
-11.1.40. xmlpipe_attr_timestamp
+11.1.41. xmlpipe_attr_timestamp
 -------------------------------
 
 xmlpipe UNIX timestamp attribute declaration. Multi-value, optional.
@@ -7580,7 +7607,7 @@ Example:
 
    | xmlpipe_attr_timestamp = published
 
-11.1.41. xmlpipe_attr_str2ordinal
+11.1.42. xmlpipe_attr_str2ordinal
 ---------------------------------
 
 xmlpipe string ordinal attribute declaration. Multi-value, optional.
@@ -7591,7 +7618,7 @@ Example:
 
    | xmlpipe_attr_str2ordinal = author_sort
 
-11.1.42. xmlpipe_attr_float
+11.1.43. xmlpipe_attr_float
 ---------------------------
 
 xmlpipe floating point attribute declaration. Multi-value, optional.
@@ -7603,7 +7630,7 @@ Example:
    | xmlpipe_attr_float = lat_radians
    | xmlpipe_attr_float = long_radians
 
-11.1.43. xmlpipe_attr_multi
+11.1.44. xmlpipe_attr_multi
 ---------------------------
 
 xmlpipe MVA attribute declaration. Multi-value, optional. Applies to
@@ -7618,7 +7645,7 @@ Example:
 
    | xmlpipe_attr_multi = taglist
 
-11.1.44. xmlpipe_attr_multi_64
+11.1.45. xmlpipe_attr_multi_64
 ------------------------------
 
 xmlpipe MVA attribute declaration. Declares the BIGINT (signed 64-bit
@@ -7634,7 +7661,7 @@ Example:
 
    | xmlpipe_attr_multi_64 = taglist
 
-11.1.45. xmlpipe_attr_string
+11.1.46. xmlpipe_attr_string
 ----------------------------
 
 xmlpipe string declaration. Multi-value, optional. Applies to xmlpipe2
@@ -7647,7 +7674,7 @@ Example:
 
    | xmlpipe_attr_string = subject
 
-11.1.46. xmlpipe_fixup_utf8
+11.1.47. xmlpipe_fixup_utf8
 ---------------------------
 
 Perform Sphinx-side UTF-8 validation and filtering to prevent XML parser
@@ -7667,7 +7694,7 @@ Example:
 
    | xmlpipe_fixup_utf8 = 1
 
-11.1.47. mssql_winauth
+11.1.48. mssql_winauth
 ----------------------
 
 MS SQL Windows authentication flag. Boolean, optional, default value is
@@ -7683,7 +7710,7 @@ Example:
 
    | mssql_winauth = 1
 
-11.1.48. mssql_unicode
+11.1.49. mssql_unicode
 ----------------------
 
 MS SQL encoding type flag. Boolean, optional, default value is 0 (false).
@@ -7700,7 +7727,7 @@ Example:
 
    | mssql_unicode = 1
 
-11.1.49. unpack_zlib
+11.1.50. unpack_zlib
 --------------------
 
 Columns to unpack using zlib (aka deflate, aka gunzip). Multi-value,
@@ -7718,7 +7745,7 @@ Example:
    | unpack_zlib = col1
    | unpack_zlib = col2
 
-11.1.50. unpack_mysqlcompress
+11.1.51. unpack_mysqlcompress
 -----------------------------
 
 Columns to unpack using MySQL UNCOMPRESS() algorithm. Multi-value,
@@ -7736,7 +7763,7 @@ Example:
    | unpack_mysqlcompress = body_compressed
    | unpack_mysqlcompress = description_compressed
 
-11.1.51. unpack_mysqlcompress_maxsize
+11.1.52. unpack_mysqlcompress_maxsize
 -------------------------------------
 
 Buffer size for UNCOMPRESS()ed data. Optional, default value is 16M.
@@ -8159,6 +8186,12 @@ office". Searching for "in office" as for exact phrase will only return the
 first document, as expected, even though "the" in the second one is
 stopped.
 
+Stopwords files can either be created manually, or semi-automatically.
+indexer provides a mode that creates a frequency dictionary of the index,
+sorted by the keyword frequency, see --buildstops and --buildfreqs switch
+in Section 6.1, <<indexer command reference>>. Top keywords from that
+dictionary can usually be used as stopwords.
+
 Example:
 
    | stopwords = /usr/local/sphinx/data/stopwords.txt
@@ -8236,9 +8269,6 @@ of important differences.
 Short summary of the differences is as follows:
 
    * exceptions are case sensitive, wordforms are not;
-
-   * exceptions allow to detect sequences of tokens, wordforms work with
-     single words only;
 
    * exceptions can use special characters that are not in charset_table,
      wordforms fully obey charset_table;
@@ -8738,12 +8768,19 @@ Local index declaration in the distributed index. Multi-value, optional,
 default is empty.
 
 This setting is used to declare local indexes that will be searched when
-given distributed index is searched. All local indexes will be searched
-sequentially, utilizing only 1 CPU or core; to parallelize processing, you
-can configure searchd to query itself (refer to Section 11.2.31, <<agent>>
-for the details). There might be several local indexes declared per each
-distributed index. Any local index can be mentioned several times in other
-distributed indexes.
+given distributed index is searched. Many local indexes can be declared per
+each distributed index. Any local index can also be mentioned several times
+in different distributed indexes.
+
+Note that by default all local indexes will be searched sequentially,
+utilizing only 1 CPU or core. To parallelize processing of the local parts
+in the distributed index, you should use dist_threads directive, see
+Section 11.4.29, <<dist_threads>>.
+
+Before dist_threads, there also was a legacy solution to configure searchd
+to query itself instead of using local indexes (refer to Section 11.2.31,
+<<agent>> for the details). However, that creates redundant CPU and network
+load, and dist_threads is now strongly suggested instead.
 
 Example:
 
@@ -10030,8 +10067,9 @@ Example:
 Binary log (aka transaction log) files path. Optional, default is
 build-time configured data directory. Introduced in version 1.10-beta.
 
-Binary logs are used for crash recovery of RT index data that would
-otherwise only be stored in RAM. When logging is enabled, every transaction
+Binary logs are used for crash recovery of RT index data, and also of
+attributes updates of plain disk indices that would otherwise only be
+stored in RAM untill flush. When logging is enabled, every transaction
 COMMIT-ted into RT index gets written into a log file. Logs are then
 automatically replayed on startup after an unclean shutdown, recovering the
 logged changes.
@@ -10043,6 +10081,12 @@ etc).
 
 Empty value disables binary logging. That improves performance, but puts RT
 index data at risk.
+
+WARNING! It is strongly recommended to always explicitly define
+'binlog_path' option in your config. Otherwise, the default path, which in
+most cases is the same as working folder, may point to the folder with no
+write access (for example, /usr/local/var/data). In this case, the searchd
+will not start at all.
 
 Example:
 
@@ -10284,22 +10328,111 @@ Appendix A. Sphinx revision history
 
 Table of Contents
 
-A.1. Version 2.0.3-release, 23 dec 2011
-A.2. Version 2.0.2-beta, 15 nov 2011
-A.3. Version 2.0.1-beta, 22 apr 2011
-A.4. Version 1.10-beta, 19 jul 2010
-A.5. Version 0.9.9-release, 02 dec 2009
-A.6. Version 0.9.9-rc2, 08 apr 2009
-A.7. Version 0.9.9-rc1, 17 nov 2008
-A.8. Version 0.9.8.1, 30 oct 2008
-A.9. Version 0.9.8, 14 jul 2008
-A.10. Version 0.9.7, 02 apr 2007
-A.11. Version 0.9.7-rc2, 15 dec 2006
-A.12. Version 0.9.7-rc1, 26 oct 2006
-A.13. Version 0.9.6, 24 jul 2006
-A.14. Version 0.9.6-rc1, 26 jun 2006
+A.1. Version 2.0.4-release, 01 mar 2012
+A.2. Version 2.0.3-release, 23 dec 2011
+A.3. Version 2.0.2-beta, 15 nov 2011
+A.4. Version 2.0.1-beta, 22 apr 2011
+A.5. Version 1.10-beta, 19 jul 2010
+A.6. Version 0.9.9-release, 02 dec 2009
+A.7. Version 0.9.9-rc2, 08 apr 2009
+A.8. Version 0.9.9-rc1, 17 nov 2008
+A.9. Version 0.9.8.1, 30 oct 2008
+A.10. Version 0.9.8, 14 jul 2008
+A.11. Version 0.9.7, 02 apr 2007
+A.12. Version 0.9.7-rc2, 15 dec 2006
+A.13. Version 0.9.7-rc1, 26 oct 2006
+A.14. Version 0.9.6, 24 jul 2006
+A.15. Version 0.9.6-rc1, 26 jun 2006
 
-A.1. Version 2.0.3-release, 23 dec 2011
+A.1. Version 2.0.4-release, 01 mar 2012
+=======================================
+
+Bug fixes
+---------
+
+   * fixed #605, pack vs mysql compress
+
+   * fixed #783, #862, #917, #985, #990, #1032 documentation bugs
+
+   * fixed #885, bitwise AND/OR were not available via API
+
+   * fixed #984, crash on indexing data with MAGIC_CODE_ZONE symbol
+
+   * fixed #1004, RT index loses words from dictionary on segments merging
+     with id64 enabled
+
+   * fixed #1035, daemon doesn't properly handle FDs in case of socket
+     overflow FD_SETSIZE ( *nix, preopen_indexes=0, worker=threads )
+
+   * fixed #1038, quoted string for API select
+
+   * fixed #1046, head SPZ overflow, snippet generation at non fast with
+     SPZ
+
+   * fixed #1048, distributed index can't sort \ filter because of missed
+     attributes
+
+   * fixed #1050, expression ranker vs agents
+
+   * fixed #1051, added MVA64 support to UDFs
+
+   * fixed #1054, max_query_time not handled properly on searching at RT
+     index
+
+   * fixed #1055, expansion_limit on searching at RT disk chunks
+
+   * fixed #1057, daemon crashes on generating snippet with 0 documents
+     provided
+
+   * fixed #1060, load_files_scattered don't work
+
+   * fixed #1065, libsphinxclient vs distribute index (agents)
+
+   * fixed #1067, modifiers were not escaped in legacy query emulation
+
+   * fixed #1071, master - agent communication got slower for a large query
+
+   * fixed #1076, #1077, (redundant copying, and a possible mutex leak with
+     uservars)
+
+   * fixed #1078, blended vs FIELD_END
+
+   * fixed #1091, RT attach of plain index with string \ MVA attributes
+     prior regular attributes
+
+   * fixed #1092, update got binloged with wrong TID
+
+   * fixed #1098, crash on creating large expression
+
+   * fixed #1099, cleaning up temporary files on fail of indexing
+
+   * fixed #1100, missing xmlpipe_attr_bigint config directive
+
+   * fixed #1101, now ignoring dashes within keywords when dash is not in
+     charset_table
+
+   * fixed #1103, ZONE operator incorrectly works on more than one keywords
+     in a simple zone
+
+   * fixed #1106, optimized WHERE id=value, WHERE id IN (values_list)
+     clauses used in SELECT, UPDATE statements
+
+   * fixed #1112, Sphinx doesn't work out-of-the-box because the collision
+     of binlog_path option
+
+   * fixed #1116, crash on FLUSH RTINDEX unknown-index-name
+
+   * fixed #1117, occasional RT headers corruption (leading to crashes
+     and/or missing results)
+
+   * fixed result set schema fix-up of internal attributes
+
+   * fixed missed MVA \ keywords storage counting at RT index segments
+     merge
+
+   * fixed negative total_found, docs and hits counter on huge indexes
+
+A.2. Version 2.0.3-release, 23 dec 2011
 =======================================
 
 Bug fixes
@@ -10344,9 +10477,9 @@ Bug fixes
 
    * fixed build of SphinxSE with MySQL 5.1
 
-   * fixed crash log for “fork” and “prefork” workers
+   * fixed crash log for 'fork' and 'prefork' workers
 
-A.2. Version 2.0.2-beta, 15 nov 2011
+A.3. Version 2.0.2-beta, 15 nov 2011
 ====================================
 
 Major new features
@@ -10613,7 +10746,7 @@ Bug fixes
    * fixed that field/zone conditions were not propagated to expanded
      keywords with dict=keywords
 
-A.3. Version 2.0.1-beta, 22 apr 2011
+A.4. Version 2.0.1-beta, 22 apr 2011
 ====================================
 
 New general features
@@ -10911,7 +11044,7 @@ Bug fixes
 
    * fixed libsphinxclient vs VS2003 compiler bug
 
-A.4. Version 1.10-beta, 19 jul 2010
+A.5. Version 1.10-beta, 19 jul 2010
 ===================================
 
    * added RT indexes support (Chapter 4, Real-time indexes)
@@ -11061,7 +11194,7 @@ A.4. Version 1.10-beta, 19 jul 2010
 
    * fixed #509, indexing ranged results from stored procedures
 
-A.5. Version 0.9.9-release, 02 dec 2009
+A.6. Version 0.9.9-release, 02 dec 2009
 =======================================
 
    * added Open, Close, Status calls to libsphinxclient (C API)
@@ -11176,7 +11309,7 @@ A.5. Version 0.9.9-release, 02 dec 2009
 
    * fixed #326 (missing CLOCK_xxx on FreeBSD)
 
-A.6. Version 0.9.9-rc2, 08 apr 2009
+A.7. Version 0.9.9-rc2, 08 apr 2009
 ===================================
 
    * added IsConnectError(), Open(), Close() calls to Java API (bug #240)
@@ -11346,7 +11479,7 @@ A.6. Version 0.9.9-rc2, 08 apr 2009
 
    * fixed parser vs @field -keyword, foo|@field bar, "" queries (bug #310)
 
-A.7. Version 0.9.9-rc1, 17 nov 2008
+A.8. Version 0.9.9-rc1, 17 nov 2008
 ===================================
 
    * added min_stemming_len directive
@@ -11449,7 +11582,7 @@ A.7. Version 0.9.9-rc1, 17 nov 2008
 
    * fixed handling of over-2GB dictionary files (.spi)
 
-A.8. Version 0.9.8.1, 30 oct 2008
+A.9. Version 0.9.8.1, 30 oct 2008
 =================================
 
    * added configure script to libsphinxclient
@@ -11504,8 +11637,8 @@ A.8. Version 0.9.8.1, 30 oct 2008
    * fixed default ID range (that filtered out all 64-bit values) in Java
      and Python APIs
 
-A.9. Version 0.9.8, 14 jul 2008
-===============================
+A.10. Version 0.9.8, 14 jul 2008
+================================
 
 Indexing
 --------
@@ -11788,7 +11921,7 @@ Changes and fixes since 0.9.8-rc2
 
    * fixed sorting of negative floats in SPH_SORT_EXTENDED mode
 
-A.10. Version 0.9.7, 02 apr 2007
+A.11. Version 0.9.7, 02 apr 2007
 ================================
 
    * added support for sql_str2ordinal_column
@@ -11873,7 +12006,7 @@ A.10. Version 0.9.7, 02 apr 2007
 
    * fixed crashes with no-attribute indexes after rotate
 
-A.11. Version 0.9.7-rc2, 15 dec 2006
+A.12. Version 0.9.7-rc2, 15 dec 2006
 ====================================
 
    * added support for extended matching mode (query language)
@@ -11909,7 +12042,7 @@ A.11. Version 0.9.7-rc2, 15 dec 2006
 
    * fixes for 64-bit platforms
 
-A.12. Version 0.9.7-rc1, 26 oct 2006
+A.13. Version 0.9.7-rc1, 26 oct 2006
 ====================================
 
    * added alpha index merging code
@@ -11959,7 +12092,7 @@ A.12. Version 0.9.7-rc1, 26 oct 2006
 
    * fixed some issues with index rotation
 
-A.13. Version 0.9.6, 24 jul 2006
+A.14. Version 0.9.6, 24 jul 2006
 ================================
 
    * added support for empty indexes
@@ -11972,7 +12105,7 @@ A.13. Version 0.9.6, 24 jul 2006
 
    * fixed building on Solaris 9
 
-A.14. Version 0.9.6-rc1, 26 jun 2006
+A.15. Version 0.9.6-rc1, 26 jun 2006
 ====================================
 
    * added boolean queries support (experimental, beta version)

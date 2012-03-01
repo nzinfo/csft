@@ -1,7 +1,7 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sphinx 2.0.3-release reference manual</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Sphinx 2.0.4-release reference manual</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1">
 <style type="text/css">pre.programlisting { background-color: #f0f0f0; padding: 0.5em; margin-left: 2em; margin-right: 2em; }</style>
 </head>
-<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div lang="en" class="book" title="Sphinx 2.0.3-release reference manual"><div class="titlepage"><div><div><h1 class="title">Sphinx 2.0.3-release reference manual</h1></div>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div lang="en" class="book" title="Sphinx 2.0.4-release reference manual"><div class="titlepage"><div><div><h1 class="title">Sphinx 2.0.4-release reference manual</h1></div>
 <div><h2 class="subtitle">Free open-source SQL full-text search engine</h2></div>
 <div><p class="copyright">Copyright &copy; 2001-2012 Andrew Aksyonoff</p></div>
 <div><p class="copyright">Copyright &copy; 2008-2012 Sphinx Technologies Inc, <a class="ulink" href="http://sphinxsearch.com" target="_top">http://sphinxsearch.com</a></p></div></div>
@@ -187,19 +187,20 @@
 <dt><span class="sect2"><a href="#conf-xmlpipe-field-string">11.1.36. xmlpipe_field_string</a></span></dt>
 <dt><span class="sect2"><a href="#conf-xmlpipe-field-wordcount">11.1.37. xmlpipe_field_wordcount</a></span></dt>
 <dt><span class="sect2"><a href="#conf-xmlpipe-attr-uint">11.1.38. xmlpipe_attr_uint</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bool">11.1.39. xmlpipe_attr_bool</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-timestamp">11.1.40. xmlpipe_attr_timestamp</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-str2ordinal">11.1.41. xmlpipe_attr_str2ordinal</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-float">11.1.42. xmlpipe_attr_float</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi">11.1.43. xmlpipe_attr_multi</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi-64">11.1.44. xmlpipe_attr_multi_64</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-string">11.1.45. xmlpipe_attr_string</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-fixup-utf8">11.1.46. xmlpipe_fixup_utf8</a></span></dt>
-<dt><span class="sect2"><a href="#conf-mssql-winauth">11.1.47. mssql_winauth</a></span></dt>
-<dt><span class="sect2"><a href="#conf-mssql-unicode">11.1.48. mssql_unicode</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-zlib">11.1.49. unpack_zlib</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress">11.1.50. unpack_mysqlcompress</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress-maxsize">11.1.51. unpack_mysqlcompress_maxsize</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bigint">11.1.39. xmlpipe_attr_bigint</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bool">11.1.40. xmlpipe_attr_bool</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-timestamp">11.1.41. xmlpipe_attr_timestamp</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-str2ordinal">11.1.42. xmlpipe_attr_str2ordinal</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-float">11.1.43. xmlpipe_attr_float</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi">11.1.44. xmlpipe_attr_multi</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi-64">11.1.45. xmlpipe_attr_multi_64</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-string">11.1.46. xmlpipe_attr_string</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-fixup-utf8">11.1.47. xmlpipe_fixup_utf8</a></span></dt>
+<dt><span class="sect2"><a href="#conf-mssql-winauth">11.1.48. mssql_winauth</a></span></dt>
+<dt><span class="sect2"><a href="#conf-mssql-unicode">11.1.49. mssql_unicode</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-zlib">11.1.50. unpack_zlib</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress">11.1.51. unpack_mysqlcompress</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress-maxsize">11.1.52. unpack_mysqlcompress_maxsize</a></span></dt>
 </dl></dd><dt><span class="sect1"><a href="#confgroup-index">11.2. Index configuration options</a></span></dt>
 <dd><dl><dt><span class="sect2"><a href="#conf-index-type">11.2.1. type</a></span></dt>
 <dt><span class="sect2"><a href="#conf-source">11.2.2. source</a></span></dt>
@@ -310,20 +311,21 @@
 <dt><span class="sect2"><a href="#conf-watchdog">11.4.41. watchdog</a></span></dt>
 <dt><span class="sect2"><a href="#conf-prefork-rotation-throttle">11.4.42. prefork_rotation_throttle</a></span></dt>
 </dl></dd></dl></dd><dt><span class="appendix"><a href="#changelog">A. Sphinx revision history</a></span></dt>
-<dd><dl><dt><span class="sect1"><a href="#rel203">A.1. Version 2.0.3-release, 23 dec 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel202">A.2. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel201">A.3. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel110">A.4. Version 1.10-beta, 19 jul 2010</a></span></dt>
-<dt><span class="sect1"><a href="#rel099">A.5. Version 0.9.9-release, 02 dec 2009</a></span></dt>
-<dt><span class="sect1"><a href="#rel099rc2">A.6. Version 0.9.9-rc2, 08 apr 2009</a></span></dt>
-<dt><span class="sect1"><a href="#rel099rc1">A.7. Version 0.9.9-rc1, 17 nov 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel0981">A.8. Version 0.9.8.1, 30 oct 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel098">A.9. Version 0.9.8, 14 jul 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel097">A.10. Version 0.9.7, 02 apr 2007</a></span></dt>
-<dt><span class="sect1"><a href="#rel097rc2">A.11. Version 0.9.7-rc2, 15 dec 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel097rc">A.12. Version 0.9.7-rc1, 26 oct 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel096">A.13. Version 0.9.6, 24 jul 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel096rc1">A.14. Version 0.9.6-rc1, 26 jun 2006</a></span></dt>
+<dd><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 01 mar 2012</a></span></dt>
+<dt><span class="sect1"><a href="#rel203">A.2. Version 2.0.3-release, 23 dec 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel202">A.3. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel201">A.4. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel110">A.5. Version 1.10-beta, 19 jul 2010</a></span></dt>
+<dt><span class="sect1"><a href="#rel099">A.6. Version 0.9.9-release, 02 dec 2009</a></span></dt>
+<dt><span class="sect1"><a href="#rel099rc2">A.7. Version 0.9.9-rc2, 08 apr 2009</a></span></dt>
+<dt><span class="sect1"><a href="#rel099rc1">A.8. Version 0.9.9-rc1, 17 nov 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel0981">A.9. Version 0.9.8.1, 30 oct 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel098">A.10. Version 0.9.8, 14 jul 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel097">A.11. Version 0.9.7, 02 apr 2007</a></span></dt>
+<dt><span class="sect1"><a href="#rel097rc2">A.12. Version 0.9.7-rc2, 15 dec 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel097rc">A.13. Version 0.9.7-rc1, 26 oct 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel096">A.14. Version 0.9.6, 24 jul 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel096rc1">A.15. Version 0.9.6-rc1, 26 jun 2006</a></span></dt>
 </dl></dd></dl></div>
 <div class="list-of-examples"><p><b>List of Examples</b></p><dl><dt>3.1. <a href="#ex-ranged-queries">Ranged query usage example</a></dt>
 <dt>3.2. <a href="#ex-xmlpipe-document">XMLpipe document stream</a></dt>
@@ -533,7 +535,7 @@ Currently known systems Sphinx has been successfully running on are:
 CPU architectures known to work include i386 (aka x86), amd64 (aka x86_64),
 SPARC64, and ARM.
 </p><p>
-Chance are good that Sphinx should work on other Unix platforms and/or
+Chances are good that Sphinx should work on other Unix platforms and/or
 CPU architectures just as well. Please report any other platforms that
 worked for you!
 </p><p>
@@ -1229,7 +1231,7 @@ could then be reindexed very frequently, and the documents can
 be made available to search in a matter of minutes.
 </p><p>
 Specifying which documents should go to what index and
-reindexing main index could also be made fully automatical.
+reindexing main index could also be made fully automatic.
 One option would be to make a counter table which would track
 the ID which would split the documents, and update it
 whenever the main index is reindexed.
@@ -1523,12 +1525,13 @@ On clean shutdown, RAM chunks are saved to disk, and then all the binlog
 files are unlinked.
 </p><p>
 During normal operation, a new binlog file will be opened every time
-when <code class="option">binlog_max_log_size</code> limit (which defaults to 128M)
+when <code class="option">binlog_max_log_size</code> limit
 is reached.  Older, already closed binlog files are kept until all of the
 transactions stored in them (from all indexes) are flushed as a disk chunk.
 Setting the limit to 0 pretty much prevents binlog from being unlinked
 at all while <code class="filename">searchd</code> is running; however, it will
-still be unlinked on clean shutdown.
+still be unlinked on clean shutdown. (This is the default case as of
+2.0.3-release, <code class="option">binlog_max_log_size</code> defaults to 0.)
 </p><p>
 There are 3 different binlog flushing strategies, controlled by
 <a class="link" href="#conf-binlog-flush" title="11.4.31.&nbsp;binlog_flush">binlog_flush</a> directive
@@ -1717,9 +1720,9 @@ The full meaning of this search is:
 
 </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Find the words 'hello' and 'world' adjacently in any field in a document;</p></li>
 <li class="listitem"><p>Additionally, the same document must also contain the words 'example' and 'program'
-	in the title field, with up to, but not including, 10 words between the words in question;
+	in the title field, with up to, but not including, 5 words between the words in question;
 	(E.g. "example PHP program" would be matched however "example script to introduce outside data
-	into the correct context for your program" would not because two terms have 10 or more words between them)</p></li>
+	into the correct context for your program" would not because two terms have 5 or more words between them)</p></li>
 <li class="listitem"><p>Additionally, the same document must contain the word 'python' in the body field, but not contain either 'php' or 'perl';</p></li>
 <li class="listitem"><p>Additionally, the same document must contain the word 'code' in any field.</p></li>
 </ul></div>
@@ -2829,10 +2832,10 @@ characters properly.
 </p><p>
 Second, we additionally need to know the language-specific
 string sorting rules. For instance, when sorting according to US rules
-in en_US locale, the accented character '�' (small letter i with diaeresis)
+in en_US locale, the accented character '&iuml;' (small letter i with diaeresis)
 should be placed somewhere after 'z'. However, when sorting with French rules
 and fr_FR locale in mind, it should be placed between 'i' and 'j'. And some
-other set of rules might choose to ignore accents at all, allowing '�'
+other set of rules might choose to ignore accents at all, allowing '&iuml;'
 and 'i' to be mixed arbitrarily.
 </p><p>
 Third, but not least, we might need case-sensitive sorting in some
@@ -2939,7 +2942,7 @@ source distribution provides a sample file,
 that defines a few simple functions showing how to work with integer,
 string, and MVA arguments; you can use that one as a foundation for
 your new functions. It includes the UDF interface header file,
-<a class="ulink" href="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/udfexample.c" target="_top">src/sphinxudf.h</a>,
+<a class="ulink" href="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/sphinxudf.h" target="_top">src/sphinxudf.h</a>,
 that defines the required types and structures. <code class="filename">sphinxudf.h</code>
 header is standalone, that is, does not require any other parts of Sphinx
 source to compile.
@@ -4273,8 +4276,8 @@ As of version 2.0.2-beta, all atributes types (int, bigint, float, MVA)
 except for strings can be updated. Previously, some of the types were not
 supported.
 </p><p>
-<code class="code">where_condition</code> uses the same syntax as the SELECT statement
-(see <a class="xref" href="#sphinxql-select" title="7.1.&nbsp;SELECT syntax">Section&nbsp;7.1, &#8220;SELECT syntax&#8221;</a> for details).
+<code class="code">where_condition</code> (also added in 2.0.2-beta) has the same syntax
+as in the SELECT statement (see <a class="xref" href="#sphinxql-select" title="7.1.&nbsp;SELECT syntax">Section&nbsp;7.1, &#8220;SELECT syntax&#8221;</a> for details).
 </p><p>
 When assigning the out-of-range values to 32-bit attributes, they
 will be trimmed to their lower 32 bits without a prompt. For example,
@@ -4882,7 +4885,7 @@ $cl-&gt;SetMatchMode ( SPH_MATCH_ANY ); // correct, works OK
 </pre><p>
 </p></div>
 <div class="sect2" title="8.3.2.&nbsp;SetRankingMode"><div class="titlepage"><div><div><h3 class="title"><a name="api-func-setrankingmode"></a>8.3.2.&nbsp;SetRankingMode</h3></div></div></div>
-<p><span class="bold"><strong>Prototype:</strong></span> function SetRankingMode ( $ranker )</p><p>
+<p><span class="bold"><strong>Prototype:</strong></span> function SetRankingMode ( $ranker, $rankexpr="" )</p><p>
 Sets ranking mode (aka ranker). Only available in SPH_MATCH_EXTENDED
 matching mode. Parameter must be a constant specifying one of the known
 rankers.
@@ -4900,6 +4903,12 @@ or maybe avoid computing it at all for performance reasons because
 you're sorting the result set by something else anyway. This can be
 accomplished by setting the appropriate ranking mode. The list of
 the modes is available in <a class="xref" href="#weighting" title="5.4.&nbsp;Search results ranking">Section&nbsp;5.4, &#8220;Search results ranking&#8221;</a>.
+</p><p>
+<code class="code">$rankexpr</code> argument was added in version 2.0.2-beta.
+It lets you specify a ranking formula to use with the
+<a class="link" href="#expression-ranker" title="5.4.&nbsp;Expression based ranker (SPH_RANK_EXPR)">expression based ranker</a>,
+that is, when <code class="code">$ranker</code> is set to SPH_RANK_EXPR.
+In all other cases, <code class="code">$rankexpr</code> is ignored.
 </p></div>
 <div class="sect2" title="8.3.3.&nbsp;SetSortMode"><div class="titlepage"><div><div><h3 class="title"><a name="api-func-setsortmode"></a>8.3.3.&nbsp;SetSortMode</h3></div></div></div>
 <p><span class="bold"><strong>Prototype:</strong></span> function SetSortMode ( $mode, $sortby="" )</p><p>
@@ -5330,10 +5339,15 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 	to the value greater than 1, and then invoke the snippets
 	generation over the distributed index, which contain only one(!) first(!) <a class="link" href="#conf-local" title="11.2.30.&nbsp;local">local</a> agent and several remotes.
 	</p></dd><dt><span class="term">"load_files_scattered":</span></dt>
-<dd><p>Added in version 2.0.2-beta. It assumes "load_files" option, and works only with distributed snippets generation
+<dd><p>Added in version 2.0.2-beta. It works only with distributed snippets generation
 	with remote agents. The source files for snippets could be distributed among different agents, and the main daemon will merge
 	together all non-erroneous results. So, if one agent of the distributed index has 'file1.txt', another has 'file2.txt' and you call for the snippets
 	with both these files, the sphinx will merge results from the agents together, so you will get the snippets from both 'file1.txt' and 'file2.txt'.
+	Boolean, default is false.
+	</p><p>If the "load_files" is also set, the request will return the error in case if any of the files is not available anywhere. Otherwise (if "load_files" is not set)
+	it will just return the empty strings for all absent files. The master instance reset this flag when distributes the snippets among agents. So, for agents the absence of a file
+	is not critical error, but for the master it might be so. If you want to be sure that all snippets are actually created, set both "load_files_scattered" and "load_files". If the
+	absense of some snippets caused by some agents is not critical for you - set just "load_files_scattered", leaving "load_files" not set.
 	</p></dd><dt><span class="term">"html_strip_mode":</span></dt>
 <dd><p>Added in version 1.10-beta. HTML stripping mode setting.
 	Defaults to "index", which means that index settings will be used.
@@ -5532,9 +5546,7 @@ reason, you would have to prepare sources manually. You will need to
 GNU Autotools framework (autoconf, automake and libtool) installed
 to do that.
 </p><div class="sect2" title="9.2.1.&nbsp;Compiling MySQL 5.0.x with SphinxSE"><div class="titlepage"><div><div><h3 class="title"><a name="sphinxse-mysql50"></a>9.2.1.&nbsp;Compiling MySQL 5.0.x with SphinxSE</h3></div></div></div>
-<p>
-Skips steps 1-3 if using already prepared delta tarball.
-</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>copy <code class="filename">sphinx.5.0.yy.diff</code> patch file
+<div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>copy <code class="filename">sphinx.5.0.yy.diff</code> patch file
 into MySQL sources directory and run
 </p><pre class="programlisting">
 patch -p1 &lt; sphinx.5.0.yy.diff
@@ -5570,9 +5582,7 @@ make install
 </p></li>
 </ol></div></div>
 <div class="sect2" title="9.2.2.&nbsp;Compiling MySQL 5.1.x with SphinxSE"><div class="titlepage"><div><div><h3 class="title"><a name="sphinxse-mysql51"></a>9.2.2.&nbsp;Compiling MySQL 5.1.x with SphinxSE</h3></div></div></div>
-<p>
-Skip steps 1-2 if using already prepared delta tarball.
-</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>in MySQL sources directory, create <code class="filename">storage/sphinx</code>
+<div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>in MySQL sources directory, create <code class="filename">storage/sphinx</code>
 directory in and copy all files in <code class="filename">mysqlse</code> directory 
 from Sphinx sources there. Example:
 </p><pre class="programlisting">
@@ -6077,19 +6087,20 @@ you a few additional questions about it.
 <dt><span class="sect2"><a href="#conf-xmlpipe-field-string">11.1.36. xmlpipe_field_string</a></span></dt>
 <dt><span class="sect2"><a href="#conf-xmlpipe-field-wordcount">11.1.37. xmlpipe_field_wordcount</a></span></dt>
 <dt><span class="sect2"><a href="#conf-xmlpipe-attr-uint">11.1.38. xmlpipe_attr_uint</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bool">11.1.39. xmlpipe_attr_bool</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-timestamp">11.1.40. xmlpipe_attr_timestamp</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-str2ordinal">11.1.41. xmlpipe_attr_str2ordinal</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-float">11.1.42. xmlpipe_attr_float</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi">11.1.43. xmlpipe_attr_multi</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi-64">11.1.44. xmlpipe_attr_multi_64</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-attr-string">11.1.45. xmlpipe_attr_string</a></span></dt>
-<dt><span class="sect2"><a href="#conf-xmlpipe-fixup-utf8">11.1.46. xmlpipe_fixup_utf8</a></span></dt>
-<dt><span class="sect2"><a href="#conf-mssql-winauth">11.1.47. mssql_winauth</a></span></dt>
-<dt><span class="sect2"><a href="#conf-mssql-unicode">11.1.48. mssql_unicode</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-zlib">11.1.49. unpack_zlib</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress">11.1.50. unpack_mysqlcompress</a></span></dt>
-<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress-maxsize">11.1.51. unpack_mysqlcompress_maxsize</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bigint">11.1.39. xmlpipe_attr_bigint</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-bool">11.1.40. xmlpipe_attr_bool</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-timestamp">11.1.41. xmlpipe_attr_timestamp</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-str2ordinal">11.1.42. xmlpipe_attr_str2ordinal</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-float">11.1.43. xmlpipe_attr_float</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi">11.1.44. xmlpipe_attr_multi</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-multi-64">11.1.45. xmlpipe_attr_multi_64</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-attr-string">11.1.46. xmlpipe_attr_string</a></span></dt>
+<dt><span class="sect2"><a href="#conf-xmlpipe-fixup-utf8">11.1.47. xmlpipe_fixup_utf8</a></span></dt>
+<dt><span class="sect2"><a href="#conf-mssql-winauth">11.1.48. mssql_winauth</a></span></dt>
+<dt><span class="sect2"><a href="#conf-mssql-unicode">11.1.49. mssql_unicode</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-zlib">11.1.50. unpack_zlib</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress">11.1.51. unpack_mysqlcompress</a></span></dt>
+<dt><span class="sect2"><a href="#conf-unpack-mysqlcompress-maxsize">11.1.52. unpack_mysqlcompress_maxsize</a></span></dt>
 </dl></dd><dt><span class="sect1"><a href="#confgroup-index">11.2. Index configuration options</a></span></dt>
 <dd><dl><dt><span class="sect2"><a href="#conf-index-type">11.2.1. type</a></span></dt>
 <dt><span class="sect2"><a href="#conf-source">11.2.2. source</a></span></dt>
@@ -6625,7 +6636,8 @@ and UNIX_TIMESTAMP() in MySQL will not return anything expected.
 If you only needs to work with dates, not times, consider TO_DAYS()
 function in MySQL instead.
 </p><h4>Example:</h4><pre class="programlisting">
-sql_attr_timestamp = UNIX_TIMESTAMP(added_datetime) AS added_ts
+# sql_query = ... UNIX_TIMESTAMP(added_datetime) AS added_ts ...
+sql_attr_timestamp = added_ts
 </pre></div>
 <div class="sect2" title="11.1.21.&nbsp;sql_attr_str2ordinal"><div class="titlepage"><div><div><h3 class="title"><a name="conf-sql-attr-str2ordinal"></a>11.1.21.&nbsp;sql_attr_str2ordinal</h3></div></div></div>
 <p>
@@ -6940,9 +6952,18 @@ Multi-value, optional.
 Applies to <code class="option">xmlpipe2</code> source type only.
 Syntax fully matches that of <a class="link" href="#conf-sql-attr-uint" title="11.1.17.&nbsp;sql_attr_uint">sql_attr_uint</a>.
 </p><h4>Example:</h4><pre class="programlisting">
-xmlpipe_attr_uint = author
+xmlpipe_attr_uint = author_id
 </pre></div>
-<div class="sect2" title="11.1.39.&nbsp;xmlpipe_attr_bool"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-bool"></a>11.1.39.&nbsp;xmlpipe_attr_bool</h3></div></div></div>
+<div class="sect2" title="11.1.39.&nbsp;xmlpipe_attr_bigint"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-bigint"></a>11.1.39.&nbsp;xmlpipe_attr_bigint</h3></div></div></div>
+<p>
+xmlpipe signed 64-bit integer attribute declaration.
+Multi-value, optional.
+Applies to <code class="option">xmlpipe2</code> source type only.
+Syntax fully matches that of <a class="link" href="#conf-sql-attr-bigint" title="11.1.19.&nbsp;sql_attr_bigint">sql_attr_bigint</a>.
+</p><h4>Example:</h4><pre class="programlisting">
+xmlpipe_attr_bigint = my_bigint_id
+</pre></div>
+<div class="sect2" title="11.1.40.&nbsp;xmlpipe_attr_bool"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-bool"></a>11.1.40.&nbsp;xmlpipe_attr_bool</h3></div></div></div>
 <p>
 xmlpipe boolean attribute declaration.
 Multi-value, optional.
@@ -6951,7 +6972,7 @@ Syntax fully matches that of <a class="link" href="#conf-sql-attr-bool" title="1
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_bool = is_deleted # will be packed to 1 bit
 </pre></div>
-<div class="sect2" title="11.1.40.&nbsp;xmlpipe_attr_timestamp"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-timestamp"></a>11.1.40.&nbsp;xmlpipe_attr_timestamp</h3></div></div></div>
+<div class="sect2" title="11.1.41.&nbsp;xmlpipe_attr_timestamp"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-timestamp"></a>11.1.41.&nbsp;xmlpipe_attr_timestamp</h3></div></div></div>
 <p>
 xmlpipe UNIX timestamp attribute declaration.
 Multi-value, optional.
@@ -6960,7 +6981,7 @@ Syntax fully matches that of <a class="link" href="#conf-sql-attr-timestamp" tit
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_timestamp = published
 </pre></div>
-<div class="sect2" title="11.1.41.&nbsp;xmlpipe_attr_str2ordinal"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-str2ordinal"></a>11.1.41.&nbsp;xmlpipe_attr_str2ordinal</h3></div></div></div>
+<div class="sect2" title="11.1.42.&nbsp;xmlpipe_attr_str2ordinal"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-str2ordinal"></a>11.1.42.&nbsp;xmlpipe_attr_str2ordinal</h3></div></div></div>
 <p>
 xmlpipe string ordinal attribute declaration.
 Multi-value, optional.
@@ -6969,7 +6990,7 @@ Syntax fully matches that of <a class="link" href="#conf-sql-attr-str2ordinal" t
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_str2ordinal = author_sort
 </pre></div>
-<div class="sect2" title="11.1.42.&nbsp;xmlpipe_attr_float"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-float"></a>11.1.42.&nbsp;xmlpipe_attr_float</h3></div></div></div>
+<div class="sect2" title="11.1.43.&nbsp;xmlpipe_attr_float"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-float"></a>11.1.43.&nbsp;xmlpipe_attr_float</h3></div></div></div>
 <p>
 xmlpipe floating point attribute declaration.
 Multi-value, optional.
@@ -6979,7 +7000,7 @@ Syntax fully matches that of <a class="link" href="#conf-sql-attr-float" title="
 xmlpipe_attr_float = lat_radians
 xmlpipe_attr_float = long_radians
 </pre></div>
-<div class="sect2" title="11.1.43.&nbsp;xmlpipe_attr_multi"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-multi"></a>11.1.43.&nbsp;xmlpipe_attr_multi</h3></div></div></div>
+<div class="sect2" title="11.1.44.&nbsp;xmlpipe_attr_multi"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-multi"></a>11.1.44.&nbsp;xmlpipe_attr_multi</h3></div></div></div>
 <p>
 xmlpipe MVA attribute declaration.
 Multi-value, optional.
@@ -6993,7 +7014,7 @@ SQL column contents when 'field' MVA source type is specified.
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_multi = taglist
 </pre></div>
-<div class="sect2" title="11.1.44.&nbsp;xmlpipe_attr_multi_64"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-multi-64"></a>11.1.44.&nbsp;xmlpipe_attr_multi_64</h3></div></div></div>
+<div class="sect2" title="11.1.45.&nbsp;xmlpipe_attr_multi_64"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-multi-64"></a>11.1.45.&nbsp;xmlpipe_attr_multi_64</h3></div></div></div>
 <p>
 xmlpipe MVA attribute declaration. Declares the BIGINT (signed 64-bit integer) MVA attribute.
 Multi-value, optional.
@@ -7007,7 +7028,7 @@ SQL column contents when 'field' MVA source type is specified.
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_multi_64 = taglist
 </pre></div>
-<div class="sect2" title="11.1.45.&nbsp;xmlpipe_attr_string"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-string"></a>11.1.45.&nbsp;xmlpipe_attr_string</h3></div></div></div>
+<div class="sect2" title="11.1.46.&nbsp;xmlpipe_attr_string"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-attr-string"></a>11.1.46.&nbsp;xmlpipe_attr_string</h3></div></div></div>
 <p>
 xmlpipe string declaration.
 Multi-value, optional.
@@ -7019,7 +7040,7 @@ The contents of the specified tag will be parsed and stored as a string value.
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_attr_string = subject
 </pre></div>
-<div class="sect2" title="11.1.46.&nbsp;xmlpipe_fixup_utf8"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-fixup-utf8"></a>11.1.46.&nbsp;xmlpipe_fixup_utf8</h3></div></div></div>
+<div class="sect2" title="11.1.47.&nbsp;xmlpipe_fixup_utf8"><div class="titlepage"><div><div><h3 class="title"><a name="conf-xmlpipe-fixup-utf8"></a>11.1.47.&nbsp;xmlpipe_fixup_utf8</h3></div></div></div>
 <p>
 Perform Sphinx-side UTF-8 validation and filtering to prevent XML parser from choking on non-UTF-8 documents.
 Optional, default is 0.
@@ -7036,7 +7057,7 @@ XML parser and replace invalid UTF-8 sequences with spaces.
 </p><h4>Example:</h4><pre class="programlisting">
 xmlpipe_fixup_utf8 = 1
 </pre></div>
-<div class="sect2" title="11.1.47.&nbsp;mssql_winauth"><div class="titlepage"><div><div><h3 class="title"><a name="conf-mssql-winauth"></a>11.1.47.&nbsp;mssql_winauth</h3></div></div></div>
+<div class="sect2" title="11.1.48.&nbsp;mssql_winauth"><div class="titlepage"><div><div><h3 class="title"><a name="conf-mssql-winauth"></a>11.1.48.&nbsp;mssql_winauth</h3></div></div></div>
 <p>
 MS SQL Windows authentication flag.
 Boolean, optional, default value is 0 (false).
@@ -7050,7 +7071,7 @@ from the account you used to install the service.
 </p><h4>Example:</h4><pre class="programlisting">
 mssql_winauth = 1
 </pre></div>
-<div class="sect2" title="11.1.48.&nbsp;mssql_unicode"><div class="titlepage"><div><div><h3 class="title"><a name="conf-mssql-unicode"></a>11.1.48.&nbsp;mssql_unicode</h3></div></div></div>
+<div class="sect2" title="11.1.49.&nbsp;mssql_unicode"><div class="titlepage"><div><div><h3 class="title"><a name="conf-mssql-unicode"></a>11.1.49.&nbsp;mssql_unicode</h3></div></div></div>
 <p>
 MS SQL encoding type flag.
 Boolean, optional, default value is 0 (false).
@@ -7066,7 +7087,7 @@ but Sphinx will automatically handle that.
 </p><h4>Example:</h4><pre class="programlisting">
 mssql_unicode = 1
 </pre></div>
-<div class="sect2" title="11.1.49.&nbsp;unpack_zlib"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-zlib"></a>11.1.49.&nbsp;unpack_zlib</h3></div></div></div>
+<div class="sect2" title="11.1.50.&nbsp;unpack_zlib"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-zlib"></a>11.1.50.&nbsp;unpack_zlib</h3></div></div></div>
 <p>
 Columns to unpack using zlib (aka deflate, aka gunzip).
 Multi-value, optional, default value is empty list of columns.
@@ -7081,7 +7102,7 @@ The feature is only available if zlib and zlib-devel were both available during 
 unpack_zlib = col1
 unpack_zlib = col2
 </pre></div>
-<div class="sect2" title="11.1.50.&nbsp;unpack_mysqlcompress"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-mysqlcompress"></a>11.1.50.&nbsp;unpack_mysqlcompress</h3></div></div></div>
+<div class="sect2" title="11.1.51.&nbsp;unpack_mysqlcompress"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-mysqlcompress"></a>11.1.51.&nbsp;unpack_mysqlcompress</h3></div></div></div>
 <p>
 Columns to unpack using MySQL UNCOMPRESS() algorithm.
 Multi-value, optional, default value is empty list of columns.
@@ -7096,13 +7117,13 @@ The feature is only available if zlib and zlib-devel were both available during 
 unpack_mysqlcompress = body_compressed
 unpack_mysqlcompress = description_compressed
 </pre></div>
-<div class="sect2" title="11.1.51.&nbsp;unpack_mysqlcompress_maxsize"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-mysqlcompress-maxsize"></a>11.1.51.&nbsp;unpack_mysqlcompress_maxsize</h3></div></div></div>
+<div class="sect2" title="11.1.52.&nbsp;unpack_mysqlcompress_maxsize"><div class="titlepage"><div><div><h3 class="title"><a name="conf-unpack-mysqlcompress-maxsize"></a>11.1.52.&nbsp;unpack_mysqlcompress_maxsize</h3></div></div></div>
 <p>
 Buffer size for UNCOMPRESS()ed data.
 Optional, default value is 16M.
 Introduced in version 0.9.9-rc1.
 </p><p>
-When using <a class="link" href="#conf-unpack-mysqlcompress" title="11.1.50.&nbsp;unpack_mysqlcompress">unpack_mysqlcompress</a>,
+When using <a class="link" href="#conf-unpack-mysqlcompress" title="11.1.51.&nbsp;unpack_mysqlcompress">unpack_mysqlcompress</a>,
 due to implementation intrincacies it is not possible to deduce the required buffer size
 from the compressed data. So the buffer must be preallocated in advance, and unpacked
 data can not go over the buffer size. This option lets you control the buffer size,
@@ -7501,6 +7522,12 @@ For instance, assume that "the" is a stopword, that document 1 contains the line
 "in office", and that document 2 contains "in the office". Searching for "in office"
 as for exact phrase will only return the first document, as expected, even though
 "the" in the second one is stopped.
+</p><p>
+Stopwords files can either be created manually, or semi-automatically.
+<code class="filename">indexer</code> provides a mode that creates a frequency dictionary
+of the index, sorted by the keyword frequency, see <code class="option">--buildstops</code>
+and <code class="option">--buildfreqs</code> switch in <a class="xref" href="#ref-indexer" title="6.1.&nbsp;indexer command reference">Section&nbsp;6.1, &#8220;<code class="filename">indexer</code> command reference&#8221;</a>.
+Top keywords from that dictionary can usually be used as stopwords.
 </p><h4>Example:</h4><pre class="programlisting">
 stopwords = /usr/local/sphinx/data/stopwords.txt
 stopwords = stopwords-ru.txt stopwords-en.txt
@@ -7582,7 +7609,6 @@ differences.
 </p><p>
 Short summary of the differences is as follows:
 </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>exceptions are case sensitive, wordforms are not;</p></li>
-<li class="listitem"><p>exceptions allow to detect sequences of tokens, wordforms work with single words only;</p></li>
 <li class="listitem"><p>exceptions can use special characters that are <span class="bold"><strong>not</strong></span> in charset_table, wordforms fully obey charset_table;</p></li>
 <li class="listitem"><p>exceptions can underperform on huge dictionaries, wordforms handle millions of entries well.</p></li>
 </ul></div>
@@ -8047,12 +8073,20 @@ Local index declaration in the <a class="link" href="#distributed" title="5.8.&n
 Multi-value, optional, default is empty.
 </p><p>
 This setting is used to declare local indexes that will be searched when
-given distributed index is searched. All local indexes will be searched
-<span class="bold"><strong>sequentially</strong></span>, utilizing only 1 CPU or core; to parallelize processing,
-you can configure <code class="filename">searchd</code> to query itself (refer to
-<a class="xref" href="#conf-agent" title="11.2.31.&nbsp;agent">Section&nbsp;11.2.31, &#8220;agent&#8221;</a> for the details). There might be several local
-indexes declared per each distributed index. Any local index can be mentioned
-several times in other distributed indexes.
+given distributed index is searched. Many local indexes can be declared per
+each distributed index. Any local index can also be mentioned several times
+in different distributed indexes.
+</p><p>
+Note that by default all local indexes will be searched <span class="bold"><strong>sequentially</strong></span>,
+utilizing only 1 CPU or core. To parallelize processing of the local parts
+in the distributed index, you should use <code class="option">dist_threads</code> directive,
+see <a class="xref" href="#conf-dist-threads" title="11.4.29.&nbsp;dist_threads">Section&nbsp;11.4.29, &#8220;dist_threads&#8221;</a>.
+</p><p>
+Before <code class="option">dist_threads</code>, there also was a legacy solution
+to configure <code class="filename">searchd</code> to query itself instead of using
+local indexes (refer to <a class="xref" href="#conf-agent" title="11.2.31.&nbsp;agent">Section&nbsp;11.2.31, &#8220;agent&#8221;</a> for the details). However,
+that creates redundant CPU and network load, and <code class="option">dist_threads</code>
+is now strongly suggested instead.
 </p><h4>Example:</h4><pre class="programlisting">
 local = chunk1
 local = chunk2
@@ -9208,8 +9242,9 @@ Binary log (aka transaction log) files path.
 Optional, default is build-time configured data directory.
 Introduced in version 1.10-beta.
 </p><p>
-Binary logs are used for crash recovery of RT index data that
-would otherwise only be stored in RAM.  When logging is enabled,
+Binary logs are used for crash recovery of RT index data, and also of 
+attributes updates of plain disk indices that
+would otherwise only be stored in RAM untill flush.  When logging is enabled,
 every transaction COMMIT-ted into RT index gets written into
 a log file.  Logs are then automatically replayed on startup
 after an unclean shutdown, recovering the logged changes.
@@ -9221,6 +9256,11 @@ will create and unlink multiple binlog.* files in that path as necessary
 </p><p>
 Empty value disables binary logging. That improves performance,
 but puts RT index data at risk.
+</p><p>
+WARNING! It is strongly recommended to always explicitly define 'binlog_path' option in your config.
+Otherwise, the default path, which in most cases is the same as working folder, may point to the 
+folder with no write access (for example, /usr/local/var/data). In this case, the searchd
+will not start at all.
 </p><h4>Example:</h4><pre class="programlisting">
 binlog_path = # disable logging
 binlog_path = /var/data # /var/data/binlog.001 etc will be created
@@ -9440,22 +9480,59 @@ the "rotation finished" message in the <code class="filename">searchd</code> eve
 prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 </pre></div></div></div>
 <div class="appendix" title="Appendix&nbsp;A.&nbsp;Sphinx revision history"><div class="titlepage"><div><div><h2 class="title"><a name="changelog"></a>Appendix&nbsp;A.&nbsp;Sphinx revision history</h2></div></div></div>
-<div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#rel203">A.1. Version 2.0.3-release, 23 dec 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel202">A.2. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel201">A.3. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
-<dt><span class="sect1"><a href="#rel110">A.4. Version 1.10-beta, 19 jul 2010</a></span></dt>
-<dt><span class="sect1"><a href="#rel099">A.5. Version 0.9.9-release, 02 dec 2009</a></span></dt>
-<dt><span class="sect1"><a href="#rel099rc2">A.6. Version 0.9.9-rc2, 08 apr 2009</a></span></dt>
-<dt><span class="sect1"><a href="#rel099rc1">A.7. Version 0.9.9-rc1, 17 nov 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel0981">A.8. Version 0.9.8.1, 30 oct 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel098">A.9. Version 0.9.8, 14 jul 2008</a></span></dt>
-<dt><span class="sect1"><a href="#rel097">A.10. Version 0.9.7, 02 apr 2007</a></span></dt>
-<dt><span class="sect1"><a href="#rel097rc2">A.11. Version 0.9.7-rc2, 15 dec 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel097rc">A.12. Version 0.9.7-rc1, 26 oct 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel096">A.13. Version 0.9.6, 24 jul 2006</a></span></dt>
-<dt><span class="sect1"><a href="#rel096rc1">A.14. Version 0.9.6-rc1, 26 jun 2006</a></span></dt>
+<div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 01 mar 2012</a></span></dt>
+<dt><span class="sect1"><a href="#rel203">A.2. Version 2.0.3-release, 23 dec 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel202">A.3. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel201">A.4. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
+<dt><span class="sect1"><a href="#rel110">A.5. Version 1.10-beta, 19 jul 2010</a></span></dt>
+<dt><span class="sect1"><a href="#rel099">A.6. Version 0.9.9-release, 02 dec 2009</a></span></dt>
+<dt><span class="sect1"><a href="#rel099rc2">A.7. Version 0.9.9-rc2, 08 apr 2009</a></span></dt>
+<dt><span class="sect1"><a href="#rel099rc1">A.8. Version 0.9.9-rc1, 17 nov 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel0981">A.9. Version 0.9.8.1, 30 oct 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel098">A.10. Version 0.9.8, 14 jul 2008</a></span></dt>
+<dt><span class="sect1"><a href="#rel097">A.11. Version 0.9.7, 02 apr 2007</a></span></dt>
+<dt><span class="sect1"><a href="#rel097rc2">A.12. Version 0.9.7-rc2, 15 dec 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel097rc">A.13. Version 0.9.7-rc1, 26 oct 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel096">A.14. Version 0.9.6, 24 jul 2006</a></span></dt>
+<dt><span class="sect1"><a href="#rel096rc1">A.15. Version 0.9.6-rc1, 26 jun 2006</a></span></dt>
 </dl></div>
-<div class="sect1" title="A.1.&nbsp;Version 2.0.3-release, 23 dec 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel203"></a>A.1.&nbsp;Version 2.0.3-release, 23 dec 2011</h2></div></div></div>
+<div class="sect1" title="A.1.&nbsp;Version 2.0.4-release, 01 mar 2012"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel204"></a>A.1.&nbsp;Version 2.0.4-release, 01 mar 2012</h2></div></div></div>
+<h3>Bug fixes</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=605" target="_top">#605</a>, pack vs mysql compress</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=783" target="_top">#783</a>, #862, #917, #985, #990, #1032 documentation bugs</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=885" target="_top">#885</a>, bitwise AND/OR were not available via API</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=984" target="_top">#984</a>, crash on indexing data with MAGIC_CODE_ZONE symbol</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1004" target="_top">#1004</a>, RT index loses words from dictionary on segments merging with <code class="code">id64</code> enabled</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1035" target="_top">#1035</a>, daemon doesn't properly handle FDs in case of socket overflow FD_SETSIZE ( *nix, <code class="code">preopen_indexes=0</code>, <code class="code">worker=threads</code> )</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1038" target="_top">#1038</a>, quoted string for API select</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1046" target="_top">#1046</a>, head SPZ overflow, snippet generation at non fast with SPZ</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1048" target="_top">#1048</a>, distributed index can't sort \ filter because of missed attributes</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1050" target="_top">#1050</a>, expression ranker vs agents</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1051" target="_top">#1051</a>, added <a class="link" href="#mva" title="3.4.&nbsp;MVA (multi-valued attributes)">MVA64</a> support to <a class="link" href="#udf" title="5.13.&nbsp;User-defined functions (UDF)">UDFs</a></p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1054" target="_top">#1054</a>, <a class="link" href="#sphinxql-select" title="7.1.&nbsp;SELECT syntax">max_query_time</a> not handled properly on searching at <a class="link" href="#rt-indexes" title="Chapter&nbsp;4.&nbsp;Real-time indexes">RT index</a></p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1055" target="_top">#1055</a>, <a class="link" href="#conf-expansion-limit" title="11.4.39.&nbsp;expansion_limit">expansion_limit</a> on searching at RT disk chunks</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1057" target="_top">#1057</a>, daemon crashes on generating snippet with 0 documents provided</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1060" target="_top">#1060</a>, <a class="link" href="#api-func-buildexcerpts" title="8.7.1.&nbsp;BuildExcerpts">load_files_scattered</a> don't work</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1065" target="_top">#1065</a>, libsphinxclient vs distribute index (agents)</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1067" target="_top">#1067</a>, modifiers were not escaped in legacy query emulation</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1071" target="_top">#1071</a>, master - agent communication got slower for a large query</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1076" target="_top">#1076</a>, #1077, (redundant copying, and a possible mutex leak with uservars)</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1078" target="_top">#1078</a>, <code class="code">blended</code> vs FIELD_END</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1091" target="_top">#1091</a>, RT attach of plain index with string \ MVA attributes prior regular attributes</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1092" target="_top">#1092</a>, update got binloged with wrong TID</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1098" target="_top">#1098</a>, crash on creating large expression</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1099" target="_top">#1099</a>, cleaning up temporary files on fail of indexing</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1100" target="_top">#1100</a>, missing <a class="link" href="#conf-xmlpipe-attr-bigint" title="11.1.39.&nbsp;xmlpipe_attr_bigint">xmlpipe_attr_bigint</a> config directive</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1101" target="_top">#1101</a>, now ignoring dashes within keywords when dash is not in charset_table</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1103" target="_top">#1103</a>, <code class="code">ZONE</code> operator incorrectly works on more than one keywords in a simple zone</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1106" target="_top">#1106</a>, optimized <code class="code">WHERE id=value</code>, <code class="code">WHERE id IN (values_list)</code> clauses used in <code class="code">SELECT</code>, <code class="code">UPDATE</code> statements</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1112" target="_top">#1112</a>, Sphinx doesn't work out-of-the-box because the collision of <code class="code">binlog_path</code> option</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1116" target="_top">#1116</a>, crash on <code class="code">FLUSH RTINDEX</code> unknown-index-name</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1117" target="_top">#1117</a>, occasional RT headers corruption (leading to crashes and/or missing results)</p></li>
+<li class="listitem"><p>fixed result set schema fix-up of internal attributes</p></li>
+<li class="listitem"><p>fixed missed <code class="code">MVA</code> \ keywords storage counting at RT index segments merge</p></li>
+<li class="listitem"><p>fixed negative <a class="link" href="#api-funcgroup-querying" title="8.6.&nbsp;Querying">total_found</a>, docs and hits counter on huge indexes</p></li>
+</ul></div></div>
+<div class="sect1" title="A.2.&nbsp;Version 2.0.3-release, 23 dec 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel203"></a>A.2.&nbsp;Version 2.0.3-release, 23 dec 2011</h2></div></div></div>
 <h3>Bug fixes</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1031" target="_top">#1031</a>, SphinxQL parsing syntax for MVA at insert \ replace statements</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1027" target="_top">#1027</a>, stalls on attribute update in high-concurrency load</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1026" target="_top">#1026</a>, daemon crash on malformed API command</p></li>
@@ -9473,9 +9550,9 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=971" target="_top">#971</a>, absent error message at master on agent "maxed out"</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=695" target="_top">#695</a>, #815, #835, #866, malformed warnings in SphinxQL</p></li>
 <li class="listitem"><p>fixed build of SphinxSE with MySQL 5.1</p></li>
-<li class="listitem"><p>fixed crash log for “fork” and “prefork” workers</p></li>
+<li class="listitem"><p>fixed crash log for 'fork' and 'prefork' workers</p></li>
 </ul></div></div>
-<div class="sect1" title="A.2.&nbsp;Version 2.0.2-beta, 15 nov 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel202"></a>A.2.&nbsp;Version 2.0.2-beta, 15 nov 2011</h2></div></div></div>
+<div class="sect1" title="A.3.&nbsp;Version 2.0.2-beta, 15 nov 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel202"></a>A.3.&nbsp;Version 2.0.2-beta, 15 nov 2011</h2></div></div></div>
 <h3>Major new features</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added keywords dictionary (<a class="link" href="#conf-dict" title="11.2.7.&nbsp;dict"><code class="code">dict=keywords</code></a>) support to RT indexes</p></li>
 <li class="listitem"><p>added <a class="link" href="#conf-rt-attr-multi" title="11.2.54.&nbsp;rt_attr_multi">MVA</a>, <a class="link" href="#conf-index-exact-words" title="11.2.42.&nbsp;index_exact_words">index_exact_words</a> support to RT indexes (#888)</p></li>
 <li class="listitem"><p>added <a class="link" href="#mva" title="3.4.&nbsp;MVA (multi-valued attributes)">MVA64</a> (a set of BIGINTs) support to both disk and RT indexes (<a class="link" href="#conf-rt-attr-multi-64" title="11.2.55.&nbsp;rt_attr_multi_64">rt_attr_multi_64</a> directive)</p></li>
@@ -9580,7 +9657,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed that in some extremely rare edge cases tiny parts of an index could end up corrupted with <code class="code">dict=keywords</code></p></li>
 <li class="listitem"><p>fixed that field/zone conditions were not propagated to expanded keywords with <code class="code">dict=keywords</code></p></li>
 </ul></div></div>
-<div class="sect1" title="A.3.&nbsp;Version 2.0.1-beta, 22 apr 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel201"></a>A.3.&nbsp;Version 2.0.1-beta, 22 apr 2011</h2></div></div></div>
+<div class="sect1" title="A.4.&nbsp;Version 2.0.1-beta, 22 apr 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel201"></a>A.4.&nbsp;Version 2.0.1-beta, 22 apr 2011</h2></div></div></div>
 <h3>New general features</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added remapping support to <a class="link" href="#conf-blend-chars" title="11.2.47.&nbsp;blend_chars">blend_chars</a> directive</p></li>
 <li class="listitem"><p>added multi-threaded snippet batches support (requires a batch sent via API, <a class="link" href="#conf-dist-threads" title="11.4.29.&nbsp;dist_threads">dist_threads</a>, and <code class="code">load_files</code>)</p></li>
 <li class="listitem"><p>added collations (<a class="link" href="#conf-collation-server" title="11.4.33.&nbsp;collation_server">collation_server</a>, <a class="link" href="#conf-collation-libc-locale" title="11.4.34.&nbsp;collation_libc_locale">collation_libc_locale directives</a>)</p></li>
@@ -9712,7 +9789,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed libsphinxclient SIGPIPE handling</p></li>
 <li class="listitem"><p>fixed libsphinxclient vs VS2003 compiler bug</p></li>
 </ul></div></div>
-<div class="sect1" title="A.4.&nbsp;Version 1.10-beta, 19 jul 2010"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel110"></a>A.4.&nbsp;Version 1.10-beta, 19 jul 2010</h2></div></div></div>
+<div class="sect1" title="A.5.&nbsp;Version 1.10-beta, 19 jul 2010"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel110"></a>A.5.&nbsp;Version 1.10-beta, 19 jul 2010</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added RT indexes support (<a class="xref" href="#rt-indexes" title="Chapter&nbsp;4.&nbsp;Real-time indexes">Chapter&nbsp;4, <i>Real-time indexes</i></a>)</p></li>
 <li class="listitem"><p>added prefork and threads support (<a class="link" href="#conf-workers" title="11.4.28.&nbsp;workers">workers</a> directives)</p></li>
 <li class="listitem"><p>added multi-threaded local searches in distributed indexes (<a class="link" href="#conf-dist-threads" title="11.4.29.&nbsp;dist_threads">dist_threads</a> directive)</p></li>
@@ -9720,7 +9797,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 	<a class="link" href="#conf-subtree-hits-cache" title="11.4.27.&nbsp;subtree_hits_cache">subtree_hits_cache</a> directives)</p></li>
 <li class="listitem"><p>added string attributes support (<a class="link" href="#conf-sql-attr-string" title="11.1.24.&nbsp;sql_attr_string">sql_attr_string</a>,
 	<a class="link" href="#conf-sql-field-string" title="11.1.27.&nbsp;sql_field_string">sql_field_string</a>,
-	<a class="link" href="#conf-xmlpipe-attr-string" title="11.1.45.&nbsp;xmlpipe_attr_string">xml_attr_string</a>,
+	<a class="link" href="#conf-xmlpipe-attr-string" title="11.1.46.&nbsp;xmlpipe_attr_string">xml_attr_string</a>,
 	<a class="link" href="#conf-xmlpipe-field-string" title="11.1.36.&nbsp;xmlpipe_field_string">xml_field_string</a> directives)</p></li>
 <li class="listitem"><p>added indexing-time word counter (<a class="link" href="#conf-sql-attr-str2wordcount" title="11.1.25.&nbsp;sql_attr_str2wordcount">sql_attr_str2wordcount</a>,
 	<a class="link" href="#conf-sql-field-str2wordcount" title="11.1.28.&nbsp;sql_field_str2wordcount">sql_field_str2wordcount</a> directives)</p></li>
@@ -9787,7 +9864,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=506" target="_top">#506</a>, better MySQL protocol commands support in SphinxQL (PING etc)</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=509" target="_top">#509</a>, indexing ranged results from stored procedures</p></li>
 </ul></div></div>
-<div class="sect1" title="A.5.&nbsp;Version 0.9.9-release, 02 dec 2009"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099"></a>A.5.&nbsp;Version 0.9.9-release, 02 dec 2009</h2></div></div></div>
+<div class="sect1" title="A.6.&nbsp;Version 0.9.9-release, 02 dec 2009"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099"></a>A.6.&nbsp;Version 0.9.9-release, 02 dec 2009</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added Open, Close, Status calls to libsphinxclient (C API)</p></li>
 <li class="listitem"><p>added automatic persistent connection reopening to PHP, Python APIs</p></li>
 <li class="listitem"><p>added 64-bit value/range filters, fullscan mode support to SphinxSE</p></li>
@@ -9842,7 +9919,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=344" target="_top">#344</a> (invalid checkpoints after merge)</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=326" target="_top">#326</a> (missing CLOCK_xxx on FreeBSD)</p></li>
 </ul></div></div>
-<div class="sect1" title="A.6.&nbsp;Version 0.9.9-rc2, 08 apr 2009"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099rc2"></a>A.6.&nbsp;Version 0.9.9-rc2, 08 apr 2009</h2></div></div></div>
+<div class="sect1" title="A.7.&nbsp;Version 0.9.9-rc2, 08 apr 2009"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099rc2"></a>A.7.&nbsp;Version 0.9.9-rc2, 08 apr 2009</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added IsConnectError(), Open(), Close() calls to Java API (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=240" target="_top">#240</a>)</p></li>
 <li class="listitem"><p>added <a class="link" href="#conf-read-buffer" title="11.4.23.&nbsp;read_buffer">read_buffer</a>, <a class="link" href="#conf-read-unhinted" title="11.4.24.&nbsp;read_unhinted">read_unhinted</a> directives</p></li>
 <li class="listitem"><p>added checks for build options returned by mysql_config (builds on Solaris now)</p></li>
@@ -9856,7 +9933,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>added support for <a class="link" href="#api-func-setselect" title="8.2.4.&nbsp;SetSelect">aggregate functions</a> in GROUP BY (namely AVG, MAX, MIN, SUM)</p></li>
 <li class="listitem"><p>added <a class="link" href="#sphinxse-snippets" title="9.4.&nbsp;Building snippets (excerpts) via MySQL">MySQL UDF that builds snippets</a> using searchd</p></li>
 <li class="listitem"><p>added <a class="link" href="#conf-write-buffer" title="11.3.5.&nbsp;write_buffer">write_buffer</a> directive (defaults to 1M)</p></li>
-<li class="listitem"><p>added <a class="link" href="#conf-xmlpipe-fixup-utf8" title="11.1.46.&nbsp;xmlpipe_fixup_utf8">xmlpipe_fixup_utf8</a> directive</p></li>
+<li class="listitem"><p>added <a class="link" href="#conf-xmlpipe-fixup-utf8" title="11.1.47.&nbsp;xmlpipe_fixup_utf8">xmlpipe_fixup_utf8</a> directive</p></li>
 <li class="listitem"><p>added suggestions sample</p></li>
 <li class="listitem"><p>added microsecond precision int64 timer (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=282" target="_top">#282</a>)</p></li>
 <li class="listitem"><p>added <a class="link" href="#conf-listen-backlog" title="11.4.22.&nbsp;listen_backlog">listen_backlog directive</a></p></li>
@@ -9884,7 +9961,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed libsphinxclient handling of zero max_matches and cutoff (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=208" target="_top">#208</a>)</p></li>
 <li class="listitem"><p>fixed Java API over-64K string reads (eg. big snippets) in Java API (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=181" target="_top">#181</a>)</p></li>
 <li class="listitem"><p>fixed Java API 2nd Query() after network error in 1st Query() call (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=308" target="_top">#308</a>)</p></li>
-<li class="listitem"><p>fixed typo-class bugs in SetFilterFloatRange (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=259" target="_top">#259</a>), SetSortMode (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=248" target="_top">#248</a>)</p></li>
+<li class="listitem"><p>fixed typo-class bugs in SetFilterFloatRange (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=259" target="_top">#259</a>), SetSortMode (bug #248)</p></li>
 <li class="listitem"><p>fixed missing @@relaxed support (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=276" target="_top">#276</a>), fixed missing error on @nosuchfield queries, documented @@relaxed</p></li>
 <li class="listitem"><p>fixed UNIX socket permissions to 0777 (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=288" target="_top">#288</a>)</p></li>
 <li class="listitem"><p>fixed xmlpipe2 crash on schemas with no fields, added better document structure checks</p></li>
@@ -9916,7 +9993,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed stupid bug in escaping code, fixed EscapeString() and made it static</p></li>
 <li class="listitem"><p>fixed parser vs @field -keyword, foo|@field bar, "" queries (bug <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=310" target="_top">#310</a>)</p></li>
 </ul></div></div>
-<div class="sect1" title="A.7.&nbsp;Version 0.9.9-rc1, 17 nov 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099rc1"></a>A.7.&nbsp;Version 0.9.9-rc1, 17 nov 2008</h2></div></div></div>
+<div class="sect1" title="A.8.&nbsp;Version 0.9.9-rc1, 17 nov 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel099rc1"></a>A.8.&nbsp;Version 0.9.9-rc1, 17 nov 2008</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added <a class="link" href="#conf-min-stemming-len" title="11.2.10.&nbsp;min_stemming_len">min_stemming_len</a> directive</p></li>
 <li class="listitem"><p>added <a class="link" href="#api-func-isconnecterror" title="8.1.7.&nbsp;IsConnectError">IsConnectError()</a> API call (helps distingusih API vs remote errors)</p></li>
 <li class="listitem"><p>added duplicate log messages filter to searchd</p></li>
@@ -9925,8 +10002,8 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>added <a class="link" href="#conf-max-filters" title="11.4.20.&nbsp;max_filters">max_filters</a>, <a class="link" href="#conf-max-filter-values" title="11.4.21.&nbsp;max_filter_values">max_filter_values</a> directives (were hardcoded before)</p></li>
 <li class="listitem"><p>added int64 expression evaluation path, automatic inference, and BIGINT() enforcer function</p></li>
 <li class="listitem"><p>added crash handler for debugging (<a class="link" href="#conf-crash-log-path" title="11.4.19.&nbsp;crash_log_path">crash_log_path</a> directive)</p></li>
-<li class="listitem"><p>added MS SQL (aka SQL Server) source support (Windows only, <a class="link" href="#conf-mssql-winauth" title="11.1.47.&nbsp;mssql_winauth">mssql_winauth</a> and <a class="link" href="#conf-mssql-unicode" title="11.1.48.&nbsp;mssql_unicode">mssql_unicode</a> directives)</p></li>
-<li class="listitem"><p>added indexer-side column unpacking feature (<a class="link" href="#conf-unpack-zlib" title="11.1.49.&nbsp;unpack_zlib">unpack_zlib</a>, <a class="link" href="#conf-unpack-mysqlcompress" title="11.1.50.&nbsp;unpack_mysqlcompress">unpack_mysqlcompress</a> directives)</p></li>
+<li class="listitem"><p>added MS SQL (aka SQL Server) source support (Windows only, <a class="link" href="#conf-mssql-winauth" title="11.1.48.&nbsp;mssql_winauth">mssql_winauth</a> and <a class="link" href="#conf-mssql-unicode" title="11.1.49.&nbsp;mssql_unicode">mssql_unicode</a> directives)</p></li>
+<li class="listitem"><p>added indexer-side column unpacking feature (<a class="link" href="#conf-unpack-zlib" title="11.1.50.&nbsp;unpack_zlib">unpack_zlib</a>, <a class="link" href="#conf-unpack-mysqlcompress" title="11.1.51.&nbsp;unpack_mysqlcompress">unpack_mysqlcompress</a> directives)</p></li>
 <li class="listitem"><p>added nested brackers and NOTs support to <a class="link" href="#extended-syntax" title="5.3.&nbsp;Extended query syntax">query language</a>, rewritten query parser</p></li>
 <li class="listitem"><p>added persistent connections support (<a class="link" href="#api-func-open" title="8.8.1.&nbsp;Open">Open()</a> and <a class="link" href="#api-func-close" title="8.8.2.&nbsp;Close">Close()</a> API calls)</p></li>
 <li class="listitem"><p>added <a class="link" href="#conf-index-exact-words" title="11.2.42.&nbsp;index_exact_words">index_exact_words</a> feature, and exact form operator to query language ("hello =world")</p></li>
@@ -9959,7 +10036,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed backslash escaping, added backslash to EscapeString()</p></li>
 <li class="listitem"><p>fixed handling of over-2GB dictionary files (.spi)</p></li>
 </ul></div></div>
-<div class="sect1" title="A.8.&nbsp;Version 0.9.8.1, 30 oct 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel0981"></a>A.8.&nbsp;Version 0.9.8.1, 30 oct 2008</h2></div></div></div>
+<div class="sect1" title="A.9.&nbsp;Version 0.9.8.1, 30 oct 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel0981"></a>A.9.&nbsp;Version 0.9.8.1, 30 oct 2008</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added configure script to libsphinxclient</p></li>
 <li class="listitem"><p>changed proximity/quorum operator syntax to require whitespace after length</p></li>
 <li class="listitem"><p>fixed potential head process crash on SIGPIPE during "maxed out" message</p></li>
@@ -9980,7 +10057,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed Python API to accept offset/limit of 'long' type</p></li>
 <li class="listitem"><p>fixed default ID range (that filtered out all 64-bit values) in Java and Python APIs</p></li>
 </ul></div></div>
-<div class="sect1" title="A.9.&nbsp;Version 0.9.8, 14 jul 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel098"></a>A.9.&nbsp;Version 0.9.8, 14 jul 2008</h2></div></div></div>
+<div class="sect1" title="A.10.&nbsp;Version 0.9.8, 14 jul 2008"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel098"></a>A.10.&nbsp;Version 0.9.8, 14 jul 2008</h2></div></div></div>
 <h3>Indexing</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added support for 64-bit document and keyword IDs, --enable-id64 switch to configure</p></li>
 <li class="listitem"><p>added support for floating point attributes</p></li>
 <li class="listitem"><p>added support for bitfields in attributes, <a class="link" href="#conf-sql-attr-bool" title="11.1.18.&nbsp;sql_attr_bool">sql_attr_bool</a> directive and bit-widths part in <a class="link" href="#conf-sql-attr-uint" title="11.1.17.&nbsp;sql_attr_uint">sql_attr_uint</a> directive</p></li>
@@ -10097,7 +10174,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed rare count(distinct) vs. querying multiple local indexes vs. reusable sorter issue</p></li>
 <li class="listitem"><p>fixed sorting of negative floats in SPH_SORT_EXTENDED mode</p></li>
 </ul></div></div>
-<div class="sect1" title="A.10.&nbsp;Version 0.9.7, 02 apr 2007"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097"></a>A.10.&nbsp;Version 0.9.7, 02 apr 2007</h2></div></div></div>
+<div class="sect1" title="A.11.&nbsp;Version 0.9.7, 02 apr 2007"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097"></a>A.11.&nbsp;Version 0.9.7, 02 apr 2007</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added support for <code class="option">sql_str2ordinal_column</code></p></li>
 <li class="listitem"><p>added support for upto 5 sort-by attrs (in extended sorting mode)</p></li>
 <li class="listitem"><p>added support for separate groups sorting clause (in group-by mode)</p></li>
@@ -10135,7 +10212,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed wrong assertion in SBCS encoder</p></li>
 <li class="listitem"><p>fixed crashes with no-attribute indexes after rotate</p></li>
 </ul></div></div>
-<div class="sect1" title="A.11.&nbsp;Version 0.9.7-rc2, 15 dec 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097rc2"></a>A.11.&nbsp;Version 0.9.7-rc2, 15 dec 2006</h2></div></div></div>
+<div class="sect1" title="A.12.&nbsp;Version 0.9.7-rc2, 15 dec 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097rc2"></a>A.12.&nbsp;Version 0.9.7-rc2, 15 dec 2006</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added support for extended matching mode (query language)</p></li>
 <li class="listitem"><p>added support for extended sorting mode (sorting clauses)</p></li>
 <li class="listitem"><p>added support for SBCS excerpts</p></li>
@@ -10152,7 +10229,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <code class="option">--with-mysql-includes/libs</code> (they conflicted with well-known paths)</p></li>
 <li class="listitem"><p>fixes for 64-bit platforms</p></li>
 </ul></div></div>
-<div class="sect1" title="A.12.&nbsp;Version 0.9.7-rc1, 26 oct 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097rc"></a>A.12.&nbsp;Version 0.9.7-rc1, 26 oct 2006</h2></div></div></div>
+<div class="sect1" title="A.13.&nbsp;Version 0.9.7-rc1, 26 oct 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel097rc"></a>A.13.&nbsp;Version 0.9.7-rc1, 26 oct 2006</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added alpha index merging code</p></li>
 <li class="listitem"><p>added an option to decrease <code class="option">max_matches</code> per-query</p></li>
 <li class="listitem"><p>added an option to specify IP address for searchd to listen on</p></li>
@@ -10176,14 +10253,14 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed line numbering in config parser</p></li>
 <li class="listitem"><p>fixed some issues with index rotation</p></li>
 </ul></div></div>
-<div class="sect1" title="A.13.&nbsp;Version 0.9.6, 24 jul 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel096"></a>A.13.&nbsp;Version 0.9.6, 24 jul 2006</h2></div></div></div>
+<div class="sect1" title="A.14.&nbsp;Version 0.9.6, 24 jul 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel096"></a>A.14.&nbsp;Version 0.9.6, 24 jul 2006</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added support for empty indexes</p></li>
 <li class="listitem"><p>added support for multiple sql_query_pre/post/post_index</p></li>
 <li class="listitem"><p>fixed timestamp ranges filter in "match any" mode</p></li>
 <li class="listitem"><p>fixed configure issues with --without-mysql and --with-pgsql options</p></li>
 <li class="listitem"><p>fixed building on Solaris 9</p></li>
 </ul></div></div>
-<div class="sect1" title="A.14.&nbsp;Version 0.9.6-rc1, 26 jun 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel096rc1"></a>A.14.&nbsp;Version 0.9.6-rc1, 26 jun 2006</h2></div></div></div>
+<div class="sect1" title="A.15.&nbsp;Version 0.9.6-rc1, 26 jun 2006"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel096rc1"></a>A.15.&nbsp;Version 0.9.6-rc1, 26 jun 2006</h2></div></div></div>
 <div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>added boolean queries support (experimental, beta version)</p></li>
 <li class="listitem"><p>added simple file-based query cache (experimental, beta version)</p></li>
 <li class="listitem"><p>added storage engine for MySQL 5.0 and 5.1 (experimental, beta version)</p></li>
