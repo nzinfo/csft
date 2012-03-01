@@ -2594,26 +2594,34 @@ void RtIndex_t::CommitReplayable ( RtSegment_t * pNewSeg, CSphVector<SphDocID_t>
 			if ( !pSeg->m_bTlsKlist )
 				continue; // should be fresh enough
 
-			bool bKlistChanged = false;
-
 			// this segment was not created by this txn
 			// so we need to merge additional K-list from current txn into it
+			CSphVector<SphDocID_t> dKlistAddon;
 			ARRAY_FOREACH ( j, dAccKlist )
 			{
+				// tricky bit!
+				// we can NOT append ids to segment k-list directly
+				// because FindAliveRow() will binary search it
+				// and it will expect a sorted list
 				SphDocID_t uDocid = dAccKlist[j];
 				if ( pSeg->FindAliveRow ( uDocid ) )
-				{
-					pSeg->m_dKlist.Add ( uDocid );
-					pSeg->m_iAliveRows--;
-					assert ( pSeg->m_iAliveRows>=0 );
-					bKlistChanged = true;
-				}
+					dKlistAddon.Add ( uDocid );
 			}
 
-			// we did not check for existence in K-list, only in segment
-			// so need to use Uniq(), not just Sort()
-			if ( bKlistChanged )
+			// now actually update it
+			if ( dKlistAddon.GetLength() )
+			{
+				// copy data, update counters
+				ARRAY_FOREACH ( i, dKlistAddon )
+					pSeg->m_dKlist.Add ( dKlistAddon[i] );
+
+				pSeg->m_iAliveRows -= dKlistAddon.GetLength();
+				assert ( pSeg->m_iAliveRows>=0 );
+
+				// we did not check for existence in K-list, only in segment
+				// so need to use Uniq(), not just Sort()
 				pSeg->m_dKlist.Uniq ();
+			}
 
 			// mark as good
 			pSeg->m_bTlsKlist = false;
@@ -3004,18 +3012,8 @@ void RtIndex_t::SaveDiskDataImpl ( const char * sFilename ) const
 
 	// prepare to build min-max index for attributes too
 	int iTotalDocs = 0;
-#if 1
-	// FIXME! slow but working; and m_iAliveRows shows discrepancies sometimes
-	ARRAY_FOREACH ( i, m_pSegments )
-	{
-		RtRowIterator_T<DOCID> tIt ( m_pSegments[i], iStride, false, NULL );
-		while ( tIt.GetNextAliveRow() )
-			iTotalDocs++;
-	}
-#else
 	ARRAY_FOREACH ( i, m_pSegments )
 		iTotalDocs += m_pSegments[i]->m_iAliveRows;
-#endif
 
 	AttrIndexBuilder_t<DOCID> tMinMaxBuilder ( m_tSchema );
 	CSphVector<DWORD> dMinMaxBuffer ( tMinMaxBuilder.GetExpectedSize ( iTotalDocs ) );
