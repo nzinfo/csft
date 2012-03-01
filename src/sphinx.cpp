@@ -13605,10 +13605,6 @@ bool CSphIndex_VLN::Preread ()
 	if ( m_pProgress )
 		m_pProgress ( &m_tProgress, true );
 
-	sphLogDebug ( "Prereading .mvp" );
-	if ( !LoadPersistentMVA ( m_sLastError ) )
-		return false;
-
 	//////////////////////
 	// precalc everything
 	//////////////////////
@@ -13666,6 +13662,11 @@ bool CSphIndex_VLN::Preread ()
 		}
 		pHash [ ++uLastHash ] = m_uDocinfo;
 	}
+
+	// persist MVA needs valid DocinfoHash
+	sphLogDebug ( "Prereading .mvp" );
+	if ( !LoadPersistentMVA ( m_sLastError ) )
+		return false;
 
 	// build "indexes" for full-scan
 	if ( m_uVersion < 20 && !PrecomputeMinMax() )
