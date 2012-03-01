@@ -11768,7 +11768,8 @@ void HandleMysqlFlush ( const SqlStmt_t & tStmt, NetOutputBuffer_c & tOut, BYTE 
 
 	if ( !pIndex || !pIndex->m_bEnabled || !pIndex->m_bRT )
 	{
-		pIndex->Unlock();
+		if ( pIndex )
+			pIndex->Unlock();
 		SendMysqlErrorPacket ( tOut, uPacketID, tStmt.m_sStmt, "FLUSH RTINDEX requires an existing RT index" );
 		return;
 	}
