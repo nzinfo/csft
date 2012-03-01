@@ -1047,7 +1047,10 @@ void * sphMyStack ()
 int64_t sphGetStackUsed()
 {
 	BYTE cStack;
-	int64_t iHeight = (BYTE*)sphMyStack() - &cStack;
+	BYTE * pStackTop = (BYTE*)sphMyStack();
+	if ( !pStackTop )
+		return 0;
+	int64_t iHeight = pStackTop - &cStack;
 	if ( iHeight>=0 )
 		return iHeight;
 	else
