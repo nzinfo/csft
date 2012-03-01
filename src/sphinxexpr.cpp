@@ -748,7 +748,7 @@ class ExprParser_t
 public:
 	ExprParser_t ( CSphSchema * pExtra, ISphExprHook * pHook )
 		: m_pHook ( pHook )
-        , m_pExtra ( pExtra )
+		, m_pExtra ( pExtra )
 	{}
 
 							~ExprParser_t ();
@@ -2376,7 +2376,6 @@ ISphExpr * ExprParser_t::CreateInNode ( int iNode )
 			{
 				m_sCreateError.SetSprintf ( "undefined user variable '%s'", m_dUservars[(int)tRight.m_iConst].cstr() );
 				return NULL;
-
 			}
 
 			switch ( tLeft.m_iToken )
@@ -2994,6 +2993,36 @@ ISphExpr * ExprParser_t::Parse ( const char * sExpr, const CSphSchema & tSchema,
 #if 0
 	Dump ( m_iParsed );
 #endif
+
+	// check expression stack
+	if ( m_dNodes.GetLength()>100 )
+	{
+		CSphVector<int> dNodes;
+		dNodes.Reserve ( m_dNodes.GetLength()/2 );
+		int iMaxHeight = 1;
+		int iHeight = 1;
+		dNodes.Add ( m_iParsed );
+		while ( dNodes.GetLength() )
+		{
+			const ExprNode_t & tExpr = m_dNodes[dNodes.Pop()];
+			iHeight += ( tExpr.m_iLeft>=0 || tExpr.m_iRight>=0 ? 1 : -1 );
+			iMaxHeight = Max ( iMaxHeight, iHeight );
+			if ( tExpr.m_iRight>=0 )
+				dNodes.Add ( tExpr.m_iRight );
+			if ( tExpr.m_iLeft>=0 )
+				dNodes.Add ( tExpr.m_iLeft );
+		}
+
+#define SPH_EXPRNODE_STACK_SIZE 110
+		int64_t iExprStack = sphGetStackUsed() + iMaxHeight*SPH_EXPRNODE_STACK_SIZE;
+		if ( sphMyStackSize()<=iExprStack )
+		{
+			sError.SetSprintf ( "query too complex, not enough stack (thread_stack_size=%dK or higher required)",
+				(int)( ( iExprStack + 1024 - ( iExprStack%1024 ) ) / 1024 ) );
+			return NULL;
+		}
+	}
+
 
 	// create evaluator
 	ISphExpr * pRes = CreateTree ( m_iParsed );

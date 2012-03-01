@@ -1043,6 +1043,18 @@ void * sphMyStack ()
 	return sphThreadGet ( g_tMyThreadStack );
 }
 
+
+int64_t sphGetStackUsed()
+{
+	BYTE cStack;
+	int64_t iHeight = (BYTE*)sphMyStack() - &cStack;
+	if ( iHeight>=0 )
+		return iHeight;
+	else
+		return -iHeight;
+}
+
+
 int sphMyStackSize ()
 {
 #if USE_WINDOWS
