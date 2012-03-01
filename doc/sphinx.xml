@@ -6545,9 +6545,12 @@ and TCP port, respectively:
 as in <link linkend="api-func-setrankingmode">SetRankingMode()</link> API call
 (the only mode that supports full query syntax).
 Known values are "proximity_bm25", "bm25", "none", "wordcount", "proximity",
-"matchany", and "fieldmask".
+"matchany", "fieldmask"; and, starting with 2.0.4-release, "expr:EXPRESSION"
+syntax to support expression-based ranker (where EXPRESSION should be replaced
+with your specific ranking formula):
 <programlisting>
 ... WHERE query='test;mode=extended;ranker=bm25;';
+... WHERE query='test;mode=extended;ranker=expr:sum(lcs);';
 </programlisting>
 </para></listitem>
 <listitem><para>geoanchor - geodistance anchor, as in
