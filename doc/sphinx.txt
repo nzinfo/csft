@@ -340,7 +340,7 @@ Table of Contents
       11.4.42. prefork_rotation_throttle
 
 A. Sphinx revision history
-   A.1. Version 2.0.4-release, 01 mar 2012
+   A.1. Version 2.0.4-release, 02 mar 2012
    A.2. Version 2.0.3-release, 23 dec 2011
    A.3. Version 2.0.2-beta, 15 nov 2011
    A.4. Version 2.0.1-beta, 22 apr 2011
@@ -6351,9 +6351,13 @@ number of options can be specified. Available options are:
    * ranker - a ranking function to use with "extended" matching mode, as
      in SetRankingMode() API call (the only mode that supports full query
      syntax). Known values are "proximity_bm25", "bm25", "none",
-     "wordcount", "proximity", "matchany", and "fieldmask".
+     "wordcount", "proximity", "matchany", "fieldmask"; and, starting with
+     2.0.4-release, "expr:EXPRESSION" syntax to support expression-based
+     ranker (where EXPRESSION should be replaced with your specific ranking
+     formula):
 
       | ... WHERE query='test;mode=extended;ranker=bm25;';
+      | ... WHERE query='test;mode=extended;ranker=expr:sum(lcs);';
 
    * geoanchor - geodistance anchor, as in SetGeoAnchor() API call. Takes
      4 parameters which are latitude and longiture attribute names, and
@@ -10328,7 +10332,7 @@ Appendix A. Sphinx revision history
 
 Table of Contents
 
-A.1. Version 2.0.4-release, 01 mar 2012
+A.1. Version 2.0.4-release, 02 mar 2012
 A.2. Version 2.0.3-release, 23 dec 2011
 A.3. Version 2.0.2-beta, 15 nov 2011
 A.4. Version 2.0.1-beta, 22 apr 2011
@@ -10344,7 +10348,7 @@ A.13. Version 0.9.7-rc1, 26 oct 2006
 A.14. Version 0.9.6, 24 jul 2006
 A.15. Version 0.9.6-rc1, 26 jun 2006
 
-A.1. Version 2.0.4-release, 01 mar 2012
+A.1. Version 2.0.4-release, 02 mar 2012
 =======================================
 
 Bug fixes
@@ -10397,6 +10401,8 @@ Bug fixes
 
    * fixed #1078, blended vs FIELD_END
 
+   * fixed #1084 crash \ index corruption on loading persist MVA
+
    * fixed #1091, RT attach of plain index with string \ MVA attributes
      prior regular attributes
 
@@ -10425,12 +10431,10 @@ Bug fixes
    * fixed #1117, occasional RT headers corruption (leading to crashes
      and/or missing results)
 
-   * fixed result set schema fix-up of internal attributes
+   * fixed #1119, missing expression ranker support in SphinxSE
 
-   * fixed missed MVA \ keywords storage counting at RT index segments
-     merge
-
-   * fixed negative total_found, docs and hits counter on huge indexes
+   * fixed #1120, negative total_found, docs and hits counter on huge
+     indexes
 
 A.2. Version 2.0.3-release, 23 dec 2011
 =======================================

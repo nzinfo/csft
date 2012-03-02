@@ -11227,7 +11227,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 
 <appendix id="changelog"><title>Sphinx revision history</title>
 
-<sect1 id="rel204"><title>Version 2.0.4-release, 01 mar 2012</title>
+<sect1 id="rel204"><title>Version 2.0.4-release, 02 mar 2012</title>
 <bridgehead>Bug fixes</bridgehead>
 <itemizedlist>
 <listitem><para>fixed #605, pack vs mysql compress</para></listitem>
@@ -11250,6 +11250,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <listitem><para>fixed #1071, master - agent communication got slower for a large query</para></listitem>
 <listitem><para>fixed #1076, #1077, (redundant copying, and a possible mutex leak with uservars)</para></listitem>
 <listitem><para>fixed #1078, <code>blended</code> vs FIELD_END</para></listitem>
+<listitem><para>fixed #1084 crash \ index corruption on loading persist MVA</para></listitem>
 <listitem><para>fixed #1091, RT attach of plain index with string \ MVA attributes prior regular attributes</para></listitem>
 <listitem><para>fixed #1092, update got binloged with wrong TID</para></listitem>
 <listitem><para>fixed #1098, crash on creating large expression</para></listitem>
@@ -11261,9 +11262,8 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <listitem><para>fixed #1112, Sphinx doesn't work out-of-the-box because the collision of <code>binlog_path</code> option</para></listitem>
 <listitem><para>fixed #1116, crash on <code>FLUSH RTINDEX</code> unknown-index-name</para></listitem>
 <listitem><para>fixed #1117, occasional RT headers corruption (leading to crashes and/or missing results)</para></listitem>
-<listitem><para>fixed result set schema fix-up of internal attributes</para></listitem>
-<listitem><para>fixed missed <code>MVA</code> \ keywords storage counting at RT index segments merge</para></listitem>
-<listitem><para>fixed negative <link linkend="api-funcgroup-querying">total_found</link>, docs and hits counter on huge indexes</para></listitem>
+<listitem><para>fixed #1119, missing expression ranker support in SphinxSE</para></listitem>
+<listitem><para>fixed #1120, negative <link linkend="api-funcgroup-querying">total_found</link>, docs and hits counter on huge indexes</para></listitem>
 </itemizedlist>
 </sect1>
 

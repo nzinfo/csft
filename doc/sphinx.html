@@ -311,7 +311,7 @@
 <dt><span class="sect2"><a href="#conf-watchdog">11.4.41. watchdog</a></span></dt>
 <dt><span class="sect2"><a href="#conf-prefork-rotation-throttle">11.4.42. prefork_rotation_throttle</a></span></dt>
 </dl></dd></dl></dd><dt><span class="appendix"><a href="#changelog">A. Sphinx revision history</a></span></dt>
-<dd><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 01 mar 2012</a></span></dt>
+<dd><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 02 mar 2012</a></span></dt>
 <dt><span class="sect1"><a href="#rel203">A.2. Version 2.0.3-release, 23 dec 2011</a></span></dt>
 <dt><span class="sect1"><a href="#rel202">A.3. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
 <dt><span class="sect1"><a href="#rel201">A.4. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
@@ -5793,9 +5793,12 @@ and TCP port, respectively:
 as in <a class="link" href="#api-func-setrankingmode" title="8.3.2.&nbsp;SetRankingMode">SetRankingMode()</a> API call
 (the only mode that supports full query syntax).
 Known values are "proximity_bm25", "bm25", "none", "wordcount", "proximity",
-"matchany", and "fieldmask".
+"matchany", "fieldmask"; and, starting with 2.0.4-release, "expr:EXPRESSION"
+syntax to support expression-based ranker (where EXPRESSION should be replaced
+with your specific ranking formula):
 </p><pre class="programlisting">
 ... WHERE query='test;mode=extended;ranker=bm25;';
+... WHERE query='test;mode=extended;ranker=expr:sum(lcs);';
 </pre><p>
 </p></li>
 <li class="listitem"><p>geoanchor - geodistance anchor, as in
@@ -9480,7 +9483,7 @@ the "rotation finished" message in the <code class="filename">searchd</code> eve
 prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 </pre></div></div></div>
 <div class="appendix" title="Appendix&nbsp;A.&nbsp;Sphinx revision history"><div class="titlepage"><div><div><h2 class="title"><a name="changelog"></a>Appendix&nbsp;A.&nbsp;Sphinx revision history</h2></div></div></div>
-<div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 01 mar 2012</a></span></dt>
+<div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#rel204">A.1. Version 2.0.4-release, 02 mar 2012</a></span></dt>
 <dt><span class="sect1"><a href="#rel203">A.2. Version 2.0.3-release, 23 dec 2011</a></span></dt>
 <dt><span class="sect1"><a href="#rel202">A.3. Version 2.0.2-beta, 15 nov 2011</a></span></dt>
 <dt><span class="sect1"><a href="#rel201">A.4. Version 2.0.1-beta, 22 apr 2011</a></span></dt>
@@ -9496,7 +9499,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <dt><span class="sect1"><a href="#rel096">A.14. Version 0.9.6, 24 jul 2006</a></span></dt>
 <dt><span class="sect1"><a href="#rel096rc1">A.15. Version 0.9.6-rc1, 26 jun 2006</a></span></dt>
 </dl></div>
-<div class="sect1" title="A.1.&nbsp;Version 2.0.4-release, 01 mar 2012"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel204"></a>A.1.&nbsp;Version 2.0.4-release, 01 mar 2012</h2></div></div></div>
+<div class="sect1" title="A.1.&nbsp;Version 2.0.4-release, 02 mar 2012"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel204"></a>A.1.&nbsp;Version 2.0.4-release, 02 mar 2012</h2></div></div></div>
 <h3>Bug fixes</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=605" target="_top">#605</a>, pack vs mysql compress</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=783" target="_top">#783</a>, #862, #917, #985, #990, #1032 documentation bugs</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=885" target="_top">#885</a>, bitwise AND/OR were not available via API</p></li>
@@ -9517,6 +9520,7 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1071" target="_top">#1071</a>, master - agent communication got slower for a large query</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1076" target="_top">#1076</a>, #1077, (redundant copying, and a possible mutex leak with uservars)</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1078" target="_top">#1078</a>, <code class="code">blended</code> vs FIELD_END</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1084" target="_top">#1084</a> crash \ index corruption on loading persist MVA</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1091" target="_top">#1091</a>, RT attach of plain index with string \ MVA attributes prior regular attributes</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1092" target="_top">#1092</a>, update got binloged with wrong TID</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1098" target="_top">#1098</a>, crash on creating large expression</p></li>
@@ -9528,9 +9532,8 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1112" target="_top">#1112</a>, Sphinx doesn't work out-of-the-box because the collision of <code class="code">binlog_path</code> option</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1116" target="_top">#1116</a>, crash on <code class="code">FLUSH RTINDEX</code> unknown-index-name</p></li>
 <li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1117" target="_top">#1117</a>, occasional RT headers corruption (leading to crashes and/or missing results)</p></li>
-<li class="listitem"><p>fixed result set schema fix-up of internal attributes</p></li>
-<li class="listitem"><p>fixed missed <code class="code">MVA</code> \ keywords storage counting at RT index segments merge</p></li>
-<li class="listitem"><p>fixed negative <a class="link" href="#api-funcgroup-querying" title="8.6.&nbsp;Querying">total_found</a>, docs and hits counter on huge indexes</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1119" target="_top">#1119</a>, missing expression ranker support in SphinxSE</p></li>
+<li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1120" target="_top">#1120</a>, negative <a class="link" href="#api-funcgroup-querying" title="8.6.&nbsp;Querying">total_found</a>, docs and hits counter on huge indexes</p></li>
 </ul></div></div>
 <div class="sect1" title="A.2.&nbsp;Version 2.0.3-release, 23 dec 2011"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="rel203"></a>A.2.&nbsp;Version 2.0.3-release, 23 dec 2011</h2></div></div></div>
 <h3>Bug fixes</h3><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>fixed <a class="ulink" href="http://sphinxsearch.com/bugs/view.php?id=1031" target="_top">#1031</a>, SphinxQL parsing syntax for MVA at insert \ replace statements</p></li>
