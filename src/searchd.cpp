@@ -4636,7 +4636,7 @@ public:
 				va_end ( ap );
 			}
 
-			if ( iLen!=-1 && Length()+iLen<=m_iSize )
+			if ( iLen!=-1 && Length()+iLen<m_iSize )
 			{
 				m_pCur += iLen;
 				break;
