@@ -16117,8 +16117,8 @@ private:
 
 	static CSphVector<WordformContainer_t*>		m_dWordformContainers;
 
-	static WordformContainer_t *	GetWordformContainer ( const char * szFile, DWORD uCRC32, const ISphTokenizer * pTokenizer, const char * sIndex );
-	static WordformContainer_t *	LoadWordformContainer ( const char * szFile, DWORD uCRC32, const ISphTokenizer * pTokenizer, const char * sIndex );
+	WordformContainer_t * GetWordformContainer ( const char * szFile, DWORD uCRC32, const ISphTokenizer * pTokenizer, const char * sIndex );
+	WordformContainer_t * LoadWordformContainer ( const char * szFile, DWORD uCRC32, const ISphTokenizer * pTokenizer, const char * sIndex );
 
 	bool				InitMorph ( const char * szMorph, int iLength, bool bUseUTF8, CSphString & sError );
 	bool				AddMorph ( int iMorph );
@@ -16887,6 +16887,7 @@ WordformContainer_t * CSphDictCRCTraits::LoadWordformContainer ( const char * sz
 
 		CSphScopedPtr<CSphMultiform> tMultiWordform ( NULL );
 		CSphString sKey;
+		bool bStopwordsPresent = false;
 
 		BYTE * pFrom = NULL;
 		while ( ( pFrom = pMyTokenizer->GetToken () )!=NULL )
@@ -16907,7 +16908,11 @@ WordformContainer_t * CSphDictCRCTraits::LoadWordformContainer ( const char * sz
 					tMultiWordform = new CSphMultiform;
 					sKey = (const char*)pFrom;
 				} else
+				{
 					tMultiWordform->m_dTokens.Add ( (const char*)pFrom );
+					if ( !bStopwordsPresent && !GetWordID ( pFrom, tMultiWordform->m_dTokens.Last().Length(), true ) )
+						bStopwordsPresent = true;
+				}
 			}
 		}
 
@@ -16918,6 +16923,71 @@ WordformContainer_t * CSphDictCRCTraits::LoadWordformContainer ( const char * sz
 		if ( !pTo ) continue; // FIXME! report parsing error
 
 		CSphString sTo ( (const char *)pTo );
+
+		if ( tMultiWordform.Ptr() )
+		{
+			tMultiWordform->m_dTokens.Add ( sFrom );
+
+			bool bToIsStopword = !GetWordID ( pTo, sTo.Length(), true );
+			bool bKeyIsStopword = !GetWordID ( (BYTE *)sKey.cstr(), sKey.Length(), true );
+
+			if ( bToIsStopword || bStopwordsPresent || bKeyIsStopword )
+			{
+				const int MAX_REPORT_LEN = 1024;
+				char szStopwordReport[MAX_REPORT_LEN];
+				szStopwordReport[0] = '\0';
+
+				ARRAY_FOREACH ( i, tMultiWordform->m_dTokens )
+				{
+					int iLen = strlen ( szStopwordReport );
+					if ( iLen + tMultiWordform->m_dTokens[i].Length() + 2 > MAX_REPORT_LEN )
+						break;
+
+					strcat ( szStopwordReport, tMultiWordform->m_dTokens[i].cstr() );	// NOLINT
+					iLen += tMultiWordform->m_dTokens[i].Length();
+					szStopwordReport[iLen] = ' ';
+					szStopwordReport[iLen+1] = '\0';
+				}
+
+				sphWarning ( "wordforms contain stopwords ( wordform='%s %s> %s' ). Fix your wordforms file '%s'.",
+					sKey.cstr(), szStopwordReport, sTo.cstr(), szFile );
+			}
+
+			if ( bToIsStopword )
+				continue;
+
+			if ( bStopwordsPresent )
+				ARRAY_FOREACH ( i, tMultiWordform->m_dTokens )
+					if ( !GetWordID ( (BYTE *)( tMultiWordform->m_dTokens[i].cstr() ), tMultiWordform->m_dTokens[i].Length(), true ) )
+					{
+						tMultiWordform->m_dTokens.Remove(i);
+						i--;
+					}
+
+			if ( bKeyIsStopword )
+				if ( tMultiWordform->m_dTokens.GetLength() )
+				{
+					sKey = tMultiWordform->m_dTokens[0];
+					tMultiWordform->m_dTokens.Remove(0);
+				} else
+					continue;
+
+			if ( !tMultiWordform->m_dTokens.GetLength() )
+			{
+				tMultiWordform.Reset();
+				sFrom = sKey;
+			}
+		} else
+		{
+			if ( !GetWordID ( (BYTE *)sFrom.cstr(), sFrom.Length(), true ) || !GetWordID ( pTo, sTo.Length(), true ) )
+			{
+				sphWarning ( "wordforms contain stopwords ( wordform='%s > %s' ). Fix your wordforms file '%s'.",
+					sFrom.cstr(), sTo.cstr(), szFile );
+
+				continue;
+			}
+		}
+
 		const CSphString & sSourceWordform = tMultiWordform.Ptr() ? sTo : sFrom;
 
 		// check wordform that source token is a new token or has same destination token
@@ -16944,7 +17014,6 @@ WordformContainer_t * CSphDictCRCTraits::LoadWordformContainer ( const char * sz
 			CSphMultiform * pMultiWordform = tMultiWordform.LeakPtr();
 			pMultiWordform->m_sNormalForm = sTo;
 			pMultiWordform->m_iNormalTokenLen = pMyTokenizer->GetLastTokenLen ();
-			pMultiWordform->m_dTokens.Add ( sFrom );
 			if ( !pContainer->m_pMultiWordforms )
 				pContainer->m_pMultiWordforms = new CSphMultiformContainer;
 
