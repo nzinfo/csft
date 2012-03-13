@@ -10279,6 +10279,7 @@ int CSphIndex_VLN::Build ( const CSphVector<CSphSource*> & dSources, int iMemory
 							m_pDict->HitblockPatch ( &dHits[0], iHits );
 						}
 						pHits = dHits;
+						m_tProgress.m_iHitsTotal += iHits;
 
 						// we're not inlining, so only flush hits, docs are flushed independently
 						dHitBlocks.Add ( cidxWriteRawVLB ( fdHits.GetFD(), dHits, iHits,
