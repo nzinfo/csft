@@ -4485,9 +4485,10 @@ void LogQueryPlain ( const CSphQuery & tQuery, const CSphQueryResult & tRes )
 	if ( ( !g_bQuerySyslog && g_iQueryLogFile<0 ) || !tRes.m_sError.IsEmpty() )
 		return;
 
+	const int iBufGap = 4;
 	char sBuf[2048];
 	char * p = sBuf;
-	char * pMax = sBuf+sizeof(sBuf)-4;
+	char * pMax = sBuf+sizeof(sBuf)-iBufGap;
 
 	// [time]
 #if USE_SYSLOG
@@ -4520,35 +4521,39 @@ void LogQueryPlain ( const CSphQuery & tQuery, const CSphQueryResult & tRes )
 		tRes.m_iTotalMatches, tQuery.m_iOffset, tQuery.m_iLimit );
 
 	// optional groupby info
-	if ( !tQuery.m_sGroupBy.IsEmpty() )
+	if ( !tQuery.m_sGroupBy.IsEmpty() && p<pMax )
 		p += snprintf ( p, pMax-p, " @%s", tQuery.m_sGroupBy.cstr() );
 
 	// ] [indexes]
-	p += snprintf ( p, pMax-p, "] [%s]", tQuery.m_sIndexes.cstr() );
+	if ( p<pMax )
+		p += snprintf ( p, pMax-p, "] [%s]", tQuery.m_sIndexes.cstr() );
 
 	// optional performance counters
 	if ( g_bIOStats || g_bCpuStats )
 	{
 		const CSphIOStats & IOStats = sphStopIOStats ();
 
-		*p++ = ' ';
+		if ( p<pMax )
+			*p++ = ' ';
+
 		char * pBracket = p; // can't fill yet, will be overwritten by sprintfs
 
-		if ( g_bIOStats )
+		if ( g_bIOStats && p<pMax )
 			p += snprintf ( p, pMax-p, " ios=%d kb=%d.%d ioms=%d.%d",
 				IOStats.m_iReadOps, (int)( IOStats.m_iReadBytes/1024 ), (int)( IOStats.m_iReadBytes%1024 )*10/1024,
 				(int)( IOStats.m_iReadTime/1000 ), (int)( IOStats.m_iReadTime%1000 )/100 );
 
-		if ( g_bCpuStats )
+		if ( g_bCpuStats && p<pMax )
 			p += snprintf ( p, pMax-p, " cpums=%d.%d", (int)( tRes.m_iCpuTime/1000 ), (int)( tRes.m_iCpuTime%1000 )/100 );
 
-		*pBracket = '[';
+		if ( pBracket<pMax )
+			*pBracket = '[';
 		if ( p<pMax )
 			*p++ = ']';
 	}
 
 	// optional query comment
-	if ( !tQuery.m_sComment.IsEmpty() )
+	if ( !tQuery.m_sComment.IsEmpty() && p<pMax )
 		p += snprintf ( p, pMax-p, " [%s]", tQuery.m_sComment.cstr() );
 
 	// query
@@ -4559,7 +4564,7 @@ void LogQueryPlain ( const CSphQuery & tQuery, const CSphQueryResult & tRes )
 
 	if ( !sQuery.IsEmpty() )
 	{
-		if ( p < pMax-1 )
+		if ( p<pMax )
 			*p++ = ' ';
 
 		for ( const char * q = sQuery.cstr(); p<pMax && *q; p++, q++ )
@@ -4572,13 +4577,13 @@ void LogQueryPlain ( const CSphQuery & tQuery, const CSphQueryResult & tRes )
 #endif
 
 	// line feed
+	char sGap[iBufGap] = { '\n', '\0', '\0', '\0' };
 	if ( p<pMax-1 )
 	{
-		*p++ = '\n';
-		*p++ = '\0';
+		memcpy ( p, sGap, 2 );
 	}
-	sBuf[sizeof(sBuf)-2] = '\n';
-	sBuf[sizeof(sBuf)-1] = '\0';
+
+	memcpy ( sBuf+sizeof(sBuf)-iBufGap, sGap, iBufGap );
 
 	lseek ( g_iQueryLogFile, 0, SEEK_END );
 	sphWrite ( g_iQueryLogFile, sBuf, strlen(sBuf) );
@@ -13841,8 +13846,8 @@ void CheckRotate ()
 
 	if ( !iRotIndexes )
 	{
-		sphWarning ( "INTERNAL ERROR: nothing to rotate after SIGHUP" );
 		g_iRotateCount = Max ( 0, g_iRotateCount-1 );
+		sphWarning ( "nothing to rotate after SIGHUP ( in queue=%d )", g_iRotateCount );
 	}
 
 	if ( g_eWorkers!=MPM_THREADS && iRotIndexes )
@@ -14470,7 +14475,7 @@ void CheckSignals ()
 		g_tRotateQueueMutex.Lock();
 		g_iRotateCount++;
 		g_tRotateQueueMutex.Unlock();
-		sphInfo ( "rotating indices (seamless=%d)", (int)g_bSeamlessRotate ); // this might hang if performed from SIGHUP
+		sphInfo ( "caught SIGHUP (seamless=%d, in queue=%d)", (int)g_bSeamlessRotate, g_iRotateCount );
 		g_bGotSighup = 0;
 	}
 
