@@ -1813,7 +1813,7 @@ void sphLockUn ( int iFile )
 
 void sphSleepMsec ( int iMsec )
 {
-	if ( iMsec<=0 )
+	if ( iMsec<0 )
 		return;
 
 #if USE_WINDOWS
