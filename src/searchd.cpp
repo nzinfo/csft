@@ -1266,6 +1266,7 @@ static void UpdateAliveChildrenList ( CSphVector<int> & dChildren )
 void Shutdown ()
 {
 	bool bAttrsSaveOk = true;
+	int fdStopwait = -1;
 	// some head-only shutdown procedures
 	if ( g_bHeadDaemon )
 	{
@@ -1273,6 +1274,18 @@ void Shutdown ()
 		{
 			*g_bDaemonAtShutdown.GetWritePtr() = 1;
 		}
+
+#if !USE_WINDOWS
+		// stopwait handshake
+		CSphString sPipeName = GetNamedPipeName ( getpid() );
+		fdStopwait = ::open ( sPipeName.cstr(), O_WRONLY | O_NONBLOCK );
+		if ( fdStopwait>=0 )
+		{
+			DWORD uHandshakeOk = 0;
+			int iDummy; // to avoid gcc unused result warning
+			iDummy = ::write ( fdStopwait, &uHandshakeOk, sizeof(DWORD) );
+		}
+#endif
 
 		const int iShutWaitPeriod = 3000000;
 
@@ -1371,17 +1384,12 @@ void Shutdown ()
 #if USE_WINDOWS
 	CloseHandle ( g_hPipe );
 #else
-	if ( g_bHeadDaemon )
+	if ( g_bHeadDaemon && fdStopwait>=0 )
 	{
-		const CSphString sPipeName = GetNamedPipeName ( getpid() );
-		const int hFile = ::open ( sPipeName.cstr(), O_WRONLY | O_NONBLOCK );
-		if ( hFile!=-1 )
-		{
-			DWORD uStatus = bAttrsSaveOk;
-			int iDummy; // to avoid gcc unused result warning
-			iDummy = ::write ( hFile, &uStatus, sizeof(DWORD) );
-			::close ( hFile );
-		}
+		DWORD uStatus = bAttrsSaveOk;
+		int iDummy; // to avoid gcc unused result warning
+		iDummy = ::write ( fdStopwait, &uStatus, sizeof(DWORD) );
+		::close ( fdStopwait );
 	}
 #endif
 
@@ -15477,17 +15485,17 @@ int WINAPI ServiceMain ( int argc, char **argv )
 #else
 		CSphString sPipeName;
 		int iPipeCreated = -1;
-		int hPipe = -1;
+		int fdPipe = -1;
 		if ( bOptStopWait )
 		{
 			sPipeName = GetNamedPipeName ( iPid );
 			iPipeCreated = mkfifo ( sPipeName.cstr(), 0666 );
 			if ( iPipeCreated!=-1 )
-				hPipe = ::open ( sPipeName.cstr(), O_RDONLY | O_NONBLOCK );
+				fdPipe = ::open ( sPipeName.cstr(), O_RDONLY | O_NONBLOCK );
 
 			if ( iPipeCreated==-1 )
 				sphWarning ( "mkfifo failed (path=%s, err=%d, msg=%s); will NOT wait", sPipeName.cstr(), errno, strerror(errno) );
-			else if ( hPipe==-1 )
+			else if ( fdPipe<0 )
 				sphWarning ( "open failed (path=%s, err=%d, msg=%s); will NOT wait", sPipeName.cstr(), errno, strerror(errno) );
 		}
 
@@ -15496,20 +15504,50 @@ int WINAPI ServiceMain ( int argc, char **argv )
 		else
 			sphInfo ( "stop: successfully sent SIGTERM to pid %d", iPid );
 
-		int iExitCode = ( bOptStopWait && ( iPipeCreated==-1 || hPipe==-1 ) ) ? 1 : 0;
-		if ( bOptStopWait && hPipe!=-1 )
+		int iExitCode = ( bOptStopWait && ( iPipeCreated==-1 || fdPipe<0 ) ) ? 1 : 0;
+		bool bHandshake = true;
+		while ( bOptStopWait && fdPipe>=0 )
 		{
-			while ( sphIsReadable ( sPid, NULL ) )
-				sphSleepMsec ( 5 );
+			int iReady = sphPoll ( fdPipe, 500000 );
 
+			// error on wait
+			if ( iReady<0 )
+			{
+				iExitCode = 3;
+				sphWarning ( "stopwait%s error '%s'", ( bHandshake ? " handshake" : " " ), strerror(errno) );
+				break;
+			}
+
+			// timeout
+			if ( iReady==0 )
+			{
+				if ( !bHandshake )
+					continue;
+
+				iExitCode = 1;
+				break;
+			}
+
+			// reading data
 			DWORD uStatus = 0;
-			if ( ::read ( hPipe, &uStatus, sizeof(DWORD) )!=sizeof(DWORD) )
+			int iRead = ::read ( fdPipe, &uStatus, sizeof(DWORD) );
+			if ( iRead!=sizeof(DWORD) )
+			{
+				sphWarning ( "stopwait read fifo error '%s'", strerror(errno) );
 				iExitCode = 3; // stopped demon crashed during stop
-			else
-				iExitCode = uStatus==1 ? 0 : 2; // uStatus == 1 - AttributeSave - ok, other values - error
+				break;
+			} else
+			{
+				iExitCode = ( uStatus==1 ? 0 : 2 ); // uStatus == 1 - AttributeSave - ok, other values - error
+			}
+
+			if ( !bHandshake )
+				break;
+
+			bHandshake = false;
 		}
-		if ( hPipe!=-1 )
-			::close ( hPipe );
+		if ( fdPipe>=0 )
+			::close ( fdPipe );
 		if ( iPipeCreated!=-1 )
 			::unlink ( sPipeName.cstr() );
 
