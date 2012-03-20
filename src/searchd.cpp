@@ -15225,6 +15225,21 @@ void OpenDaemonLog ( const CSphConfigSection & hSearchd )
 		g_bLogTty = isatty ( g_iLogFile )!=0;
 }
 
+
+int sphPoll ( int iSock, int64_t tmTimeout, bool bWrite=false )
+{
+	fd_set fdSet;
+	FD_ZERO ( &fdSet );
+	sphFDSet ( iSock, &fdSet );
+
+	struct timeval tv;
+	tv.tv_sec = (int)( tmTimeout / 1000000 );
+	tv.tv_usec = (int)( tmTimeout % 1000000 );
+
+	return ::select ( iSock+1, bWrite ? NULL : &fdSet, bWrite ? &fdSet : NULL, NULL, &tv );
+}
+
+
 int WINAPI ServiceMain ( int argc, char **argv )
 {
 	g_bLogTty = isatty ( g_iLogFile )!=0;
