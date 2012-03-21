@@ -1197,6 +1197,7 @@ struct CSphColumnInfo
 	ESphEvalStage					m_eStage;		///< column evaluation stage (who and how computes this column)
 	bool							m_bPayload;
 	bool							m_bFilename;	///< column is a file name
+	bool							m_bWeight;		///< is a weight column
 
 	/// handy ctor
 	CSphColumnInfo ( const char * sName=NULL, ESphAttr eType=SPH_ATTR_NONE )
@@ -1211,6 +1212,7 @@ struct CSphColumnInfo
 		, m_eStage ( SPH_EVAL_STATIC )
 		, m_bPayload ( false )
 		, m_bFilename ( false )
+		, m_bWeight ( false )
 	{
 		m_sName.ToLower ();
 	}

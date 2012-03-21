@@ -14108,6 +14108,16 @@ bool CSphIndex_VLN::DoGetKeywords ( CSphVector <CSphKeywordInfo> & dKeywords, co
 #endif
 
 
+static bool IsWeightColumn ( const CSphString & sAttr, const CSphSchema & tSchema )
+{
+	if ( sAttr=="@weight" )
+		return true;
+
+	const CSphColumnInfo * pCol = tSchema.GetAttr ( sAttr.cstr() );
+	return ( pCol && pCol->m_bWeight );
+}
+
+
 bool CSphQueryContext::CreateFilters ( bool bFullscan, const CSphVector<CSphFilterSettings> * pdFilters, const CSphSchema & tSchema, const DWORD * pMvaPool, CSphString & sError )
 {
 	if ( !pdFilters )
@@ -14118,14 +14128,16 @@ bool CSphQueryContext::CreateFilters ( bool bFullscan, const CSphVector<CSphFilt
 		if ( tFilter.m_sAttrName.IsEmpty() )
 			continue;
 
-		if ( bFullscan && tFilter.m_sAttrName=="@weight" )
+		bool bWeight = IsWeightColumn ( tFilter.m_sAttrName, tSchema );
+
+		if ( bFullscan && bWeight )
 			continue; // @weight is not avaiable in fullscan mode
 
 		ISphFilter * pFilter = sphCreateFilter ( tFilter, tSchema, pMvaPool, sError );
 		if ( !pFilter )
 			return false;
 
-		ISphFilter ** pGroup = tFilter.m_sAttrName=="@weight" ? &m_pWeightFilter : &m_pFilter;
+		ISphFilter ** pGroup = bWeight ? &m_pWeightFilter : &m_pFilter;
 		*pGroup = sphJoinFilters ( *pGroup, pFilter );
 	}
 	return true;

@@ -8162,7 +8162,7 @@ void SqlParser_c::UpdateMVAAttr ( const CSphString & sName, const SqlNode_t & dV
 
 CSphFilterSettings * SqlParser_c::AddFilter ( const CSphString & sCol, ESphFilter eType )
 {
-	if ( sCol=="@weight" || sCol=="@count" || sCol=="count(*)" || sCol=="weight()" )
+	if ( sCol=="@count" || sCol=="count(*)" )
 	{
 		yyerror ( this, "Aggregates in 'where' clause prohibited" );
 		return NULL;
