@@ -1925,7 +1925,7 @@ protected:
 	BYTE *	GetTokenSyn ();
 	bool	BlendAdjust ( BYTE * pPosition );
 	BYTE *	GetBlendedVariant ();
-	int		CodepointArbitration ( int iCodepoint, bool bWasEscaped, bool bSpaceAhead );
+	int		CodepointArbitration ( int iCodepoint, bool bWasEscaped, BYTE uNextByte );
 
 protected:
 	/// get codepoint
@@ -3444,8 +3444,28 @@ static inline bool IsCapital ( int iCh )
 }
 
 
+static inline bool IsWhitespace ( BYTE c )
+{
+	return ( c=='\0' || c==' ' || c=='\t' || c=='\r' || c=='\n' );
+}
+
+
+static inline bool IsWhitespace ( int c )
+{
+	return ( c=='\0' || c==' ' || c=='\t' || c=='\r' || c=='\n' );
+}
+
+
+static inline bool IsBoundary ( BYTE c, bool bPhrase )
+{
+	// FIXME? sorta intersects with specials
+	// then again, a shortened-down list (more strict syntax) is reasonble here too
+	return IsWhitespace(c) || c=='"' || ( !bPhrase && ( c=='(' || c==')' || c=='|' ) );
+}
+
+
 template < bool IS_UTF8 >
-int CSphTokenizerTraits<IS_UTF8>::CodepointArbitration ( int iCode, bool bWasEscaped, bool bSpaceAhead )
+int CSphTokenizerTraits<IS_UTF8>::CodepointArbitration ( int iCode, bool bWasEscaped, BYTE uNextByte )
 {
 	/////////////////////////////
 	// indexing time arbitration
@@ -3562,7 +3582,7 @@ int CSphTokenizerTraits<IS_UTF8>::CodepointArbitration ( int iCode, bool bWasEsc
 	if ( iCode & FLAG_CODEPOINT_SPECIAL )
 		if ( bWasEscaped
 			|| bDashInside
-			|| ( m_iAccum && iSymbol=='$' && !bSpaceAhead )
+			|| ( m_iAccum && iSymbol=='$' && !IsBoundary ( uNextByte, m_bPhrase ) )
 			|| ( m_bPhrase && iSymbol!='"' && !IsModifier ( iSymbol ) ) )
 	{
 		if ( iCode & FLAG_CODEPOINT_DUAL )
@@ -3667,16 +3687,6 @@ static inline bool Special2Simple ( int & iCodepoint )
 	return false;
 }
 
-static inline bool IsWhitespace ( BYTE c )
-{
-	return ( c=='\0' || c==' ' || c=='\t' || c=='\r' || c=='\n' );
-}
-
-static inline bool IsWhitespace ( int c )
-{
-	return ( c=='\0' || c==' ' || c=='\t' || c=='\r' || c=='\n' );
-}
-
 template < bool IS_UTF8 >
 BYTE * CSphTokenizerTraits<IS_UTF8>::GetTokenSyn ()
 {
@@ -3752,7 +3762,7 @@ BYTE * CSphTokenizerTraits<IS_UTF8>::GetTokenSyn ()
 				iLastCodepoint = iCode;
 			}
 
-			iFolded = CodepointArbitration ( iFolded, false, IsWhitespace ( *m_pCur ) );
+			iFolded = CodepointArbitration ( iFolded, false, *m_pCur );
 
 			iLastFolded = iFolded;
 
@@ -3997,7 +4007,7 @@ BYTE * CSphTokenizerTraits<IS_UTF8>::GetTokenSyn ()
 					iLast = iCode;
 				}
 
-				iFolded = CodepointArbitration ( iFolded, false, IsWhitespace ( *m_pCur ) );
+				iFolded = CodepointArbitration ( iFolded, false, *m_pCur );
 
 				if ( IsSeparator ( iFolded, false ) )
 				{
@@ -4265,7 +4275,7 @@ BYTE * CSphTokenizer_SBCS::GetToken ()
 			}
 		}
 
-		iCode = CodepointArbitration ( iCode, bWasEscaped, IsWhitespace ( *m_pCur ) );
+		iCode = CodepointArbitration ( iCode, bWasEscaped, *m_pCur );
 
 		// handle ignored chars
 		if ( iCode & FLAG_CODEPOINT_IGNORE )
@@ -4505,7 +4515,7 @@ BYTE * CSphTokenizer_UTF8::GetToken ()
 		}
 
 		// handle all the flags..
-		iCode = CodepointArbitration ( iCode, bWasEscaped, IsWhitespace ( *m_pCur ) );
+		iCode = CodepointArbitration ( iCode, bWasEscaped, *m_pCur );
 
 		// handle ignored chars
 		if ( iCode & FLAG_CODEPOINT_IGNORE )
