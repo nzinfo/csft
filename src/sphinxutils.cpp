@@ -871,6 +871,10 @@ bool sphConfTokenizer ( const CSphConfigSection & hIndex, CSphTokenizerSettings 
 		tSettings.m_sDictPath = hIndex["charset_dictpath"];
 		tSettings.m_iType = TOKENIZER_ZHCN_UTF8;
 	} 
+	else if(hIndex["charset_type"]=="space.utf-8" )
+	{
+		tSettings.m_iType = TOKENIZER_SPACE;
+	}
 	#endif
 	else
 	{
