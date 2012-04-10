@@ -7259,7 +7259,7 @@ void SearchHandler_c::RunSubset ( int iStart, int iEnd )
 	{
 		AggrResult_t & tRes = m_dResults[iRes];
 		CSphQuery & tQuery = m_dQueries[iRes];
-		CSphSchemaMT * pExtraSchema = tQuery.m_bAgent?&m_dExtraSchemas[bWasLocalSorter?0:iRes]:NULL;
+		CSphSchemaMT * pExtraSchema = tQuery.m_bAgent ? m_dExtraSchemas.Begin() + ( bWasLocalSorter ? 0 : iRes ) : NULL;
 
 		// minimize sorters needs these pointers
 		tRes.m_dTag2Pools[0].m_pMva = m_dMvaStorage.Begin();
@@ -7283,14 +7283,20 @@ void SearchHandler_c::RunSubset ( int iStart, int iEnd )
 			if ( g_bCompatResults && !tQuery.m_bAgent )
 			{
 				if ( !MinimizeAggrResultCompat ( tRes, tQuery, m_dLocal.GetLength()!=0 ) )
+				{
+					tRes.m_iSuccesses = 0;
 					return;
+				}
 			} else
 			{
 				if ( pExtraSchema )
 					pExtraSchema->RLock();
 				UnlockOnDestroy SchemaLocker ( pExtraSchema );
 				if ( !MinimizeAggrResult ( tRes, tQuery, m_dLocal.GetLength()!=0, pExtraSchema, m_bSphinxql ) )
+				{
+					tRes.m_iSuccesses = 0;
 					return;
+				}
 			}
 		}
 
