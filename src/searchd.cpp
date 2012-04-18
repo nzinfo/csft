@@ -1266,7 +1266,9 @@ static void UpdateAliveChildrenList ( CSphVector<int> & dChildren )
 void Shutdown ()
 {
 	bool bAttrsSaveOk = true;
+#if !USE_WINDOWS
 	int fdStopwait = -1;
+#endif
 	// some head-only shutdown procedures
 	if ( g_bHeadDaemon )
 	{
