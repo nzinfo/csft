@@ -8546,6 +8546,8 @@ void SnippetRequestBuilder_t::BuildRequest ( const char * sIndex, NetOutputBuffe
 
 	if ( m_bScattered )
 		tOut.SendInt ( q.m_iRawFlags & ~EXCERPT_FLAG_LOAD_FILES );
+	else
+		tOut.SendInt ( q.m_iRawFlags );
 
 	tOut.SendString ( sIndex );
 	tOut.SendString ( q.m_sWords.cstr() );
