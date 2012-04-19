@@ -4935,6 +4935,9 @@ bool CSphFilterSettings::operator == ( const CSphFilterSettings & rhs ) const
 		case SPH_FILTER_RANGE:
 			return m_uMinValue==rhs.m_uMinValue && m_uMaxValue==rhs.m_uMaxValue;
 
+		case SPH_FILTER_FLOATRANGE:
+			return m_fMinValue==rhs.m_fMinValue && m_fMaxValue==rhs.m_fMaxValue;
+
 		case SPH_FILTER_VALUES:
 			if ( m_dValues.GetLength()!=rhs.m_dValues.GetLength() )
 				return false;
