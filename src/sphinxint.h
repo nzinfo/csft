@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -81,6 +81,7 @@ public:
 	bool			OpenFile ( const CSphString & sName, CSphString & sErrorBuffer );
 	void			SetFile ( int iFD, SphOffset_t * pSharedOffset );
 	void			CloseFile ( bool bTruncate = false );	///< note: calls Flush(), ie. IsError() might get true after this call
+	void			UnlinkFile (); /// some shit happened (outside) and the file is no more actual.
 
 	void			PutByte ( int uValue );
 	void			PutBytes ( const void * pData, int iSize );
@@ -131,6 +132,7 @@ protected:
 	int			m_iFD;			///< my file descriptior
 	CSphString	m_sFilename;	///< my file name
 	bool		m_bTemporary;	///< whether to unlink this file on Close()
+	bool		m_bWouldTemporary; ///< backup of the m_bTemporary
 
 	CSphIndex::ProgressCallback_t *		m_pProgress; ///< for displaying progress
 	CSphIndexProgress *					m_pStat;
@@ -142,6 +144,7 @@ public:
 
 	int				Open ( const CSphString & sName, int iMode, CSphString & sError, bool bTemp=false );
 	void			Close ();
+	void			SetTemporary(); ///< would be set if a shit happened and the file is not actual.
 
 public:
 	int				GetFD () const { return m_iFD; }
@@ -1122,16 +1125,6 @@ struct LocatorPair_t
 	CSphAttrLocator m_tTo;		///< destination (dynamized) locator
 };
 
-/// internal disk index interface (that exposes some guts)
-struct ISphIndex_VLN : public CSphIndex
-{
-	explicit ISphIndex_VLN ( const char * sIndexName, const char * sFilename )
-		: CSphIndex ( sIndexName, sFilename )
-	{}
-
-	virtual void SetDynamize ( const CSphVector<LocatorPair_t> & dDynamize ) = 0;
-};
-
 //////////////////////////////////////////////////////////////////////////
 // DICTIONARY INTERNALS
 //////////////////////////////////////////////////////////////////////////
@@ -1195,6 +1188,15 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////
+// USER VARIABLES
+//////////////////////////////////////////////////////////////////////////
+
+/// value container for the intset uservar type
+class UservarIntSet_c : public CSphVector<SphAttr_t>, public ISphRefcountedMT
+{
+};
+
+//////////////////////////////////////////////////////////////////////////
 // BINLOG INTERNALS
 //////////////////////////////////////////////////////////////////////////
 
@@ -1204,7 +1206,7 @@ class ISphBinlog : ISphNoncopyable
 public:
 	virtual				~ISphBinlog () {}
 
-	virtual void		BinlogUpdateAttributes ( const char * sIndexName, int64_t iTID, const CSphAttrUpdate & tUpd ) = 0;
+	virtual void		BinlogUpdateAttributes ( int64_t * pTID, const char * sIndexName, const CSphAttrUpdate & tUpd ) = 0;
 	virtual void		NotifyIndexFlush ( const char * sIndexName, int64_t iTID, bool bShutdown ) = 0;
 };
 
@@ -1223,7 +1225,6 @@ const BYTE *	SkipQuoted ( const BYTE * p );
 
 ISphExpr *		sphSortSetupExpr ( const CSphString & sName, const CSphSchema & tIndexSchema );
 bool			sphSortGetStringRemap ( const CSphSchema & tSorterSchema, const CSphSchema & tIndexSchema, CSphVector<SphStringSorterRemap_t> & dAttrs );
-void			sphSortRemoveInternalAttrs ( CSphSchema & tSchema );
 bool			sphIsSortStringInternal ( const char * sColumnName );
 
 bool			sphWriteThrottled ( int iFD, const void * pBuf, int64_t iCount, const char * sName, CSphString & sError );

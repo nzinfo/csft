@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,7 @@ public:
 	int64_t			m_iSize;			///< file size, to sort to work-queue order
 	int				m_iSeq;				///< request order, to sort back to request order
 	int				m_iNext;			///< the next one in one-link list for batch processing. -1 terminate the list. -2 sign of other (out-of-the-lists)
-	CSphVector<BYTE>	m_dRes;				///< snippet result holder
+	char *			m_sRes;				///< snippet result holder (NOT owned)
 	CSphString		m_sError;			///< snippet error message
 	bool			m_bHasBeforePassageMacro;
 	bool			m_bHasAfterPassageMacro;
@@ -65,7 +65,7 @@ public:
 /// an excerpt generator
 /// returns a newly allocated string in encoding specified by tokenizer on success
 /// returns NULL on failure
-void sphBuildExcerpt ( ExcerptQuery_t &, CSphDict *, ISphTokenizer *, const CSphSchema *, CSphIndex *, CSphString & sError, const CSphHTMLStripper *, ISphTokenizer * );
+char * sphBuildExcerpt ( ExcerptQuery_t &, CSphDict *, ISphTokenizer *, const CSphSchema *, CSphIndex *, CSphString & sError, const CSphHTMLStripper *, ISphTokenizer * );
 
 #endif // _sphinxexcerpt_
 

@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -154,7 +154,7 @@ void sphUnalignedWrite ( void * pPtr, const T & tVal )
 #define SPHINXSE_MAX_ALLOC			(16*1024*1024)
 #define SPHINXSE_MAX_KEYWORDSTATS	4096
 
-#define SPHINXSE_VERSION			"2.1.0-dev"
+#define SPHINXSE_VERSION			"2.0.4-release"
 
 // FIXME? the following is cut-n-paste from sphinx.h and searchd.cpp
 // cut-n-paste is somewhat simpler that adding dependencies however..
@@ -204,6 +204,7 @@ enum ESphRankMode
 	SPH_RANK_MATCHANY			= 5,	///< emulate old match-any weighting
 	SPH_RANK_FIELDMASK			= 6,	///< sets bits where there were matches
 	SPH_RANK_SPH04				= 7,	///< codename SPH04, phrase proximity + bm25 + head/exact boost
+	SPH_RANK_EXPR				= 8,	///< expression based ranker
 
 	SPH_RANK_TOTAL,
 	SPH_RANK_DEFAULT			= SPH_RANK_PROXIMITY_BM25
@@ -521,6 +522,7 @@ private:
 	int				m_iWeights;
 	ESphMatchMode	m_eMode;
 	ESphRankMode	m_eRanker;
+	char *			m_sRankExpr;
 	ESphSortOrder	m_eSort;
 	char *			m_sSortBy;
 	int				m_iMaxMatches;
@@ -1240,6 +1242,7 @@ CSphSEQuery::CSphSEQuery ( const char * sQuery, int iLength, const char * sIndex
 	, m_iWeights ( 0 )
 	, m_eMode ( SPH_MATCH_ALL )
 	, m_eRanker ( SPH_RANK_PROXIMITY_BM25 )
+	, m_sRankExpr ( NULL )
 	, m_eSort ( SPH_SORT_RELEVANCE )
 	, m_sSortBy ( "" )
 	, m_iMaxMatches ( 1000 )
@@ -1457,7 +1460,11 @@ bool CSphSEQuery::ParseField ( char * sField )
 		else if ( !strcmp ( sValue, "matchany" ) )	m_eRanker = SPH_RANK_MATCHANY;
 		else if ( !strcmp ( sValue, "fieldmask" ) )	m_eRanker = SPH_RANK_FIELDMASK;
 		else if ( !strcmp ( sValue, "sph04" ) )		m_eRanker = SPH_RANK_SPH04;
-		else
+		else if ( !strncmp ( sValue, "expr:", 5 ) )
+		{
+			m_eRanker = SPH_RANK_EXPR;
+			m_sRankExpr = sValue+5;
+		} else
 		{
 			snprintf ( m_sParseError, sizeof(m_sParseError), "unknown ranking mode '%s'", sValue );
 			SPH_RET(false);
@@ -1546,8 +1553,8 @@ bool CSphSEQuery::ParseField ( char * sField )
 
 			if ( tFilter.m_eType==SPH_FILTER_RANGE )
 			{
-				tFilter.m_uMinValue = strtoll ( sValue, NULL, 0 );
-				tFilter.m_uMaxValue = strtoll ( p, NULL, 0 );
+				tFilter.m_uMinValue = strtoll ( sValue, NULL, 10 );
+				tFilter.m_uMaxValue = strtoll ( p, NULL, 10 );
 			} else
 			{
 				tFilter.m_fMinValue = (float)atof(sValue);
@@ -1837,6 +1844,8 @@ int CSphSEQuery::BuildRequest ( char ** ppBuffer )
 		+ strlen ( m_sGroupDistinct )
 		+ strlen ( m_sComment )
 		+ strlen ( m_sSelect );
+	if ( m_eRanker==SPH_RANK_EXPR )
+		iReqSize += 4 + strlen(m_sRankExpr);
 	for ( int i=0; i<m_iFilters; i++ )
 	{
 		const CSphSEFilter & tFilter = m_dFilters[i];
@@ -1888,6 +1897,8 @@ int CSphSEQuery::BuildRequest ( char ** ppBuffer )
 	SendInt ( m_iLimit );
 	SendInt ( m_eMode );
 	SendInt ( m_eRanker ); // 1.16+
+	if ( m_eRanker==SPH_RANK_EXPR )
+		SendString ( m_sRankExpr );
 	SendInt ( m_eSort );
 	SendString ( m_sSortBy ); // sort attr
 	SendString ( m_sQuery ); // query
