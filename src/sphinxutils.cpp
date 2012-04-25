@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -169,6 +169,7 @@ static KeyDesc_t g_dKeysSource[] =
 	{ "xmlpipe_attr_str2ordinal",	KEY_LIST, NULL },
 	{ "xmlpipe_attr_bool",		KEY_LIST, NULL },
 	{ "xmlpipe_attr_float",		KEY_LIST, NULL },
+	{ "xmlpipe_attr_bigint",	KEY_LIST, NULL },
 	{ "xmlpipe_attr_multi",		KEY_LIST, NULL },
 	{ "xmlpipe_attr_multi_64",	KEY_LIST, NULL },
 	{ "xmlpipe_attr_string",	KEY_LIST, NULL },
