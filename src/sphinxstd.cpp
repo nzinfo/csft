@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -826,7 +826,7 @@ bool CSphProcessSharedMutex::TimedLock ( int tmSpin ) const
 	if ( iRes==EBUSY )
 		iRes = pthread_mutex_trylock ( m_pMutex );
 
-	return iRes!=0;
+	return iRes==0;
 #endif // HAVE_PTHREAD_MUTEX_TIMEDLOCK && HAVE_CLOCK_GETTIME
 #endif // USE_WINDOWS
 }
@@ -1042,6 +1042,21 @@ void * sphMyStack ()
 {
 	return sphThreadGet ( g_tMyThreadStack );
 }
+
+
+int64_t sphGetStackUsed()
+{
+	BYTE cStack;
+	BYTE * pStackTop = (BYTE*)sphMyStack();
+	if ( !pStackTop )
+		return 0;
+	int64_t iHeight = pStackTop - &cStack;
+	if ( iHeight>=0 )
+		return iHeight;
+	else
+		return -iHeight;
+}
+
 
 int sphMyStackSize ()
 {

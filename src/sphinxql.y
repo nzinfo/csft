@@ -84,7 +84,6 @@
 %token	TOK_TO
 %token	TOK_TRANSACTION
 %token	TOK_TRUE
-%token	TOK_TRUNCATE
 %token	TOK_UNCOMMITTED
 %token	TOK_UPDATE
 %token	TOK_VALUES
@@ -140,7 +139,6 @@ statement:
 	| flush_rtindex
 	| set_transaction
 	| select_sysvar
-	| truncate
 	;
 
 //////////////////////////////////////////////////////////////////////////
@@ -550,10 +548,10 @@ arg:
 //////////////////////////////////////////////////////////////////////////
 
 show_stmt:
-	TOK_SHOW show_what
+	TOK_SHOW show_variable
 	;
 
-show_what:
+show_variable:
 	TOK_WARNINGS		{ pParser->m_pStmt->m_eStmt = STMT_SHOW_WARNINGS; }
 	| TOK_STATUS		{ pParser->m_pStmt->m_eStmt = STMT_SHOW_STATUS; }
 	| TOK_META			{ pParser->m_pStmt->m_eStmt = STMT_SHOW_META; }
@@ -836,33 +834,16 @@ update_item:
 //////////////////////////////////////////////////////////////////////////
 
 show_variables:
-	TOK_SHOW opt_scope TOK_VARIABLES opt_show_variables_where
+	TOK_SHOW opt_scope TOK_VARIABLES
 		{
 			pParser->m_pStmt->m_eStmt = STMT_SHOW_VARIABLES;
 		}
 	;
 
-opt_show_variables_where:
-	| show_variables_where
-	;
-
-show_variables_where:
-	TOK_WHERE show_variables_where_list
-	;
-
-show_variables_where_list:
-	show_variables_where_entry
-	| show_variables_where_list TOK_OR show_variables_where_entry
-	;
-
-show_variables_where_entry:
-	TOK_IDENT '=' TOK_QUOTED_STRING // for example, Variable_name = 'character_set'
-	;
-
 show_collation:
 	TOK_SHOW TOK_COLLATION
 		{
-			pParser->m_pStmt->m_eStmt = STMT_SHOW_COLLATION;
+			pParser->m_pStmt->m_eStmt = STMT_DUMMY;
 		}
 	;
 
@@ -938,32 +919,12 @@ flush_rtindex:
 //////////////////////////////////////////////////////////////////////////
 
 select_sysvar:
-	TOK_SELECT sysvar_name opt_limit_clause
+	TOK_SELECT TOK_SYSVAR opt_limit_clause
 		{
-			pParser->m_pStmt->m_eStmt = STMT_SELECT_SYSVAR;
-			pParser->m_pStmt->m_tQuery.m_sQuery = $2.m_sValue;
+			pParser->m_pStmt->m_eStmt = STMT_DUMMY;
 		}
 	;
 	
-sysvar_name:
-	TOK_SYSVAR
-	| TOK_SYSVAR '.' TOK_IDENT
-		{
-			$$.m_sValue.SetSprintf ( "%s.%s", $1.m_sValue.cstr(), $3.m_sValue.cstr() );
-		}
-	;
-
-////////////////////////////////////////////////////////////
-
-truncate:
-	TOK_TRUNCATE TOK_RTINDEX TOK_IDENT
-		{
-			SqlStmt_t & tStmt = *pParser->m_pStmt;
-			tStmt.m_eStmt = STMT_TRUNCATE_RTINDEX;
-			tStmt.m_sIndex = $3.m_sValue;
-		}
-	;
-
 %%
 
 #if USE_WINDOWS

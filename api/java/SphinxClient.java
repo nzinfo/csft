@@ -4,8 +4,8 @@
  * Java version of Sphinx searchd client (Java API)
  *
  * Copyright (c) 2007, Vladimir Fedorkov
- * Copyright (c) 2007-2011, Andrew Aksyonoff
- * Copyright (c) 2008-2011, Sphinx Technologies Inc
+ * Copyright (c) 2007-2012, Andrew Aksyonoff
+ * Copyright (c) 2008-2012, Sphinx Technologies Inc
  * All rights reserved
  *
  * This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,8 @@ public class SphinxClient
 	public final static int SPH_RANK_MATCHANY		= 5;
 	public final static int SPH_RANK_FIELDMASK		= 6;
 	public final static int SPH_RANK_SPH04			= 7;
-	public final static int SPH_RANK_TOTAL			= 8;
+	public final static int SPH_RANK_EXPR			= 8;
+	public final static int SPH_RANK_TOTAL			= 9;
 
 	/* sorting modes */
 	public final static int SPH_SORT_RELEVANCE		= 0;
@@ -136,6 +137,7 @@ public class SphinxClient
 	private ArrayList	_reqs;
 	private Map			_indexWeights;
 	private int			_ranker;
+	private String		_rankexpr;
 	private int			_maxQueryTime;
 	private Map			_fieldWeights;
 	private Map			_overrideTypes;
@@ -193,6 +195,7 @@ public class SphinxClient
 		_indexWeights	= new LinkedHashMap();
 		_fieldWeights	= new LinkedHashMap();
 		_ranker			= SPH_RANK_PROXIMITY_BM25;
+		_rankexpr		= "";
 
 		_overrideTypes	= new LinkedHashMap();
 		_overrideValues	= new LinkedHashMap();
@@ -504,9 +507,10 @@ public class SphinxClient
 	}
 
 	/** Set ranking mode. */
-	public void SetRankingMode ( int ranker ) throws SphinxException
+	public void SetRankingMode ( int ranker, String rankexpr ) throws SphinxException
 	{
 		myAssert ( ranker>=0 && ranker<SPH_RANK_TOTAL, "unknown ranker value; use one of the SPH_RANK_xxx constants" );
+		_rankexpr = ( rankexpr==null ) ? "" : rankexpr;
 		_ranker = ranker;
 	}
 
@@ -819,6 +823,9 @@ public class SphinxClient
 			out.writeInt(_limit);
 			out.writeInt(_mode);
 			out.writeInt(_ranker);
+			if ( _ranker == SPH_RANK_EXPR ) {
+				writeNetUTF8(out, _rankexpr);
+			}
 			out.writeInt(_sort);
 			writeNetUTF8(out, _sortby);
 			writeNetUTF8(out, query);

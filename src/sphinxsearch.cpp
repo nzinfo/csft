@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -99,7 +99,6 @@ public:
 	virtual void				SetQwordsIDF ( const ExtQwordsHash_t & hQwords ) = 0;
 	virtual bool				GotHitless () = 0;
 	virtual int					GetDocsCount () { return INT_MAX; }
-	virtual SphWordID_t			GetWordID () { return 0; }		///< for now, only used for duplicate keyword checks in quorum operator
 
 	void DebugIndent ( int iLevel )
 	{
@@ -172,7 +171,6 @@ public:
 	virtual void				SetQwordsIDF ( const ExtQwordsHash_t & hQwords );
 	virtual bool				GotHitless () { return false; }
 	virtual int					GetDocsCount () { return m_pQword->m_iDocs; }
-	virtual SphWordID_t			GetWordID () { return m_pQword->m_iWordID; }
 
 	virtual void DebugDump ( int iLevel )
 	{
@@ -242,6 +240,46 @@ protected:
 	DWORD	m_uFieldPos;
 };
 
+//////////////////////////////////////////////////////////////////////////
+
+/// per-document zone information (span start/end positions)
+struct ZoneInfo_t
+{
+	CSphVector<Hitpos_t> m_dStarts;
+	CSphVector<Hitpos_t> m_dEnds;
+};
+
+
+/// zone hash key, zoneid+docid
+struct ZoneKey_t
+{
+	int				m_iZone;
+	SphDocID_t		m_uDocid;
+
+	explicit ZoneKey_t ( int iZone=0, SphDocID_t uDocid=0 )
+		: m_iZone ( iZone )
+		, m_uDocid ( uDocid )
+	{}
+
+	bool operator == ( const ZoneKey_t & rhs ) const
+	{
+		return m_iZone==rhs.m_iZone && m_uDocid==rhs.m_uDocid;
+	}
+};
+
+
+/// zone hashing function
+struct ZoneHash_fn
+{
+	static inline int Hash ( const ZoneKey_t & tKey )
+	{
+		return (DWORD)tKey.m_uDocid ^ ( tKey.m_iZone<<16 );
+	}
+};
+
+
+/// zone hash
+typedef CSphOrderedHash < ZoneInfo_t, ZoneKey_t, ZoneHash_fn, 4096 > ZoneHash_c;
 
 /// single keyword streamer, with term position filtering
 template < TermPosFilter_e T >
@@ -364,7 +402,7 @@ protected:
 class ExtNWayT : public ExtNode_i
 {
 public:
-								ExtNWayT ( const CSphVector<ExtNode_i *> & dNodes, const ISphQwordSetup & tSetup );
+								ExtNWayT ( const CSphVector<ExtNode_i *> & dNodes, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
 								~ExtNWayT ();
 	virtual void				Reset ( const ISphQwordSetup & tSetup );
 	virtual void				GetQwords ( ExtQwordsHash_t & hQwords );
@@ -441,9 +479,9 @@ template < class FSM >
 class ExtNWay_c : public ExtNWayT, private FSM
 {
 public:
-	ExtNWay_c ( const CSphVector<ExtNode_i *> & dNodes, const XQNode_t & tNode, const ISphQwordSetup & tSetup )
-		: ExtNWayT ( dNodes, tSetup )
-		, FSM ( dNodes, tNode, tSetup )
+	ExtNWay_c ( const CSphVector<ExtNode_i *> & dNodes, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup )
+		: ExtNWayT ( dNodes, uDupeMask, tNode, tSetup )
+		, FSM ( dNodes, uDupeMask, tNode, tSetup )
 	{
 		bool bTerms = FSM::bTermsTree; // workaround MSVC const condition warning
 		CSphVector<WORD> dPositions ( dNodes.GetLength() );
@@ -469,26 +507,24 @@ private:
 
 class FSMphrase
 {
-protected:
-	static const bool			bTermsTree = true;		///< we work with ExtTerm nodes
+	protected:
+									FSMphrase ( const CSphVector<ExtNode_i *> & dQwords, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
+		inline void ResetFSM()
+		{
+			m_uExpPos = 0;
+			m_uExpQpos = 0;
+		}
+		bool						HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget );
+		inline static const char*	GetName() { return "ExtPhrase"; }
+		static const bool			bTermsTree = true;		///< we work with ExtTerm nodes
 
-								FSMphrase ( const CSphVector<ExtNode_i *> & dQwords, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
-	bool						HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget );
-
-	inline static const char *	GetName() { return "ExtPhrase"; }
-	inline void ResetFSM()
-	{
-		m_uExpPos = 0;
-		m_uExpQpos = 0;
-	}
-
-protected:
-	DWORD						m_uExpQpos;
-	CSphVector<int>				m_dQposDelta;			///< next expected qpos delta for each existing qpos (for skipped stopwords case)
-	DWORD						m_uMinQpos;
-	DWORD						m_uMaxQpos;
-	DWORD						m_uExpPos;
-	DWORD						m_uLeaves;				///< number of keywords (might be different from qpos delta because of stops and overshorts)
+	protected:
+		DWORD						m_uExpQpos;
+		CSphVector<int>				m_dQposDelta;			///< next expected qpos delta for each existing qpos (for skipped stopwords case)
+		DWORD						m_uMinQpos;
+		DWORD						m_uMaxQpos;
+		DWORD						m_uExpPos;
+		DWORD						m_uLeaves;				///< number of keywords (might be different from qpos delta because of stops and overshorts)
 };
 /// exact phrase streamer
 typedef ExtNWay_c < FSMphrase > ExtPhrase_c;
@@ -497,12 +533,7 @@ typedef ExtNWay_c < FSMphrase > ExtPhrase_c;
 class FSMproximity
 {
 protected:
-	static const bool			bTermsTree = true;		///< we work with ExtTerm nodes
-
-								FSMproximity ( const CSphVector<ExtNode_i *> & dQwords, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
-	bool						HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget );
-
-	inline static const char *	GetName() { return "ExtProximity"; }
+								FSMproximity ( const CSphVector<ExtNode_i *> & dQwords, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
 	inline void ResetFSM()
 	{
 		m_uExpPos = 0;
@@ -511,7 +542,9 @@ protected:
 		ARRAY_FOREACH ( i, m_dProx )
 			m_dProx[i] = UINT_MAX;
 	}
-
+	bool						HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget );
+	inline static const char*	GetName() { return "ExtProximity"; }
+	static const bool			bTermsTree = true;		///< we work with ExtTerm nodes
 protected:
 	int							m_iMaxDistance;
 	DWORD						m_uWordsExpected;
@@ -530,17 +563,14 @@ typedef ExtNWay_c<FSMproximity> ExtProximity_c;
 class FSMmultinear
 {
 protected:
-	static const bool			bTermsTree = true;	///< we work with generic (not just ExtTerm) nodes
-
-								FSMmultinear ( const CSphVector<ExtNode_i *> & dNodes, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
-	bool						HitFSM ( const ExtHit_t * pHit, ExtHit_t * dTarget );
-
-	inline static const char *	GetName() { return "ExtMultinear"; }
+								FSMmultinear ( const CSphVector<ExtNode_i *> & dNodes, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
 	inline void ResetFSM()
 	{
 		m_iRing = m_uLastP = m_uPrelastP = 0;
 	}
-
+	bool						HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget );
+	inline static const char*	GetName() { return "ExtMultinear"; }
+	static const bool			bTermsTree = true;	///< we work with generic (not just ExtTerm) nodes
 protected:
 	int							m_iNear;			///< the NEAR distance
 	DWORD						m_uPrelastP;
@@ -583,7 +613,7 @@ typedef ExtNWay_c<FSMmultinear> ExtMultinear_c;
 class ExtQuorum_c : public ExtNode_i
 {
 public:
-								ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
+								ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & tSetup );
 	virtual						~ExtQuorum_c ();
 
 	virtual void				Reset ( const ISphQwordSetup & tSetup );
@@ -600,13 +630,13 @@ protected:
 	CSphVector<ExtNode_i*>		m_dChildren;		///< my children nodes (simply ExtTerm_c for now)
 	CSphVector<const ExtDoc_t*>	m_pCurDoc;			///< current positions into children doclists
 	CSphVector<const ExtHit_t*>	m_pCurHit;			///< current positions into children hitlists
-	CSphSmallBitvec				m_bmMask;			///< mask of nodes that count toward threshold
-	int							m_iMaskEnd;			///< index of the last bit in mask
+	DWORD						m_uMask;			///< mask of nodes that count toward threshold
+	DWORD						m_uMaskEnd;			///< index of the last bit in mask
 	bool						m_bDone;			///< am i done
 	SphDocID_t					m_uMatchedDocid;	///< current docid for hitlist emission
 
 private:
-	CSphSmallBitvec				m_bmInitialMask;	///< backup mask for Reset()
+	DWORD						m_uInitialMask;		///< backup mask for Reset()
 	CSphVector<ExtNode_i*>		m_dInitialChildren;	///< my children nodes (simply ExtTerm_c for now)
 };
 
@@ -703,41 +733,7 @@ private:
 	const ExtHit_t *	m_pDotHit;		///< current in-chunk ptr
 };
 
-//////////////////////////////////////////////////////////////////////////
 
-/// per-document zone information (span start/end positions)
-struct ZoneInfo_t
-{
-	CSphVector<Hitpos_t> m_dStarts;
-	CSphVector<Hitpos_t> m_dEnds;
-};
-
-
-/// zone hash key, zoneid+docid
-struct ZoneKey_t
-{
-	int				m_iZone;
-	SphDocID_t		m_uDocid;
-
-	bool operator == ( const ZoneKey_t & rhs ) const
-	{
-		return m_iZone==rhs.m_iZone && m_uDocid==rhs.m_uDocid;
-	}
-};
-
-
-/// zone hashing function
-struct ZoneHash_fn
-{
-	static inline int Hash ( const ZoneKey_t & tKey )
-	{
-		return (DWORD)tKey.m_uDocid ^ ( tKey.m_iZone<<16 );
-	}
-};
-
-
-/// zone hash
-typedef CSphOrderedHash < ZoneInfo_t, ZoneKey_t, ZoneHash_fn, 4096 > ZoneHash_c;
 
 
 /// ranker interface
@@ -892,22 +888,61 @@ static ISphQword * CreateQueryWord ( const XQKeyword_t & tWord, const ISphQwordS
 }
 
 
-static void CalcDupeMask ( CSphSmallBitvec * pMask, const CSphVector<ExtNode_i *> & dNodes )
+static bool KeywordsEqual ( const XQNode_t * pA, const XQNode_t * pB )
 {
-	pMask->Unset();
-	ARRAY_FOREACH ( i, dNodes )
-	{
-		bool bUniq = true;
-		for ( int j = i + 1; j < dNodes.GetLength() && bUniq; j++ )
-			if ( dNodes[i]->GetWordID()==dNodes[j]->GetWordID() )
-				bUniq = false;
-		if ( bUniq )
-			pMask->Set(i);
-	}
+	// we expected a keyword here but got composite node; lets drill down until first real keyword
+	while ( pA->m_dChildren.GetLength() )
+		pA = pA->m_dChildren[0];
+
+	while ( pB->m_dChildren.GetLength() )
+		pB = pB->m_dChildren[0];
+
+	// actually check keywords
+	assert ( pA->m_dWords.GetLength() );
+	assert ( pB->m_dWords.GetLength() );
+	return pA->m_dWords[0].m_sWord==pB->m_dWords[0].m_sWord;
 }
 
 
-template < typename T >
+static DWORD CalcDupeMask ( const CSphVector<XQNode_t *> & dChildren )
+{
+	DWORD uDupeMask = 0;
+	ARRAY_FOREACH ( i, dChildren )
+	{
+		int iValue = 1;
+		for ( int j = i+1; j<dChildren.GetLength(); j++ )
+		{
+			if ( KeywordsEqual ( dChildren[i], dChildren[j] ) )
+			{
+				iValue = 0;
+				break;
+			}
+		}
+		uDupeMask |= iValue << i;
+	}
+	return uDupeMask;
+}
+
+
+static DWORD CalcDupeMask ( const CSphVector<ISphQword *> & dQwordsHit )
+{
+	DWORD uDupeMask = 0;
+	ARRAY_FOREACH ( i, dQwordsHit )
+	{
+		int iValue = 1;
+		for ( int j = i + 1; j < dQwordsHit.GetLength(); j++ )
+			if ( dQwordsHit[i]->m_iWordID==dQwordsHit[j]->m_iWordID )
+			{
+				iValue = 0;
+				break;
+			}
+			uDupeMask |= iValue << i;
+	}
+	return uDupeMask;
+}
+
+
+template < typename T, bool NEED_MASK >
 static ExtNode_i * CreateMultiNode ( const XQNode_t * pQueryNode, const ISphQwordSetup & tSetup, bool bNeedsHitlist )
 {
 	///////////////////////////////////
@@ -923,11 +958,13 @@ static ExtNode_i * CreateMultiNode ( const XQNode_t * pQueryNode, const ISphQwor
 			assert ( dNodes.Last()->m_iAtomPos>=0 );
 		}
 
-		// FIXME! tricky combo again
-		// quorum+expand used KeywordsEqual() path to drill down until actual nodes
-		// that path is no longer and quorum+expand+dupes might probably fail now
-		// the proper solution would be to have dNodes return proper wordids somehow
-		ExtNode_i * pResult = new T ( dNodes, *pQueryNode, tSetup );
+		// compute dupe mask (needed for quorum only)
+		// FIXME! this check will fail with wordforms and stuff; sorry, no wordforms vs expand vs quorum support for now!
+		DWORD uDupeMask = NEED_MASK
+			? CalcDupeMask ( pQueryNode->m_dChildren )
+			: 0;
+		ExtNode_i * pResult = new T ( dNodes, uDupeMask, *pQueryNode, tSetup );
+
 		if ( pQueryNode->GetCount() )
 			return tSetup.m_pNodeCache->CreateProxy ( pResult, pQueryNode, tSetup );
 		return pResult; // FIXME! sorry, no hitless vs expand vs phrase support for now!
@@ -979,7 +1016,11 @@ static ExtNode_i * CreateMultiNode ( const XQNode_t * pQueryNode, const ISphQwor
 			dNodes.Last()->m_iAtomPos = dQwordsHit[i]->m_iAtomPos;
 		}
 
-		pResult = new T ( dNodes, *pQueryNode, tSetup );
+		// compute dupe mask (needed for quorum only)
+		DWORD uDupeMask = NEED_MASK
+			? CalcDupeMask ( dQwordsHit )
+			: 0;
+		pResult = new T ( dNodes, uDupeMask, *pQueryNode, tSetup );
 	}
 
 	// AND result with the words that had no hitlist
@@ -1037,17 +1078,17 @@ ExtNode_i * ExtNode_i::Create ( ISphQword * pQword, const XQNode_t * pNode, cons
 {
 	assert ( pQword );
 
-	if ( pNode->m_iFieldMaxPos )
+	if ( pNode->m_dSpec.m_iFieldMaxPos )
 		pQword->m_iTermPos = TERM_POS_FIELD_LIMIT;
 
-	if ( pNode->m_dZones.GetLength() )
+	if ( pNode->m_dSpec.m_dZones.GetLength() )
 		pQword->m_iTermPos = TERM_POS_ZONES;
 
 	if ( !pQword->m_bHasHitlist )
 	{
 		if ( tSetup.m_pWarning && pQword->m_iTermPos )
 			tSetup.m_pWarning->SetSprintf ( "hitlist unavailable, position limit ignored" );
-		return new ExtTermHitless_c ( pQword, pNode->m_dFieldMask, tSetup, pNode->m_bNotWeighted );
+		return new ExtTermHitless_c ( pQword, pNode->m_dSpec.m_dFieldMask, tSetup, pNode->m_bNotWeighted );
 	}
 	switch ( pQword->m_iTermPos )
 	{
@@ -1056,7 +1097,7 @@ ExtNode_i * ExtNode_i::Create ( ISphQword * pQword, const XQNode_t * pNode, cons
 		case TERM_POS_FIELD_END:		return new ExtTermPos_c<TERM_POS_FIELD_END> ( pQword, pNode, tSetup );
 		case TERM_POS_FIELD_LIMIT:		return new ExtTermPos_c<TERM_POS_FIELD_LIMIT> ( pQword, pNode, tSetup );
 		case TERM_POS_ZONES:			return new ExtTermPos_c<TERM_POS_ZONES> ( pQword, pNode, tSetup );
-		default:						return new ExtTerm_c ( pQword, pNode->m_dFieldMask, tSetup, pNode->m_bNotWeighted );
+		default:						return new ExtTerm_c ( pQword, pNode->m_dSpec.m_dFieldMask, tSetup, pNode->m_bNotWeighted );
 	}
 }
 
@@ -1083,13 +1124,13 @@ ExtNode_i * ExtNode_i::Create ( const XQNode_t * pNode, const ISphQwordSetup & t
 		switch ( pNode->GetOp() )
 		{
 			case SPH_QUERY_PHRASE:
-				return CreateMultiNode<ExtPhrase_c> ( pNode, tSetup, true );
+				return CreateMultiNode<ExtPhrase_c,false> ( pNode, tSetup, true );
 
 			case SPH_QUERY_PROXIMITY:
-				return CreateMultiNode<ExtProximity_c> ( pNode, tSetup, true );
+				return CreateMultiNode<ExtProximity_c,false> ( pNode, tSetup, true );
 
 			case SPH_QUERY_NEAR:
-				return CreateMultiNode<ExtMultinear_c> ( pNode, tSetup, true );
+				return CreateMultiNode<ExtMultinear_c,false> ( pNode, tSetup, true );
 
 			case SPH_QUERY_QUORUM:
 			{
@@ -1102,14 +1143,14 @@ ExtNode_i * ExtNode_i::Create ( const XQNode_t * pNode, const ISphQwordSetup & t
 						tSetup.m_pWarning->SetSprintf ( "quorum threshold too high (words=%d, thresh=%d); replacing quorum operator with AND operator",
 							iQuorumCount, pNode->m_iOpArg );
 
-				} else if ( iQuorumCount>256 )
+				} else if ( iQuorumCount>32 )
 				{
-					// right now quorum can only handle 256 words
+					// right now quorum can only handle 32 words
 					if ( tSetup.m_pWarning )
 						tSetup.m_pWarning->SetSprintf ( "too many words (%d) for quorum; replacing with an AND", iQuorumCount );
 
 				} else // everything is ok; create quorum node
-					return CreateMultiNode<ExtQuorum_c> ( pNode, tSetup, false );
+					return CreateMultiNode<ExtQuorum_c,true> ( pNode, tSetup, false );
 
 				// couldn't create quorum, make an AND node instead
 				CSphVector<ExtNode_i*> dTerms;
@@ -1177,7 +1218,7 @@ ExtNode_i * ExtNode_i::Create ( const XQNode_t * pNode, const ISphQwordSetup & t
 
 		// Multinear could be also non-plain, so here is the second entry for it.
 		if ( pNode->GetOp()==SPH_QUERY_NEAR )
-			return CreateMultiNode<ExtMultinear_c> ( pNode, tSetup, true );
+			return CreateMultiNode<ExtMultinear_c,false> ( pNode, tSetup, true );
 
 		// generic create
 		ExtNode_i * pCur = NULL;
@@ -1195,8 +1236,8 @@ ExtNode_i * ExtNode_i::Create ( const XQNode_t * pNode, const ISphQwordSetup & t
 				case SPH_QUERY_OR:			pCur = new ExtOr_c ( pCur, pNext, tSetup ); break;
 				case SPH_QUERY_AND:			pCur = new ExtAnd_c ( pCur, pNext, tSetup ); break;
 				case SPH_QUERY_ANDNOT:		pCur = new ExtAndNot_c ( pCur, pNext, tSetup ); break;
-				case SPH_QUERY_SENTENCE:	pCur = new ExtUnit_c ( pCur, pNext, pNode->m_dFieldMask, tSetup, MAGIC_WORD_SENTENCE ); break;
-				case SPH_QUERY_PARAGRAPH:	pCur = new ExtUnit_c ( pCur, pNext, pNode->m_dFieldMask, tSetup, MAGIC_WORD_PARAGRAPH ); break;
+				case SPH_QUERY_SENTENCE:	pCur = new ExtUnit_c ( pCur, pNext, pNode->m_dSpec.m_dFieldMask, tSetup, MAGIC_WORD_SENTENCE ); break;
+				case SPH_QUERY_PARAGRAPH:	pCur = new ExtUnit_c ( pCur, pNext, pNode->m_dSpec.m_dFieldMask, tSetup, MAGIC_WORD_PARAGRAPH ); break;
 				default:					assert ( 0 && "internal error: unhandled op in ExtNode_i::Create()" ); break;
 			}
 		}
@@ -1526,8 +1567,8 @@ const ExtHit_t * ExtTermHitless_c::GetHitsChunk ( const ExtDoc_t * pMatched, Sph
 
 template < TermPosFilter_e T >
 ExtTermPos_c<T>::ExtTermPos_c ( ISphQword * pQword, const XQNode_t * pNode, const ISphQwordSetup & tSetup )
-	: ExtTerm_c ( pQword, pNode->m_dFieldMask, tSetup, pNode->m_bNotWeighted )
-	, m_iMaxFieldPos ( pNode->m_iFieldMaxPos )
+	: ExtTerm_c ( pQword, pNode->m_dSpec.m_dFieldMask, tSetup, pNode->m_bNotWeighted )
+	, m_iMaxFieldPos ( pNode->m_dSpec.m_iFieldMaxPos )
 	, m_uTermMaxID ( 0 )
 	, m_pRawDocs ( NULL )
 	, m_pRawDoc ( NULL )
@@ -1536,7 +1577,7 @@ ExtTermPos_c<T>::ExtTermPos_c ( ISphQword * pQword, const XQNode_t * pNode, cons
 	, m_eState ( COPY_DONE )
 	, m_uDoneFor ( 0 )
 	, m_pZoneChecker ( tSetup.m_pZoneChecker )
-	, m_dZones ( pNode->m_dZones )
+	, m_dZones ( pNode->m_dSpec.m_dZones )
 	, m_uLastZonedId ( 0 )
 	, m_iCheckFrom ( 0 )
 {
@@ -2318,7 +2359,7 @@ void ExtAndNot_c::Reset ( const ISphQwordSetup & tSetup )
 
 //////////////////////////////////////////////////////////////////////////
 
-ExtNWayT::ExtNWayT ( const CSphVector<ExtNode_i *> & dNodes, const ISphQwordSetup & tSetup )
+ExtNWayT::ExtNWayT ( const CSphVector<ExtNode_i *> & dNodes, DWORD, const XQNode_t &, const ISphQwordSetup & tSetup )
 	: m_pNode ( NULL )
 	, m_pDocs ( NULL )
 	, m_pHits ( NULL )
@@ -2618,7 +2659,7 @@ bool ExtNWay_c<FSM>::EmitTail ( int & iHit )
 
 //////////////////////////////////////////////////////////////////////////
 
-FSMphrase::FSMphrase ( const CSphVector<ExtNode_i *> & dQwords, const XQNode_t & , const ISphQwordSetup & )
+FSMphrase::FSMphrase ( const CSphVector<ExtNode_i *> & dQwords, DWORD, const XQNode_t & , const ISphQwordSetup & )
 	: m_uExpQpos ( 0 )
 	, m_uExpPos ( 0 )
 	, m_uLeaves ( dQwords.GetLength() )
@@ -2696,7 +2737,7 @@ inline bool FSMphrase::HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget )
 
 //////////////////////////////////////////////////////////////////////////
 
-FSMproximity::FSMproximity ( const CSphVector<ExtNode_i *> & dQwords, const XQNode_t & tNode, const ISphQwordSetup & )
+FSMproximity::FSMproximity ( const CSphVector<ExtNode_i *> & dQwords, DWORD, const XQNode_t & tNode, const ISphQwordSetup & )
 	: m_iMaxDistance ( tNode.m_iOpArg )
 	, m_uWordsExpected ( dQwords.GetLength() )
 	, m_uExpPos ( 0 )
@@ -2791,7 +2832,7 @@ inline bool FSMproximity::HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget )
 
 //////////////////////////////////////////////////////////////////////////
 
-FSMmultinear::FSMmultinear ( const CSphVector<ExtNode_i *> & dNodes, const XQNode_t & tNode, const ISphQwordSetup & )
+FSMmultinear::FSMmultinear ( const CSphVector<ExtNode_i *> & dNodes, DWORD, const XQNode_t & tNode, const ISphQwordSetup & )
 	: m_iNear ( tNode.m_iOpArg )
 	, m_uWordsExpected ( dNodes.GetLength() )
 {
@@ -2973,7 +3014,7 @@ inline bool FSMmultinear::HitFSM ( const ExtHit_t* pHit, ExtHit_t* dTarget )
 
 //////////////////////////////////////////////////////////////////////////
 
-ExtQuorum_c::ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, const XQNode_t & tNode, const ISphQwordSetup & )
+ExtQuorum_c::ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, DWORD uDupeMask, const XQNode_t & tNode, const ISphQwordSetup & )
 {
 	assert ( tNode.GetOp()==SPH_QUERY_QUORUM );
 
@@ -2981,7 +3022,7 @@ ExtQuorum_c::ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, const XQNode_t & tN
 	m_bDone = false;
 
 	assert ( dQwords.GetLength()>1 ); // use TERM instead
-	assert ( dQwords.GetLength()<=256 ); // internal masks are upto 256 bits
+	assert ( dQwords.GetLength()<=32 ); // internal masks are 32 bits
 	assert ( m_iThresh>=1 ); // 1 is also OK; it's a bit different from just OR
 	assert ( m_iThresh<dQwords.GetLength() ); // use AND instead
 
@@ -2997,13 +3038,8 @@ ExtQuorum_c::ExtQuorum_c ( CSphVector<ExtNode_i*> & dQwords, const XQNode_t & tN
 
 	m_dChildren = m_dInitialChildren;
 
-	// compute duplicate keywords mask (aka dupe mask)
-	// FIXME! will (likely) now fail with quorum+expand+dupes, need a new test?
-	// FIXME! will fail with wordforms and stuff; sorry, no wordforms vs expand vs quorum support for now!
-	CSphSmallBitvec bmDupes;
-	CalcDupeMask ( &bmDupes, dQwords );
-	m_bmMask = m_bmInitialMask = bmDupes;
-	m_iMaskEnd = dQwords.GetLength() - 1;
+	m_uMask = m_uInitialMask = uDupeMask;
+	m_uMaskEnd = dQwords.GetLength() - 1;
 	m_uMatchedDocid = 0;
 }
 
@@ -3027,8 +3063,8 @@ void ExtQuorum_c::Reset ( const ISphQwordSetup & tSetup )
 		m_pCurHit[i] = NULL;
 	}
 
-	m_bmMask = m_bmInitialMask;
-	m_iMaskEnd = m_dChildren.GetLength() - 1;
+	m_uMask = m_uInitialMask;
+	m_uMaskEnd = m_dChildren.GetLength() - 1;
 	m_uMatchedDocid = 0;
 
 	ARRAY_FOREACH ( i, m_dChildren )
@@ -3064,10 +3100,9 @@ const ExtDoc_t * ExtQuorum_c::GetDocsChunk ( SphDocID_t * pMaxID )
 		}
 
 		// replace i-th bit with the last one
-		m_bmMask.Unset(i); // clear i-th bit
-		if ( m_bmMask.Test ( m_iMaskEnd ) )
-			m_bmMask.Set(i); // set i-th bit to end bit; OPTIMIZE? can be made unconditional
-		m_iMaskEnd--;
+		m_uMask &= ~( 1UL<<i ); // clear i-th bit
+		m_uMask |= ( ( m_uMask >> m_uMaskEnd ) & 1 ) << i; // set i-th bit to end bit
+		m_uMaskEnd--;
 
 		m_dChildren.RemoveFast ( i );
 		m_pCurDoc.RemoveFast ( i );
@@ -3080,9 +3115,7 @@ const ExtDoc_t * ExtQuorum_c::GetDocsChunk ( SphDocID_t * pMaxID )
 		return NULL;
 
 	// main loop
-	CSphSmallBitvec bmTouched; // bitmask of children that actually produced matches this time
-	bmTouched.Unset();
-
+	DWORD uTouched = 0; // bitmask of children that actually produced matches this time
 	int iDoc = 0;
 	bool bDone = false;
 	CSphRowitem * pDocinfo = m_pDocinfo;
@@ -3104,13 +3137,13 @@ const ExtDoc_t * ExtQuorum_c::GetDocsChunk ( SphDocID_t * pMaxID )
 			if ( m_pCurDoc[i]->m_uDocid < tCand.m_uDocid )
 			{
 				tCand = *m_pCurDoc[i];
-				iCandMatches = m_bmMask.Test(i);
+				iCandMatches = (m_uMask >> i) & 1;
 
 			} else if ( m_pCurDoc[i]->m_uDocid==tCand.m_uDocid )
 			{
 				tCand.m_uDocFields |= m_pCurDoc[i]->m_uDocFields; // non necessary
 				tCand.m_fTFIDF += m_pCurDoc[i]->m_fTFIDF;
-				iCandMatches += m_bmMask.Test(i);
+				iCandMatches += (m_uMask >> i) & 1;
 			}
 		}
 
@@ -3123,13 +3156,13 @@ const ExtDoc_t * ExtQuorum_c::GetDocsChunk ( SphDocID_t * pMaxID )
 			if ( m_pCurDoc[i]->m_uDocid==tCand.m_uDocid )
 		{
 			if ( iCandMatches>=m_iThresh )
-				bmTouched.Set(i);
+				uTouched |= ( 1UL<<i );
 
 			m_pCurDoc[i]++;
 			if ( m_pCurDoc[i]->m_uDocid!=DOCID_MAX )
 				continue;
 
-			if ( bmTouched.Test(i) )
+			if ( uTouched & ( 1UL<<i) )
 			{
 				bDone = true;
 				continue; // NOT break. because we still need to advance some further children!
@@ -3146,14 +3179,12 @@ const ExtDoc_t * ExtQuorum_c::GetDocsChunk ( SphDocID_t * pMaxID )
 			}
 
 			// replace i-th bit with the last one
-			m_bmMask.Unset(i); // clear i-th bit
-			if ( m_bmMask.Test ( m_iMaskEnd ) )
-				m_bmMask.Set(i); // set i-th bit to end bit; OPTIMIZE? can be made unconditional
-			m_iMaskEnd--;
+			m_uMask &= ~( 1UL<<i ); // clear i-th bit
+			m_uMask |= ( ( m_uMask >> m_uMaskEnd ) & 1 ) << i; // set i-th bit to end bit
+			m_uMaskEnd--;
 
-			bmTouched.Unset(i);
-			if ( bmTouched.Test ( m_dChildren.GetLength()-1 ) )
-				bmTouched.Set(i);
+			uTouched &= ~(1UL<<i);
+			uTouched |= ( ( uTouched >> (m_dChildren.GetLength()-1) ) & 1UL ) << i;
 
 			m_dChildren.RemoveFast ( i );
 			m_pCurDoc.RemoveFast ( i );
@@ -3778,7 +3809,7 @@ int ExtUnit_c::FilterHits ( int iMyHit, DWORD uSentenceEnd, SphDocID_t uDocid, i
 			{
 				// we have a match!
 				// copy hits until next dot
-				if ( !SkipHitsLtePos ( &m_pDotHit, m_pDotHit->m_uHitpos, m_pDot, m_pDotDocs ) )
+				if ( !SkipHitsLtePos ( &m_pDotHit, uMax, m_pDot, m_pDotDocs ) )
 					uSentenceEnd = UINT_MAX; // correction, no next dot, so make it "next document"
 				else
 					uSentenceEnd = m_pDotHit->m_uHitpos;
@@ -4116,10 +4147,7 @@ const ExtDoc_t * ExtRanker_c::GetFilteredDocs ()
 				if ( uMinDocid==DOCID_MAX )
 					continue;
 
-				ZoneKey_t tZoneStart;
-				tZoneStart.m_iZone = i;
-				tZoneStart.m_uDocid = uMinDocid;
-				Verify ( m_hZoneInfo.IterateStart ( tZoneStart ) );
+				Verify ( m_hZoneInfo.IterateStart ( ZoneKey_t ( i, uMinDocid ) ) );
 				uMinDocid = DOCID_MAX;
 				do
 				{
@@ -4163,10 +4191,7 @@ void ExtRanker_c::SetQwordsIDF ( const ExtQwordsHash_t & hQwords )
 SphZoneHit_e ExtRanker_c::IsInZone ( int iZone, const ExtHit_t * pHit )
 {
 	// quick route, we have current docid cached
-	ZoneKey_t tKey; // OPTIMIZE? allow 2-component hash keys maybe?
-	tKey.m_uDocid = pHit->m_uDocid;
-	tKey.m_iZone = iZone;
-
+	ZoneKey_t tKey ( iZone, pHit->m_uDocid ); // OPTIMIZE? allow 2-component hash keys maybe?
 	ZoneInfo_t * pZone = m_hZoneInfo ( tKey );
 	if ( pZone )
 	{
@@ -4304,8 +4329,7 @@ SphZoneHit_e ExtRanker_c::IsInZone ( int iZone, const ExtHit_t * pHit )
 			SphDocID_t uCur = pStartHits->m_uDocid;
 
 			tKey.m_uDocid = uCur;
-			m_hZoneInfo.Add ( ZoneInfo_t(), tKey );
-			pZone = m_hZoneInfo ( tKey ); // OPTIMIZE? return pointer from Add()?
+			pZone = m_hZoneInfo.AddUnique ( ZoneInfo_t(), tKey );
 
 			// load all the start hits for it
 			while ( pStartHits )
