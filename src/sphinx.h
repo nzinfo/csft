@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -196,8 +196,8 @@ inline const	DWORD *	STATIC2DOCINFO ( const DWORD * pAttrs )	{ return STATIC2DOC
 #define SPHINX_TAG "-dev"
 #endif
 
-#define SPHINX_VERSION			"2.1.0" SPHINX_BITS_TAG SPHINX_TAG " (" SPH_SVN_TAGREV ")"
-#define SPHINX_BANNER			"Sphinx " SPHINX_VERSION "\nCopyright (c) 2001-2011, Andrew Aksyonoff\nCopyright (c) 2008-2011, Sphinx Technologies Inc (http://sphinxsearch.com)\n\n"
+#define SPHINX_VERSION			"2.0.4" SPHINX_BITS_TAG SPHINX_TAG " (" SPH_SVN_TAGREV ")"
+#define SPHINX_BANNER			"Sphinx " SPHINX_VERSION "\nCopyright (c) 2001-2012, Andrew Aksyonoff\nCopyright (c) 2008-2012, Sphinx Technologies Inc (http://sphinxsearch.com)\n\n"
 #define SPHINX_SEARCHD_PROTO	1
 
 #define SPH_MAX_WORD_LEN		42		// so that any UTF-8 word fits 127 bytes
@@ -528,8 +528,8 @@ public:
 	/// get original tokenized multiform (if any); NULL means there was none
 	virtual BYTE *					GetTokenizedMultiform () { return NULL; }
 
-	virtual bool					TokenIsBlended () { return m_bBlended; }
-	virtual bool					TokenIsBlendedPart () { return m_bBlendedPart; }
+	virtual bool					TokenIsBlended () const { return m_bBlended; }
+	virtual bool					TokenIsBlendedPart () const { return m_bBlendedPart; }
 	virtual int						SkipBlended () { return 0; }
 
 public:
@@ -1197,6 +1197,7 @@ struct CSphColumnInfo
 	ESphEvalStage					m_eStage;		///< column evaluation stage (who and how computes this column)
 	bool							m_bPayload;
 	bool							m_bFilename;	///< column is a file name
+	bool							m_bWeight;		///< is a weight column
 
 	/// handy ctor
 	CSphColumnInfo ( const char * sName=NULL, ESphAttr eType=SPH_ATTR_NONE )
@@ -1211,6 +1212,7 @@ struct CSphColumnInfo
 		, m_eStage ( SPH_EVAL_STATIC )
 		, m_bPayload ( false )
 		, m_bFilename ( false )
+		, m_bWeight ( false )
 	{
 		m_sName.ToLower ();
 	}
@@ -2287,8 +2289,8 @@ public:
 
 	struct WordStat_t
 	{
-		int					m_iDocs;			///< document count for this term
-		int					m_iHits;			///< hit count for this term
+		int64_t					m_iDocs;			///< document count for this term
+		int64_t					m_iHits;			///< hit count for this term
 		bool				m_bExpanded;		///< is this term from query itself or was expanded
 
 		WordStat_t()
@@ -2300,14 +2302,14 @@ public:
 	SmallStringHash_T<WordStat_t>	m_hWordStats; ///< hash of i-th search term (normalized word form)
 
 	int						m_iMatches;			///< total matches returned (upto MAX_MATCHES)
-	int						m_iTotalMatches;	///< total matches found (unlimited)
+	int64_t					m_iTotalMatches;	///< total matches found (unlimited)
 
 	CSphString				m_sError;			///< error message
 	CSphString				m_sWarning;			///< warning message
 
 	CSphQueryResultMeta ();													///< ctor
 	virtual					~CSphQueryResultMeta () {}						///< dtor
-	void					AddStat ( const CSphString & sWord, int iDocs, int iHits, bool bExpanded );
+	void					AddStat ( const CSphString & sWord, int64_t iDocs, int64_t iHits, bool bExpanded );
 
 	CSphQueryResultMeta ( const CSphQueryResultMeta & tMeta );				///< copy ctor
 	CSphQueryResultMeta & operator= ( const CSphQueryResultMeta & tMeta );	///< copy
@@ -2474,7 +2476,7 @@ class ISphMatchSorter
 {
 public:
 	bool				m_bRandomize;
-	int					m_iTotal;
+	int64_t				m_iTotal;
 
 protected:
 	CSphSchema			m_tSchema;		///< sorter schema (adds dynamic attributes on top of index schema)
@@ -2522,7 +2524,7 @@ public:
 	virtual int			GetLength () const = 0;
 
 	/// get total count of non-duplicates Push()ed through this queue
-	virtual int			GetTotalCount () const { return m_iTotal; }
+	virtual int64_t		GetTotalCount () const { return m_iTotal; }
 
 	/// get first entry ptr
 	/// used for docinfo lookup
@@ -2695,11 +2697,8 @@ public:
 	/// internal debugging hook, DO NOT USE
 	virtual int					DebugCheck ( FILE * fp ) = 0;
 
-	/// getter for the index name
-	const char *				GetName () { return m_sIndexName.cstr(); }
-
-	/// get for the base file name
-	const char *				GetFilename () { return m_sFilename.cstr(); }
+	/// getter for name
+	const char * GetName () { return m_sIndexName.cstr(); }
 
 public:
 	int64_t						m_iTID;
@@ -2738,7 +2737,6 @@ protected:
 	int							m_iMaxCachedDocs;
 	int							m_iMaxCachedHits;
 	CSphString					m_sIndexName;
-	CSphString					m_sFilename;
 };
 
 // update attributes with index pointer attached
