@@ -3,8 +3,8 @@
 //
 
 //
-// Copyright (c) 2001-2011, Andrew Aksyonoff
-// Copyright (c) 2008-2011, Sphinx Technologies Inc
+// Copyright (c) 2001-2012, Andrew Aksyonoff
+// Copyright (c) 2008-2012, Sphinx Technologies Inc
 // All rights reserved
 //
 // This program is free software; you can redistribute it and/or modify
@@ -787,11 +787,11 @@ CSphString ReconstructNode ( const XQNode_t * pNode, const CSphSchema & tSchema 
 			default:					assert ( 0 && "unexpected op in ReconstructNode()" ); break;
 		}
 
-		if ( !pNode->m_dFieldMask.TestAll(true) )
+		if ( !pNode->m_dSpec.m_dFieldMask.TestAll(true) )
 		{
 			CSphString sFields ( "" );
 			for ( int i=0; i<CSphSmallBitvec::iTOTALBITS; i++ )
-				if ( pNode->m_dFieldMask.Test(i) )
+				if ( pNode->m_dSpec.m_dFieldMask.Test(i) )
 					sFields.SetSprintf ( "%s,%s", sFields.cstr(), tSchema.m_dFields[i].m_sName.cstr() );
 
 			sRes.SetSprintf ( "( @%s: %s )", sFields.cstr()+1, sRes.cstr() );
@@ -906,8 +906,11 @@ void TestQueryParser ()
 		sphParseExtendedQuery ( tQuery, dTest[i].m_sQuery, pTokenizer.Ptr(), &tSchema, pDict.Ptr(), 1 );
 
 		CSphString sReconst = ReconstructNode ( tQuery.m_pRoot, tSchema );
-		assert ( sReconst==dTest[i].m_sReconst );
-
+		if ( sReconst!=dTest[i].m_sReconst )
+		{
+			printf ( "failed!\n Expected '%s',\n got '%s'", dTest[i].m_sReconst, sReconst.cstr() );
+			assert ( sReconst==dTest[i].m_sReconst );
+		}
 		printf ( "ok\n" );
 	}
 }
@@ -2213,6 +2216,11 @@ void BenchStemmer ()
 
 int main ()
 {
+	// threads should be initialized before memory allocations
+	char cTopOfMainStack;
+	sphThreadInit();
+	MemorizeStack ( &cTopOfMainStack );
+
 	printf ( "RUNNING INTERNAL LIBSPHINX TESTS\n\n" );
 
 #if 0

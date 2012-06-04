@@ -5,16 +5,16 @@
 ]>
 <book lang="en">
 
-<title>Sphinx 2.0.2-beta reference manual</title>
+<title>Sphinx 2.0.4-release reference manual</title>
 <subtitle>Free open-source SQL full-text search engine</subtitle>
 
 <bookinfo>
 <copyright>
-<year>2001-2011</year>
+<year>2001-2012</year>
 <holder>Andrew Aksyonoff</holder>
 </copyright>
 <copyright>
-<year>2008-2011</year>
+<year>2008-2012</year>
 <holder>Sphinx Technologies Inc, <ulink 
 url="http://sphinxsearch.com">http://sphinxsearch.com</ulink></holder>
 </copyright>
@@ -245,7 +245,7 @@ CPU architectures known to work include i386 (aka x86), amd64 (aka x86_64),
 SPARC64, and ARM.
 </para>
 <para>
-Chance are good that Sphinx should work on other Unix platforms and/or
+Chances are good that Sphinx should work on other Unix platforms and/or
 CPU architectures just as well. Please report any other platforms that
 worked for you!
 </para>
@@ -1092,7 +1092,7 @@ be made available to search in a matter of minutes.
 </para>
 <para>
 Specifying which documents should go to what index and
-reindexing main index could also be made fully automatical.
+reindexing main index could also be made fully automatic.
 One option would be to make a counter table which would track
 the ID which would split the documents, and update it
 whenever the main index is reindexed.
@@ -1421,12 +1421,13 @@ files are unlinked.
 </para>
 <para>
 During normal operation, a new binlog file will be opened every time
-when <option>binlog_max_log_size</option> limit (which defaults to 128M)
+when <option>binlog_max_log_size</option> limit
 is reached.  Older, already closed binlog files are kept until all of the
 transactions stored in them (from all indexes) are flushed as a disk chunk.
 Setting the limit to 0 pretty much prevents binlog from being unlinked
 at all while <filename>searchd</filename> is running; however, it will
-still be unlinked on clean shutdown.
+still be unlinked on clean shutdown. (This is the default case as of
+2.0.3-release, <option>binlog_max_log_size</option> defaults to 0.)
 </para>
 <para>
 There are 3 different binlog flushing strategies, controlled by
@@ -1624,9 +1625,9 @@ The full meaning of this search is:
 <itemizedlist>
 <listitem><para>Find the words 'hello' and 'world' adjacently in any field in a document;</para></listitem>
 <listitem><para>Additionally, the same document must also contain the words 'example' and 'program'
-	in the title field, with up to, but not including, 10 words between the words in question;
+	in the title field, with up to, but not including, 5 words between the words in question;
 	(E.g. "example PHP program" would be matched however "example script to introduce outside data
-	into the correct context for your program" would not because two terms have 10 or more words between them)</para></listitem>
+	into the correct context for your program" would not because two terms have 5 or more words between them)</para></listitem>
 <listitem><para>Additionally, the same document must contain the word 'python' in the body field, but not contain either 'php' or 'perl';</para></listitem>
 <listitem><para>Additionally, the same document must contain the word 'code' in any field.</para></listitem>
 </itemizedlist>
@@ -3142,7 +3143,7 @@ source distribution provides a sample file,
 that defines a few simple functions showing how to work with integer,
 string, and MVA arguments; you can use that one as a foundation for
 your new functions. It includes the UDF interface header file,
-<ulink url="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/udfexample.c">src/sphinxudf.h</ulink>,
+<ulink url="http://code.google.com/p/sphinxsearch/source/browse/trunk/src/sphinxudf.h">src/sphinxudf.h</ulink>,
 that defines the required types and structures. <filename>sphinxudf.h</filename>
 header is standalone, that is, does not require any other parts of Sphinx
 source to compile.
@@ -4685,8 +4686,8 @@ except for strings can be updated. Previously, some of the types were not
 supported.
 </para>
 <para>
-<code>where_condition</code> uses the same syntax as the SELECT statement
-(see <xref linkend="sphinxql-select"/> for details).
+<code>where_condition</code> (also added in 2.0.2-beta) has the same syntax
+as in the SELECT statement (see <xref linkend="sphinxql-select"/> for details).
 </para>
 <para>
 When assigning the out-of-range values to 32-bit attributes, they
@@ -4835,22 +4836,6 @@ FLUSH RTINDEX should be almost instant.
 </para>
 <programlisting>
 mysql> FLUSH RTINDEX rt;
-Query OK, 0 rows affected (0.05 sec)
-</programlisting>
-</sect1>
-
-
-<sect1 id="sphinxql-truncate-rtindex"><title>TRUNCATE RTINDEX syntax</title>
-<programlisting>
-TRUNCATE RTINDEX rtindex
-</programlisting>
-<para>
-TRUNCATE RTINDEX statement, added in version 2.1.1-beta, clears
-the RT index completely. It disposes the in-memory data, unlinks
-all the index data files, and releases the associated binary logs.
-</para>
-<programlisting>
-mysql> TRUNCATE RTINDEX rt;
 Query OK, 0 rows affected (0.05 sec)
 </programlisting>
 </sect1>
@@ -5384,7 +5369,7 @@ $cl->SetMatchMode ( SPH_MATCH_ANY ); // correct, works OK
 </sect2>
 
 <sect2 id="api-func-setrankingmode"><title>SetRankingMode</title>
-<para><b>Prototype:</b> function SetRankingMode ( $ranker )</para>
+<para><b>Prototype:</b> function SetRankingMode ( $ranker, $rankexpr="" )</para>
 <para>
 Sets ranking mode (aka ranker). Only available in SPH_MATCH_EXTENDED
 matching mode. Parameter must be a constant specifying one of the known
@@ -5405,6 +5390,13 @@ or maybe avoid computing it at all for performance reasons because
 you're sorting the result set by something else anyway. This can be
 accomplished by setting the appropriate ranking mode. The list of
 the modes is available in <xref linkend="weighting"/>.
+</para>
+<para>
+<code>$rankexpr</code> argument was added in version 2.0.2-beta.
+It lets you specify a ranking formula to use with the
+<link linkend="expression-ranker">expression based ranker</link>,
+that is, when <code>$ranker</code> is set to SPH_RANK_EXPR.
+In all other cases, <code>$rankexpr</code> is ignored.
 </para>
 </sect2>
 
@@ -6005,11 +5997,18 @@ Starting with version 0.9.9-rc1, keywords can contain wildcards, that work simil
 </varlistentry>
 <varlistentry>
 	<term>"load_files_scattered":</term>
-	<listitem><para>Added in version 2.0.2-beta. It assumes "load_files" option, and works only with distributed snippets generation
+	<listitem><para>Added in version 2.0.2-beta. It works only with distributed snippets generation
 	with remote agents. The source files for snippets could be distributed among different agents, and the main daemon will merge
 	together all non-erroneous results. So, if one agent of the distributed index has 'file1.txt', another has 'file2.txt' and you call for the snippets
 	with both these files, the sphinx will merge results from the agents together, so you will get the snippets from both 'file1.txt' and 'file2.txt'.
-	</para></listitem>
+	Boolean, default is false.
+	</para>
+	<para>If the "load_files" is also set, the request will return the error in case if any of the files is not available anywhere. Otherwise (if "load_files" is not set)
+	it will just return the empty strings for all absent files. The master instance reset this flag when distributes the snippets among agents. So, for agents the absence of a file
+	is not critical error, but for the master it might be so. If you want to be sure that all snippets are actually created, set both "load_files_scattered" and "load_files". If the
+	absense of some snippets caused by some agents is not critical for you - set just "load_files_scattered", leaving "load_files" not set.
+	</para>
+</listitem>
 </varlistentry>
 <varlistentry>
 	<term>"html_strip_mode":</term>
@@ -6279,9 +6278,6 @@ to do that.
 
 
 <sect2 id="sphinxse-mysql50"><title>Compiling MySQL 5.0.x with SphinxSE</title>
-<para>
-Skips steps 1-3 if using already prepared delta tarball.
-</para>
 <orderedlist>
 <listitem><para>copy <filename>sphinx.5.0.yy.diff</filename> patch file
 into MySQL sources directory and run
@@ -6322,9 +6318,6 @@ make install
 
 
 <sect2 id="sphinxse-mysql51"><title>Compiling MySQL 5.1.x with SphinxSE</title>
-<para>
-Skip steps 1-2 if using already prepared delta tarball.
-</para>
 <orderedlist>
 <listitem><para>in MySQL sources directory, create <filename>storage/sphinx</filename>
 directory in and copy all files in <filename>mysqlse</filename> directory 
@@ -6552,9 +6545,12 @@ and TCP port, respectively:
 as in <link linkend="api-func-setrankingmode">SetRankingMode()</link> API call
 (the only mode that supports full query syntax).
 Known values are "proximity_bm25", "bm25", "none", "wordcount", "proximity",
-"matchany", and "fieldmask".
+"matchany", "fieldmask"; and, starting with 2.0.4-release, "expr:EXPRESSION"
+syntax to support expression-based ranker (where EXPRESSION should be replaced
+with your specific ranking formula):
 <programlisting>
 ... WHERE query='test;mode=extended;ranker=bm25;';
+... WHERE query='test;mode=extended;ranker=expr:sum(lcs);';
 </programlisting>
 </para></listitem>
 <listitem><para>geoanchor - geodistance anchor, as in
@@ -7404,7 +7400,8 @@ function in MySQL instead.
 </para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
-sql_attr_timestamp = UNIX_TIMESTAMP(added_datetime) AS added_ts
+# sql_query = ... UNIX_TIMESTAMP(added_datetime) AS added_ts ...
+sql_attr_timestamp = added_ts
 </programlisting>
 </sect2>
 
@@ -7831,7 +7828,21 @@ Syntax fully matches that of <link linkend="conf-sql-attr-uint">sql_attr_uint</l
 </para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
-xmlpipe_attr_uint = author
+xmlpipe_attr_uint = author_id
+</programlisting>
+</sect2>
+
+
+<sect2 id="conf-xmlpipe-attr-bigint"><title>xmlpipe_attr_bigint</title>
+<para>
+xmlpipe signed 64-bit integer attribute declaration.
+Multi-value, optional.
+Applies to <option>xmlpipe2</option> source type only.
+Syntax fully matches that of <link linkend="conf-sql-attr-bigint">sql_attr_bigint</link>.
+</para>
+<bridgehead>Example:</bridgehead>
+<programlisting>
+xmlpipe_attr_bigint = my_bigint_id
 </programlisting>
 </sect2>
 
@@ -8553,6 +8564,13 @@ For instance, assume that "the" is a stopword, that document 1 contains the line
 as for exact phrase will only return the first document, as expected, even though
 "the" in the second one is stopped.
 </para>
+<para>
+Stopwords files can either be created manually, or semi-automatically.
+<filename>indexer</filename> provides a mode that creates a frequency dictionary
+of the index, sorted by the keyword frequency, see <option>--buildstops</option>
+and <option>--buildfreqs</option> switch in <xref linkend="ref-indexer"/>.
+Top keywords from that dictionary can usually be used as stopwords.
+</para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
 stopwords = /usr/local/sphinx/data/stopwords.txt
@@ -8653,7 +8671,6 @@ differences.
 Short summary of the differences is as follows:
 <itemizedlist>
 <listitem><para>exceptions are case sensitive, wordforms are not;</para></listitem>
-<listitem><para>exceptions allow to detect sequences of tokens, wordforms work with single words only;</para></listitem>
 <listitem><para>exceptions can use special characters that are <b>not</b> in charset_table, wordforms fully obey charset_table;</para></listitem>
 <listitem><para>exceptions can underperform on huge dictionaries, wordforms handle millions of entries well.</para></listitem>
 </itemizedlist>
@@ -9259,12 +9276,22 @@ Multi-value, optional, default is empty.
 </para>
 <para>
 This setting is used to declare local indexes that will be searched when
-given distributed index is searched. All local indexes will be searched
-<b>sequentially</b>, utilizing only 1 CPU or core; to parallelize processing,
-you can configure <filename>searchd</filename> to query itself (refer to
-<xref linkend="conf-agent"/> for the details). There might be several local
-indexes declared per each distributed index. Any local index can be mentioned
-several times in other distributed indexes.
+given distributed index is searched. Many local indexes can be declared per
+each distributed index. Any local index can also be mentioned several times
+in different distributed indexes.
+</para>
+<para>
+Note that by default all local indexes will be searched <b>sequentially</b>,
+utilizing only 1 CPU or core. To parallelize processing of the local parts
+in the distributed index, you should use <option>dist_threads</option> directive,
+see <xref linkend="conf-dist-threads"/>.
+</para>
+<para>
+Before <option>dist_threads</option>, there also was a legacy solution
+to configure <filename>searchd</filename> to query itself instead of using
+local indexes (refer to <xref linkend="conf-agent"/> for the details). However,
+that creates redundant CPU and network load, and <option>dist_threads</option>
+is now strongly suggested instead.
 </para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
@@ -10856,8 +10883,9 @@ Optional, default is build-time configured data directory.
 Introduced in version 1.10-beta.
 </para>
 <para>
-Binary logs are used for crash recovery of RT index data that
-would otherwise only be stored in RAM.  When logging is enabled,
+Binary logs are used for crash recovery of RT index data, and also of 
+attributes updates of plain disk indices that
+would otherwise only be stored in RAM untill flush.  When logging is enabled,
 every transaction COMMIT-ted into RT index gets written into
 a log file.  Logs are then automatically replayed on startup
 after an unclean shutdown, recovering the logged changes.
@@ -10871,6 +10899,12 @@ will create and unlink multiple binlog.* files in that path as necessary
 <para>
 Empty value disables binary logging. That improves performance,
 but puts RT index data at risk.
+</para>
+<para>
+WARNING! It is strongly recommended to always explicitly define 'binlog_path' option in your config.
+Otherwise, the default path, which in most cases is the same as working folder, may point to the 
+folder with no write access (for example, /usr/local/var/data). In this case, the searchd
+will not start at all.
 </para>
 <bridgehead>Example:</bridgehead>
 <programlisting>
@@ -11192,6 +11226,70 @@ prefork_rotation_throttle = 50 # throttle children restarts by 50 msec each
 -->
 
 <appendix id="changelog"><title>Sphinx revision history</title>
+
+<sect1 id="rel204"><title>Version 2.0.4-release, 02 mar 2012</title>
+<bridgehead>Bug fixes</bridgehead>
+<itemizedlist>
+<listitem><para>fixed #605, pack vs mysql compress</para></listitem>
+<listitem><para>fixed #783, #862, #917, #985, #990, #1032 documentation bugs</para></listitem>
+<listitem><para>fixed #885, bitwise AND/OR were not available via API</para></listitem>
+<listitem><para>fixed #984, crash on indexing data with MAGIC_CODE_ZONE symbol</para></listitem>
+<listitem><para>fixed #1004, RT index loses words from dictionary on segments merging with <code>id64</code> enabled</para></listitem>
+<listitem><para>fixed #1035, daemon doesn't properly handle FDs in case of socket overflow FD_SETSIZE ( *nix, <code>preopen_indexes=0</code>, <code>worker=threads</code> )</para></listitem>
+<listitem><para>fixed #1038, quoted string for API select</para></listitem>
+<listitem><para>fixed #1046, head SPZ overflow, snippet generation at non fast with SPZ</para></listitem>
+<listitem><para>fixed #1048, distributed index can't sort \ filter because of missed attributes</para></listitem>
+<listitem><para>fixed #1050, expression ranker vs agents</para></listitem>
+<listitem><para>fixed #1051, added <link linkend="mva">MVA64</link> support to <link linkend="udf">UDFs</link></para></listitem>
+<listitem><para>fixed #1054, <link linkend="sphinxql-select">max_query_time</link> not handled properly on searching at <link linkend="rt-indexes">RT index</link></para></listitem>
+<listitem><para>fixed #1055, <link linkend="conf-expansion-limit">expansion_limit</link> on searching at RT disk chunks</para></listitem>
+<listitem><para>fixed #1057, daemon crashes on generating snippet with 0 documents provided</para></listitem>
+<listitem><para>fixed #1060, <link linkend="api-func-buildexcerpts">load_files_scattered</link> don't work</para></listitem>
+<listitem><para>fixed #1065, libsphinxclient vs distribute index (agents)</para></listitem>
+<listitem><para>fixed #1067, modifiers were not escaped in legacy query emulation</para></listitem>
+<listitem><para>fixed #1071, master - agent communication got slower for a large query</para></listitem>
+<listitem><para>fixed #1076, #1077, (redundant copying, and a possible mutex leak with uservars)</para></listitem>
+<listitem><para>fixed #1078, <code>blended</code> vs FIELD_END</para></listitem>
+<listitem><para>fixed #1084 crash \ index corruption on loading persist MVA</para></listitem>
+<listitem><para>fixed #1091, RT attach of plain index with string \ MVA attributes prior regular attributes</para></listitem>
+<listitem><para>fixed #1092, update got binloged with wrong TID</para></listitem>
+<listitem><para>fixed #1098, crash on creating large expression</para></listitem>
+<listitem><para>fixed #1099, cleaning up temporary files on fail of indexing</para></listitem>
+<listitem><para>fixed #1100, missing <link linkend="conf-xmlpipe-attr-bigint">xmlpipe_attr_bigint</link> config directive</para></listitem>
+<listitem><para>fixed #1101, now ignoring dashes within keywords when dash is not in charset_table</para></listitem>
+<listitem><para>fixed #1103, <code>ZONE</code> operator incorrectly works on more than one keywords in a simple zone</para></listitem>
+<listitem><para>fixed #1106, optimized <code>WHERE id=value</code>, <code>WHERE id IN (values_list)</code> clauses used in <code>SELECT</code>, <code>UPDATE</code> statements</para></listitem>
+<listitem><para>fixed #1112, Sphinx doesn't work out-of-the-box because the collision of <code>binlog_path</code> option</para></listitem>
+<listitem><para>fixed #1116, crash on <code>FLUSH RTINDEX</code> unknown-index-name</para></listitem>
+<listitem><para>fixed #1117, occasional RT headers corruption (leading to crashes and/or missing results)</para></listitem>
+<listitem><para>fixed #1119, missing expression ranker support in SphinxSE</para></listitem>
+<listitem><para>fixed #1120, negative <link linkend="api-funcgroup-querying">total_found</link>, docs and hits counter on huge indexes</para></listitem>
+</itemizedlist>
+</sect1>
+
+<sect1 id="rel203"><title>Version 2.0.3-release, 23 dec 2011</title>
+<bridgehead>Bug fixes</bridgehead>
+<itemizedlist>
+<listitem><para>fixed #1031, SphinxQL parsing syntax for MVA at insert \ replace statements</para></listitem>
+<listitem><para>fixed #1027, stalls on attribute update in high-concurrency load</para></listitem>
+<listitem><para>fixed #1026, daemon crash on malformed API command</para></listitem>
+<listitem><para>fixed #1021, <code>max_children</code> option has been ignored with <code>worker=threads</code></para></listitem>
+<listitem><para>fixed #1020, crash on large attribute files loading</para></listitem>
+<listitem><para>fixed #1014, crash on rotation when index has been removed from config file (<code>worker=threads</code>, *nix box)</para></listitem>
+<listitem><para>fixed #1001, broken MVA  files in RT index while saving disk chunk</para></listitem>
+<listitem><para>fixed #995, crash on empty MVA updates</para></listitem>
+<listitem><para>fixed #994, crash on daemon shutdown with <code>seamless_rotate=0</code> and <code>workers=threads</code></para></listitem>
+<listitem><para>fixed #993, #998, crash on replay <code>DELETE</code> statement vs RT index with <code>dict=keywords</code>, fixed sequential <code>INSERT</code> into <code>dict=keywords</code> index right after <code>INSERT</code> into <code>dict=crc</code> index</para></listitem>
+<listitem><para>fixed #991, crash on indexing mssql source with <code>mssql_unicode</code> enabled</para></listitem>
+<listitem><para>fixed #983, #950, crash on host name lookup (SphinxSE with MySQL 5.5)</para></listitem>
+<listitem><para>fixed #981, snippet inconsistency with <code>allow_empty=0</code></para></listitem>
+<listitem><para>fixed #980, broken index produced by index merge in rare cases</para></listitem>
+<listitem><para>fixed #971, absent error message at master on agent "maxed out"</para></listitem>
+<listitem><para>fixed #695, #815, #835, #866, malformed warnings in SphinxQL</para></listitem>
+<listitem><para>fixed build of SphinxSE with MySQL 5.1</para></listitem>
+<listitem><para>fixed crash log for 'fork' and 'prefork' workers</para></listitem>
+</itemizedlist>
+</sect1>
 
 <sect1 id="rel202"><title>Version 2.0.2-beta, 15 nov 2011</title>
 <bridgehead>Major new features</bridgehead>
