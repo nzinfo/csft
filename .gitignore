@@ -2,6 +2,7 @@
 /Makefile
 /config.status
 /config.log
+/aclocal.m4
 /sphinx-min.conf.dist
 /sphinx.conf.dist
 /bin
@@ -10,6 +11,9 @@
 /*.ncb
 /*.sdf
 /.hg
+/autom4te.cache
+/bld
+/configure
 
 # /api/libsphinxclient/
 /api/libsphinxclient/*.ncb
@@ -27,6 +31,7 @@
 # /config/
 /config/stamp-h1
 /config/config.h
+/config/config.h.in
 
 # /libstemmer_c/
 /libstemmer_c/Makefile
@@ -40,6 +45,8 @@
 /src/spelldump
 /src/tests
 /src/wordbreaker
+/src/wordbreaker
+/src/libsphinx.a
 /src/Makefile
 /src/.deps
 /src/sphinxversion.h
@@ -63,3 +70,6 @@
 /test/ql/data/*.lock
 /test/ql/*.class
 /test/ql/*.exe
+
+# file types
+*.o
