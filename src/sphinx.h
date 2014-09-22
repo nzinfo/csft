@@ -131,6 +131,13 @@ const int				ROWITEM_SHIFT	= 5;
 
 STATIC_ASSERT ( ( 1 << ROWITEM_SHIFT )==ROWITEM_BITS, INVALID_ROWITEM_SHIFT );
 
+#ifdef __LITTLE_ENDIAN__
+#	define USE_LITTLE_ENDIAN 1
+#else
+#	define USE_LITTLE_ENDIAN 0
+#endif
+
+
 #ifndef USE_LITTLE_ENDIAN
 #error Please define endianness
 #endif

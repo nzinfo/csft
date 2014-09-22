@@ -726,12 +726,12 @@ else
 fi
 
 # check endianness
-AC_C_BIGENDIAN(
-	AC_DEFINE(USE_LITTLE_ENDIAN, 0, [big-endian]),
-	AC_DEFINE(USE_LITTLE_ENDIAN, 1, [little-endian]),
-	AC_MSG_ERROR(unknown endianess not supported),
-	AC_MSG_ERROR(universal endianess not supported)
-)
+#AC_C_BIGENDIAN(
+#	AC_DEFINE(USE_LITTLE_ENDIAN, 0, [big-endian]),
+#	AC_DEFINE(USE_LITTLE_ENDIAN, 1, [little-endian]),
+#	AC_MSG_ERROR(unknown endianess not supported),
+#	AC_MSG_ERROR(universal endianess not supported)
+#)
 
 dnl --------------------------------------------------------------------------
 
