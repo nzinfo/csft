@@ -1,0 +1,12 @@
+[CMake化]
+1 Mac 上编译，需要特别的 Patch
+	+#ifdef __LITTLE_ENDIAN__
+	+#	define USE_LITTLE_ENDIAN 1
+	+#else
+	+#	define USE_LITTLE_ENDIAN 0
+	+#endif
+
+2 直接使用 CMake 编译， 对应 sphinxversion.h 无法自动生成
+3 直接使用 CMake， 对 XMLPipe2 数据源的支持缺失了
+
+[Branding]
