@@ -21227,7 +21227,7 @@ void ShowHelp ()
 		"Options are:\n"
 		"-h, --help\t\tdisplay this help message\n"
 		"-c, --config <file>\tread configuration from specified file\n"
-		"\t\t\t(default is sphinx.conf)\n"
+        "\t\t\t(default is csft.conf)\n"
 		"--stop\t\t\tsend SIGTERM to currently running searchd\n"
 		"--stopwait\t\tsend SIGTERM and wait until actual exit\n"
 		"--status\t\tget ant print status variables\n"
@@ -21264,9 +21264,9 @@ void ShowHelp ()
 		"--safetrace\t\tonly use system backtrace() call in crash reports\n"
 		"\n"
 		"Examples:\n"
-		"searchd --config /usr/local/sphinx/etc/sphinx.conf\n"
+        "searchd --config /usr/local/sphinx/etc/csft.conf\n"
 #if USE_WINDOWS
-		"searchd --install --config c:\\sphinx\\sphinx.conf\n"
+        "searchd --install --config c:\\sphinx\\csft.conf\n"
 #endif
 		);
 }
@@ -22520,12 +22520,12 @@ int WINAPI ServiceMain ( int argc, char **argv )
 	while ( !g_sConfigFile.cstr() )
 	{
 #ifdef SYSCONFDIR
-		g_sConfigFile = SYSCONFDIR "/sphinx.conf";
+        g_sConfigFile = SYSCONFDIR "/";
 		if ( sphIsReadable ( g_sConfigFile.cstr () ) )
 			break;
 #endif
 
-		g_sConfigFile = "./sphinx.conf";
+        g_sConfigFile = "./";
 		if ( sphIsReadable ( g_sConfigFile.cstr () ) )
 			break;
 
@@ -22536,9 +22536,9 @@ int WINAPI ServiceMain ( int argc, char **argv )
 	if ( !g_sConfigFile.cstr () )
 		sphFatal ( "no readable config file (looked in "
 #ifdef SYSCONFDIR
-			SYSCONFDIR "/sphinx.conf, "
+            SYSCONFDIR "/csft.conf, "
 #endif
-			"./sphinx.conf)." );
+            "./csft.conf)." );
 
 	sphInfo ( "using config file '%s'...", g_sConfigFile.cstr () );
 
