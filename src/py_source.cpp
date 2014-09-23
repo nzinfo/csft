@@ -322,7 +322,7 @@ CSphSource_Python::~CSphSource_Python (){
 // get string
 #define LOC_GETS(_arg,_key) \
 	if ( hSource.Exists(_key) ) \
-	_arg = hSource[_key].strval();
+		_arg = hSource[_key].strval();
 
 // get array of strings
 #define LOC_GETAS(_arg,_key) \
@@ -1419,6 +1419,64 @@ DONE:
 		SetAttr(i, item);
 		//Py_XDECREF(item);
 	}
+	ARRAY_FOREACH ( i, m_tSchema.m_dFields ) {
+		// set m_dFields
+		char* ptr_Name = (char*)m_tSchema.m_dFields[i].m_sName.cstr();
+		PyObject* item = PyObject_GetAttrString(m_pInstance,ptr_Name);
+
+		if(PyErr_Occurred()) {
+			PyErr_Print();
+			PyErr_Clear();
+			continue;
+		}
+
+		//check as string?
+		BYTE* ptr = NULL;
+		if(item && Py_None!=item && PyString_Check(item)) {
+			char* data = PyString_AsString(item);
+			//m_dFields[i] = (BYTE*)PyString_AsString(item); //error!!! this pointer might be move later.
+			ptr = (BYTE*)strdup(data);
+		}
+		//check is unicode?
+		if(ptr == NULL && item && Py_None!=item && PyUnicode_Check(item)) {
+			PyObject* utf8str = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(item),
+	                                         PyUnicode_GET_SIZE(item),
+	                                         "ignore"); //ignore all error unicode char.
+			if(utf8str) {
+				//if convert successfully.
+				char* data = PyString_AsString(utf8str);
+				ptr = (BYTE*)strdup(data);
+				Py_XDECREF(utf8str);
+			}
+		}
+		//check is integer & long
+		if(ptr == NULL && item && Py_None!=item && PyLong_Check(item)) {
+			// convert long & integer to string.
+			char buf[128];
+			memset(buf,0,sizeof(buf));
+			PY_LONG_LONG dVal = PyLong_AsLongLong(item);
+	#ifdef _WIN32
+			snprintf(buf,sizeof(buf), "%I64u", dVal);
+	#else
+			snprintf(buf,sizeof(buf), "%llu", dVal);
+	#endif
+			ptr = (BYTE*)strdup(buf);
+		}
+		
+		if(ptr == NULL && item && Py_None!=item && PyInt_Check(item)) {
+			// convert long & integer to string.
+			long dVal = PyInt_AsLong(item);
+			char buf[128];
+			memset(buf,0,sizeof(buf));
+			snprintf(buf,sizeof(buf), "%ld", dVal);
+			ptr = (BYTE*)strdup(buf);
+		}
+
+		Py_XDECREF(item);
+		//printf("set field %s @ %d \n", ptr_Name, i);
+		m_dFields[i] = ptr;
+	} // end for each fields.
+
 	return m_dFields;
 }
 

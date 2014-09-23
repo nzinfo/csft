@@ -76,4 +76,5 @@
 
 # file types
 *.o
+*.pyc
 *.user
