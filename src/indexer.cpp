@@ -1896,10 +1896,10 @@ int main ( int argc, char ** argv )
     /////////////////////
     // init python layer
     ////////////////////
-    if ( hConf("python") && hConf["python"]("python") )
+    if ( hConf("common") && hConf["common"]("common") )
     {
 #if USE_PYTHON
-        CSphConfigSection & hPython = hConf["python"]["python"];
+        CSphConfigSection & hPython = hConf["common"]["common"];
         if(!cftInitialize(hPython))
             sphDie ( "Python layer's initiation failed.");
 #else

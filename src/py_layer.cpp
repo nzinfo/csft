@@ -35,7 +35,7 @@ bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSource
 
     * pSrcPython = pPySource;
 
-    return false;
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,11 +56,11 @@ int init_python_layer_helpers()
 	//helper function to append path to env.
 	nRet = PyRun_SimpleString("\n\
 def __coreseek_set_python_path(sPath):\n\
-	sPaths = [x.lower() for x in sys.path]\n\
-	sPath = os.path.abspath(sPath)\n\
-	if sPath not in sPaths:\n\
-		sys.path.append(sPath)\n\
-	#print sPaths\n\
+    sPaths = [x.lower() for x in sys.path]\n\
+    sPath = os.path.abspath(sPath)\n\
+    if sPath not in sPaths:\n\
+        sys.path.append(sPath)\n\
+    #print sPaths\n\
 \n");
 	if(nRet) return nRet;
 	// helper function to find data source
@@ -103,7 +103,8 @@ bool	cftInitialize( const CSphConfigSection & hPython)
 	{
 		
 		CSphVector<CSphString>	m_dPyPaths;
-		LOC_GETAS(hPython, m_dPyPaths, "path");
+        LOC_GETAS(hPython, m_dPyPaths, "python_path");
+        printf("dddd");
 		///XXX: append system pre-defined path here.
 		{
 			main_module = PyImport_AddModule("__main__");  //+1
@@ -113,7 +114,8 @@ bool	cftInitialize( const CSphConfigSection & hPython)
 			if(pFunc && PyCallable_Check(pFunc)){
 				ARRAY_FOREACH ( i, m_dPyPaths )
 				{
-					PyObject* pArgsKey  = Py_BuildValue("(s)",m_dPyPaths[i].cstr() );
+                    printf("add path=%s\n", m_dPyPaths[i].cstr());
+                    PyObject* pArgsKey  = Py_BuildValue("(s)", m_dPyPaths[i].cstr() );
 					PyObject* pResult = PyEval_CallObject(pFunc, pArgsKey);
 					Py_XDECREF(pArgsKey);
 					Py_XDECREF(pResult);
