@@ -5,7 +5,6 @@ SRC_SPHINX = sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp \
 
 if USE_PYTHON
 SRC_PYTHONLAYER = \
-	py_helper.cpp \
 	py_layer.cpp 
 endif
 

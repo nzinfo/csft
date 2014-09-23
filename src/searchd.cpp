@@ -22576,7 +22576,7 @@ int WINAPI ServiceMain ( int argc, char **argv )
 #else
         sphDie ( "Python layer defined, but search does Not supports python. used --with-python to recompile.");
 #endif
-
+    }
 	////////////////////////
 	// stop running searchd
 	////////////////////////

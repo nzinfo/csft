@@ -213,7 +213,11 @@ inline const	DWORD *	STATIC2DOCINFO ( const DWORD * pAttrs )	{ return STATIC2DOC
 #define SPHINX_SEARCHD_PROTO	1
 #define SPHINX_CLIENT_VERSION	1
 
+#if USE_PYTHON
+#define CORESEEK_BANNER			"Coreseek FullText Search 5.1 (ext:Python)\nCopyright (c) 2008-2014, Beijing Choice Software Technologies Inc (http://www.coreseek.com)\n\n"
+#else
 #define CORESEEK_BANNER			"Coreseek FullText Search 5.1 \nCopyright (c) 2008-2014, Beijing Choice Software Technologies Inc (http://www.coreseek.com)\n\n"
+#endif
 #define SPHINX_BANNER2 "" CORESEEK_BANNER "" SPHINX_BANNER_ORIG
 #define SPHINX_BANNER SPHINX_BANNER2
 

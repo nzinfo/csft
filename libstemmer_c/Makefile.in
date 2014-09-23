@@ -92,7 +92,7 @@ DIST_COMMON = $(srcdir)/mkinc.mak $(srcdir)/Makefile.in \
 subdir = libstemmer_c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/python.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -294,7 +294,9 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
 PYTHON = @PYTHON@
+PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
 PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
+PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_VERSION = @PYTHON_VERSION@

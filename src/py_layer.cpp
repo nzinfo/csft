@@ -11,20 +11,20 @@
 #if USE_PYTHON
 
 #define LOC_CHECK(_hash,_key,_msg,_add) \
-	if (!( _hash.Exists ( _key ) )) \
-	{ \
-	fprintf ( stdout, "ERROR: key '%s' not found " _msg "\n", _key, _add ); \
-	return false; \
-	}
+    if (!( _hash.Exists ( _key ) )) \
+    { \
+        fprintf ( stdout, "ERROR: key '%s' not found " _msg "\n", _key, _add ); \
+        return false; \
+    }
 
-CSphSource * SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName)
+bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython)
 {
 	assert ( hSource["type"]=="python" );
 
 	LOC_CHECK ( hSource, "name", "in source '%s'.", sSourceName );
 	
-	CSphSource * pSrcPython = NULL;
-
+    * pSrcPython = NULL;
+    /*
 	CSphSource_Python * pPySource = new CSphSource_Python ( sSourceName );
 	if ( !pPySource->Setup ( hSource ) ) {
 		if(pPySource->m_sError.Length())
@@ -33,8 +33,8 @@ CSphSource * SpawnSourcePython ( const CSphConfigSection & hSource, const char *
 	}
 
 	pSrcPython = pPySource;
-
-	return pSrcPython;
+    */
+    return false;
 }
 
 //////////////////////////////////////////////////////////////////////////

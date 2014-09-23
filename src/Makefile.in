@@ -85,7 +85,7 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/config/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/python.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -106,7 +106,7 @@ am__libsphinx_a_SOURCES_DIST = sphinx.cpp sphinxexcerpt.cpp \
 	sphinxstemar.cpp sphinxutils.cpp sphinxstd.cpp sphinxsort.cpp \
 	sphinxexpr.cpp sphinxfilter.cpp sphinxsearch.cpp sphinxrt.cpp \
 	sphinxjson.cpp sphinxudf.c sphinxaot.cpp sphinxplugin.cpp \
-	py_helper.cpp py_layer.cpp
+	py_layer.cpp
 am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxquery.$(OBJEXT) sphinxsoundex.$(OBJEXT) \
 	sphinxmetaphone.$(OBJEXT) sphinxstemen.$(OBJEXT) \
@@ -116,8 +116,7 @@ am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxfilter.$(OBJEXT) sphinxsearch.$(OBJEXT) \
 	sphinxrt.$(OBJEXT) sphinxjson.$(OBJEXT) sphinxudf.$(OBJEXT) \
 	sphinxaot.$(OBJEXT) sphinxplugin.$(OBJEXT)
-@USE_PYTHON_TRUE@am__objects_2 = py_helper.$(OBJEXT) \
-@USE_PYTHON_TRUE@	py_layer.$(OBJEXT)
+@USE_PYTHON_TRUE@am__objects_2 = py_layer.$(OBJEXT)
 am_libsphinx_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libsphinx_a_OBJECTS = $(am_libsphinx_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -280,7 +279,9 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PGSQL_CFLAGS = @PGSQL_CFLAGS@
 PGSQL_LIBS = @PGSQL_LIBS@
 PYTHON = @PYTHON@
+PYTHON_CPPFLAGS = @PYTHON_CPPFLAGS@
 PYTHON_EXEC_PREFIX = @PYTHON_EXEC_PREFIX@
+PYTHON_LIBS = @PYTHON_LIBS@
 PYTHON_PLATFORM = @PYTHON_PLATFORM@
 PYTHON_PREFIX = @PYTHON_PREFIX@
 PYTHON_VERSION = @PYTHON_VERSION@
@@ -344,7 +345,6 @@ SRC_SPHINX = sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp \
 	sphinxsearch.cpp sphinxrt.cpp sphinxjson.cpp sphinxudf.c sphinxaot.cpp sphinxplugin.cpp
 
 @USE_PYTHON_TRUE@SRC_PYTHONLAYER = \
-@USE_PYTHON_TRUE@	py_helper.cpp \
 @USE_PYTHON_TRUE@	py_layer.cpp 
 
 noinst_LIBRARIES = libsphinx.a
@@ -484,7 +484,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indextool.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_helper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_layer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/searchd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spelldump.Po@am__quote@

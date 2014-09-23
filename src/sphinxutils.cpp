@@ -691,7 +691,7 @@ bool CSphConfigParser::ValidateKey ( const char * sKey )
     bool bNoCheck = false;
     // This piece cause that type assignment must be the 1st line in source section.
     if(tSec.Exists ( "type") ) {
-        bNoCheck = (tSec["type"].Begins("python") &&  tSec["type"].Length() == 6);
+        bNoCheck = (tSec["type"].strval().Begins("python") &&  tSec["type"].strval().Length() == 6);
     }
     // -coreseek -pysource
 

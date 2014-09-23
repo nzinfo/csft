@@ -36,6 +36,9 @@
 # /libstemmer_c/
 /libstemmer_c/Makefile
 /libstemmer_c/.deps
+/libstemmer_c/libstemmer/
+/libstemmer_c/runtime/
+/libstemmer_c/src_c/
 
 # /src/
 /src/indexer

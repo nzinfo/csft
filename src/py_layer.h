@@ -24,7 +24,7 @@
 bool			cftInitialize( const CSphConfigSection & hPython);
 void			cftShutdown();
 
-CSphSource * SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName);
+bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython);
 
 #endif //USE_PYTHON
 

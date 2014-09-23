@@ -3,6 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 AC_INIT([sphinx], [2.2.6], [shodan(at)sphinxsearch.com])
 
+m4_include([python.m4])
 dnl --------------------------------------------------------------------------
 
 SPHINX_CONFIGURE_PART([checking build environment])
