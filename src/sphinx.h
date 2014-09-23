@@ -32,6 +32,8 @@
 
 	#define UNALIGNED_RAM_ACCESS	1
 	#define USE_LITTLE_ENDIAN		1
+    #define USE_PYTHON              1       /// whether to compile Python support, NOTE:Coreseek Fork, this option must be on!
+    #define USE_PYTHON_DEBUG        0       ///link to _d.lib or not
 #else
 	#define USE_WINDOWS		0	/// whether to compile for Windows
 #endif

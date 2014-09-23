@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS = subdir-objects
+
 if USE_INTERNAL_LIBSTEMMER
 LIBSTEMMER_DIRS = libstemmer_c
 else

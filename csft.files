@@ -56,3 +56,6 @@ src/yysphinxquery.c
 src/yysphinxquery.h
 src/yysphinxselect.c
 src/yysphinxselect.h
+src/indextool.o
+src/py_layer.cpp
+src/py_layer.h

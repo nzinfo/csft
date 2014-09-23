@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = subdir-objects
 if USE_LIBSTEMMER
 noinst_LIBRARIES = libstemmer.a
 include $(srcdir)/mkinc.mak
