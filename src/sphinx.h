@@ -1534,6 +1534,7 @@ struct CSphColumnInfo
 	bool			m_bIndexed;		///< whether to index this column as fulltext field too
 
 	int				m_iIndex;		///< index into source result set (-1 for joined fields)
+    int				m_iMVAIndex;	///< index the mva indexer, for faster reassign values. -pysource
 	CSphAttrLocator	m_tLocator;		///< attribute locator in the row
 
 	ESphAttrSrc		m_eSrc;			///< attr source (for multi-valued attrs only)
@@ -2039,6 +2040,7 @@ enum ESphOnFileFieldError
 	FFE_FAIL_INDEX
 };
 
+int sphAddMva64 ( CSphVector<DWORD> & dStorage, int64_t iVal ); //forward declare.
 
 /// generic document source
 /// provides multi-field support and generic tokenizer

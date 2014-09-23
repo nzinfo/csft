@@ -7077,6 +7077,7 @@ CSphColumnInfo::CSphColumnInfo ( const char * sName, ESphAttr eType )
 	, m_eWordpart ( SPH_WORDPART_WHOLE )
 	, m_bIndexed ( false )
 	, m_iIndex ( -1 )
+    , m_iMVAIndex( -1 )
 	, m_eSrc ( SPH_ATTRSRC_NONE )
 	, m_pExpr ( NULL )
 	, m_eAggrFunc ( SPH_AGGR_NONE )
@@ -26281,7 +26282,7 @@ SphRange_t CSphSource_Document::IterateFieldMVAStart ( int iAttr )
 }
 
 
-static int sphAddMva64 ( CSphVector<DWORD> & dStorage, int64_t iVal )
+int sphAddMva64 ( CSphVector<DWORD> & dStorage, int64_t iVal )
 {
 	int uOff = dStorage.GetLength();
 	dStorage.Resize ( uOff+2 );

@@ -5,7 +5,8 @@ SRC_SPHINX = sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp \
 
 if USE_PYTHON
 SRC_PYTHONLAYER = \
-	py_layer.cpp 
+	py_layer.cpp \
+	py_source.cpp
 endif
 
 noinst_LIBRARIES = libsphinx.a

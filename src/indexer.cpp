@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
+#include "py_layer.h"
 
 #if USE_WINDOWS
 	#define snprintf	_snprintf
@@ -877,6 +878,16 @@ CSphSource * SpawnSource ( const CSphConfigSection & hSource, const char * sSour
 	if ( hSource["type"]=="mysql" )
 		return SpawnSourceMySQL ( hSource, sSourceName, bBatchedRLP );
 	#endif
+
+#if USE_PYTHON
+    if ( hSource["type"]=="python") {
+        CSphSource* ptr;
+        if(SpawnSourcePython ( hSource, sSourceName, &ptr)) {
+            return ptr;
+        }else
+            return NULL;
+    }
+#endif
 
 	#if USE_ODBC
 	if ( hSource["type"]=="odbc" )
@@ -1882,6 +1893,20 @@ int main ( int argc, char ** argv )
 
 	sphConfigureCommon ( hConf );
 
+    /////////////////////
+    // init python layer
+    ////////////////////
+    if ( hConf("python") && hConf["python"]("python") )
+    {
+#if USE_PYTHON
+        CSphConfigSection & hPython = hConf["python"]["python"];
+        if(!cftInitialize(hPython))
+            sphDie ( "Python layer's initiation failed.");
+#else
+        sphDie ( "Python layer defined, but indexer does Not supports python. used --enbale-python to recompile.");
+#endif
+    }
+
 	/////////////////////
 	// index each index
 	////////////////////
@@ -1978,6 +2003,10 @@ int main ( int argc, char ** argv )
 
 #if SPH_DEBUG_LEAKS
 	sphAllocsStats ();
+#endif
+
+#if USE_PYTHON
+    cftShutdown(); //clean up
 #endif
 
 	return bIndexedOk ? 0 : 1;

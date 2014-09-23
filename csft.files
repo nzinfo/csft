@@ -59,3 +59,5 @@ src/yysphinxselect.h
 src/indextool.o
 src/py_layer.cpp
 src/py_layer.h
+src/py_source.cpp
+src/py_source.h

@@ -7,6 +7,7 @@
 #include "sphinxutils.h"
 
 #include "py_layer.h"
+#include "py_source.h"
 
 #if USE_PYTHON
 
@@ -24,7 +25,7 @@ bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSource
 	LOC_CHECK ( hSource, "name", "in source '%s'.", sSourceName );
 	
     * pSrcPython = NULL;
-    /*
+
 	CSphSource_Python * pPySource = new CSphSource_Python ( sSourceName );
 	if ( !pPySource->Setup ( hSource ) ) {
 		if(pPySource->m_sError.Length())
@@ -32,8 +33,8 @@ bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSource
 		SafeDelete ( pPySource );
 	}
 
-	pSrcPython = pPySource;
-    */
+    * pSrcPython = pPySource;
+
     return false;
 }
 

@@ -106,7 +106,7 @@ am__libsphinx_a_SOURCES_DIST = sphinx.cpp sphinxexcerpt.cpp \
 	sphinxstemar.cpp sphinxutils.cpp sphinxstd.cpp sphinxsort.cpp \
 	sphinxexpr.cpp sphinxfilter.cpp sphinxsearch.cpp sphinxrt.cpp \
 	sphinxjson.cpp sphinxudf.c sphinxaot.cpp sphinxplugin.cpp \
-	py_layer.cpp
+	py_layer.cpp py_source.cpp
 am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxquery.$(OBJEXT) sphinxsoundex.$(OBJEXT) \
 	sphinxmetaphone.$(OBJEXT) sphinxstemen.$(OBJEXT) \
@@ -116,7 +116,8 @@ am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxfilter.$(OBJEXT) sphinxsearch.$(OBJEXT) \
 	sphinxrt.$(OBJEXT) sphinxjson.$(OBJEXT) sphinxudf.$(OBJEXT) \
 	sphinxaot.$(OBJEXT) sphinxplugin.$(OBJEXT)
-@USE_PYTHON_TRUE@am__objects_2 = py_layer.$(OBJEXT)
+@USE_PYTHON_TRUE@am__objects_2 = py_layer.$(OBJEXT) \
+@USE_PYTHON_TRUE@	py_source.$(OBJEXT)
 am_libsphinx_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libsphinx_a_OBJECTS = $(am_libsphinx_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -345,7 +346,8 @@ SRC_SPHINX = sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp \
 	sphinxsearch.cpp sphinxrt.cpp sphinxjson.cpp sphinxudf.c sphinxaot.cpp sphinxplugin.cpp
 
 @USE_PYTHON_TRUE@SRC_PYTHONLAYER = \
-@USE_PYTHON_TRUE@	py_layer.cpp 
+@USE_PYTHON_TRUE@	py_layer.cpp \
+@USE_PYTHON_TRUE@	py_source.cpp
 
 noinst_LIBRARIES = libsphinx.a
 libsphinx_a_SOURCES = $(SRC_SPHINX) $(SRC_PYTHONLAYER) 
@@ -485,6 +487,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indextool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_layer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/searchd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spelldump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sphinx.Po@am__quote@
