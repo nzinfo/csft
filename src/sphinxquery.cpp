@@ -25,9 +25,9 @@
 
 #include "yysphinxquery.h"
 
-// #define XQDEBUG 1
-// #define XQ_DUMP_TRANSFORMED_TREE 1
-// #define XQ_DUMP_NODE_ADDR 1
+#define XQDEBUG 1
+#define XQ_DUMP_TRANSFORMED_TREE 1
+#define XQ_DUMP_NODE_ADDR 1
 
 //////////////////////////////////////////////////////////////////////////
 
