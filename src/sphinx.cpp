@@ -2558,10 +2558,14 @@ class CSphTokenizer_UTF8 : public CSphTokenizerBase2
 public:
 								CSphTokenizer_UTF8 ();
 	virtual void				SetBuffer ( const BYTE * sBuffer, int iLength );
+    virtual bool                IsPreTokenized()    {   return m_bPreTokenized;   }
 	virtual BYTE *				GetToken ();
 	virtual ISphTokenizer *		Clone ( ESphTokenizerClone eMode ) const;
 	virtual int					GetCodepointLength ( int iCode ) const;
 	virtual int					GetMaxCodepointLength () const { return m_tLC.GetMaxCodepointLength(); }
+
+protected:
+    bool    m_bPreTokenized;
 };
 
 
@@ -5961,7 +5965,20 @@ CSphTokenizer_UTF8<IS_QUERY>::CSphTokenizer_UTF8 ()
 {
 	CSphString sTmp;
 	SetCaseFolding ( SPHINX_DEFAULT_UTF8_TABLE, sTmp );
-	m_bHasBlend = false;
+
+    // BEGIN CJK There is no case folding, should do this in remote tokenizer.
+    // Here just make CJK Charactor will remain. --coreseek
+    CSphVector<CSphRemapRange> dRemaps;
+    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+
+    m_tLC.AddRemaps ( dRemaps,
+        FLAG_CODEPOINT_NGRAM ); // !COMMIT support other n-gram lengths than 1
+    // ENDCJK
+    m_bPreTokenized = false;    // by default use original route.
+
+    m_bHasBlend = false;
 }
 
 
@@ -5971,10 +5988,29 @@ void CSphTokenizer_UTF8<IS_QUERY>::SetBuffer ( const BYTE * sBuffer, int iLength
 	// check that old one is over and that new length is sane
 	assert ( iLength>=0 );
 
-	// set buffer
+    // set buffer
 	m_pBuffer = sBuffer;
+    // check is pre-segment buffer, with prefix 0xFFFA
+    // if True, the following should be 0xFFA, 0x41, [ctx]      --coreseek
+    m_bPreTokenized = false;
+    if(iLength > 4)
+    {
+        // there is a ' ' (space, 32) as padding. might not true
+        unsigned char mask[] = {32, 239, 191, 186, 65};
+        unsigned char mask_bare[] = {239, 191, 186, 65};
+        if(strncmp( (const char *)mask, (const char *)sBuffer, 5) == 0) {
+            // 0xFFFA is a magic number , if it's in head, mark this buffer pre-tokenized.
+            m_bPreTokenized = true;
+            m_pBuffer += 5;
+        }else
+        if(strncmp( (const char *)mask_bare, (const char *)sBuffer, 4) == 0) {
+            m_bPreTokenized = true;
+            m_pBuffer += 4;
+        }
+    }
+
 	m_pBufferMax = sBuffer + iLength;
-	m_pCur = sBuffer;
+    m_pCur = m_pBuffer;
 	m_pTokenStart = m_pTokenEnd = NULL;
 	m_pBlendStart = m_pBlendEnd = NULL;
 
@@ -5992,7 +6028,7 @@ BYTE * CSphTokenizer_UTF8<IS_QUERY>::GetToken ()
 	m_bTokenBoundary = false;
 	m_bWasSynonym = false;
 
-	return m_bHasBlend
+    return m_bHasBlend
 		? DoGetToken<IS_QUERY,true>()
 		: DoGetToken<IS_QUERY,false>();
 }
@@ -26090,11 +26126,23 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 	while ( ( m_iMaxHits==0 || m_tHits.m_dData.GetLength()+BUILD_REGULAR_HITS_COUNT<m_iMaxHits )
 		&& ( sWord = m_pTokenizer->GetToken() )!=NULL )
 	{
+        //FIXME: dump token to console --coreseek
+        printf("%s/ ", sWord);
+        // fix sWork if in pre-tokenized mode.
+        int iBytes = strlen ( (const char*)sWord );
+        bool bAdvancePos = true;
+        if(m_pTokenizer->IsPreTokenized()) {
+            if(sWord[iBytes-1] != 'x')
+                bAdvancePos = false;  // not an advance token.
+            sWord[iBytes-2] = '\0'; // change token_x   -> token\0x
+            iBytes -= 2;    // decrease length
+        }
+
 		m_pDict->SetApplyMorph ( m_pTokenizer->GetMorphFlag() );
 
 		int iLastBlendedStart = TrackBlendedStart ( m_pTokenizer, iBlendedHitsStart, m_tHits.Length() );
 
-		if ( !bPayload )
+        if ( !bPayload && bAdvancePos)
 		{
 			HITMAN::AddPos ( &m_tState.m_iHitPos, m_tState.m_iBuildLastStep + m_pTokenizer->GetOvershortCount()*m_iOvershortStep );
 			if ( m_pTokenizer->GetBoundary() )
@@ -26106,7 +26154,7 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 
 		if ( bGlobalPartialMatch )
 		{
-			int iBytes = strlen ( (const char*)sWord );
+            //int iBytes = strlen ( (const char*)sWord );
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD;
 			sBuf[iBytes+1] = '\0';
@@ -26116,7 +26164,7 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 		ESphTokenMorph eMorph = m_pTokenizer->GetTokenMorph();
 		if ( m_bIndexExactWords && eMorph!=SPH_TOKEN_MORPH_GUESS )
 		{
-			int iBytes = strlen ( (const char*)sWord );
+            //int iBytes = strlen ( (const char*)sWord );
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sBuf[iBytes+1] = '\0';
