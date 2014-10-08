@@ -624,6 +624,9 @@ public:
 	/// pass next buffer
 	virtual void					SetBuffer ( const BYTE * sBuffer, int iLength ) = 0;
 
+    /// is pre-tokenized            --coreseek
+    virtual bool                    IsPreTokenized()    {   return false;   }
+
 	/// set current index schema (only intended for the token filter plugins)
 	virtual bool					SetFilterSchema ( const CSphSchema &, CSphString & ) { return true; }
 
