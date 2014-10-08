@@ -26127,7 +26127,7 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 		&& ( sWord = m_pTokenizer->GetToken() )!=NULL )
 	{
         //FIXME: dump token to console --coreseek
-        printf("%s/ ", sWord);
+        //printf("%s/ ", sWord);
         // fix sWork if in pre-tokenized mode.
         int iBytes = strlen ( (const char*)sWord );
         bool bAdvancePos = true;
