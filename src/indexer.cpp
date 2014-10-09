@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "py_layer.h"
+#include "py_iface.h"
 
 #if USE_WINDOWS
 	#define snprintf	_snprintf
@@ -880,9 +881,17 @@ CSphSource * SpawnSource ( const CSphConfigSection & hSource, const char * sSour
 	#endif
 
 #if USE_PYTHON
-    if ( hSource["type"]=="python") {
+    if ( hSource["type"]=="python_legacy") {
         CSphSource* ptr;
         if(SpawnSourcePython ( hSource, sSourceName, &ptr)) {
+            return ptr;
+        }else
+            return NULL;
+    }
+
+    if ( hSource["type"]=="python") {
+        CSphSource* ptr;
+        if(SpawnSourcePython2 ( hSource, sSourceName, &ptr)) {
             return ptr;
         }else
             return NULL;

@@ -106,7 +106,8 @@ am__libsphinx_a_SOURCES_DIST = sphinx.cpp sphinxexcerpt.cpp \
 	sphinxstemar.cpp sphinxutils.cpp sphinxstd.cpp sphinxsort.cpp \
 	sphinxexpr.cpp sphinxfilter.cpp sphinxsearch.cpp sphinxrt.cpp \
 	sphinxjson.cpp sphinxudf.c sphinxaot.cpp sphinxplugin.cpp \
-	py_layer.cpp py_source.cpp
+	py_layer.cpp py_source.cpp py_source2.cpp py_iface.cpp \
+	py_csft.cxx
 am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxquery.$(OBJEXT) sphinxsoundex.$(OBJEXT) \
 	sphinxmetaphone.$(OBJEXT) sphinxstemen.$(OBJEXT) \
@@ -117,7 +118,8 @@ am__objects_1 = sphinx.$(OBJEXT) sphinxexcerpt.$(OBJEXT) \
 	sphinxrt.$(OBJEXT) sphinxjson.$(OBJEXT) sphinxudf.$(OBJEXT) \
 	sphinxaot.$(OBJEXT) sphinxplugin.$(OBJEXT)
 @USE_PYTHON_TRUE@am__objects_2 = py_layer.$(OBJEXT) \
-@USE_PYTHON_TRUE@	py_source.$(OBJEXT)
+@USE_PYTHON_TRUE@	py_source.$(OBJEXT) py_source2.$(OBJEXT) \
+@USE_PYTHON_TRUE@	py_iface.$(OBJEXT) py_csft.$(OBJEXT)
 am_libsphinx_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libsphinx_a_OBJECTS = $(am_libsphinx_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -347,7 +349,10 @@ SRC_SPHINX = sphinx.cpp sphinxexcerpt.cpp sphinxquery.cpp \
 
 @USE_PYTHON_TRUE@SRC_PYTHONLAYER = \
 @USE_PYTHON_TRUE@	py_layer.cpp \
-@USE_PYTHON_TRUE@	py_source.cpp
+@USE_PYTHON_TRUE@	py_source.cpp \
+@USE_PYTHON_TRUE@	py_source2.cpp \
+@USE_PYTHON_TRUE@	py_iface.cpp \
+@USE_PYTHON_TRUE@	py_csft.cxx
 
 noinst_LIBRARIES = libsphinx.a
 libsphinx_a_SOURCES = $(SRC_SPHINX) $(SRC_PYTHONLAYER) 
@@ -357,7 +362,7 @@ spelldump_SOURCES = spelldump.cpp
 indextool_SOURCES = indextool.cpp
 tests_SOURCES = tests.cpp
 wordbreaker_SOURCES = wordbreaker.cpp
-BUILT_SOURCES = extract-version
+BUILT_SOURCES = extract-version py_csft.cxx
 @USE_RLP_FALSE@RLP_LIBS = 
 @USE_RLP_TRUE@RLP_LIBS = -L$(top_srcdir)/rlp/lib/amd64-glibc25-gcc42 -lbtrlpc -lbtrlpcore -lbtutils
 @USE_RLP_FALSE@RLP_INC = 
@@ -369,7 +374,7 @@ all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
+.SUFFIXES: .c .cpp .cxx .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -486,8 +491,11 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indextool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_csft.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_iface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_layer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_source.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/py_source2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/searchd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spelldump.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sphinx.Po@am__quote@
@@ -535,6 +543,20 @@ distclean-compile:
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
 
 .cpp.obj:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cxx.o:
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
+
+.cxx.obj:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -752,6 +774,9 @@ uninstall-am: uninstall-binPROGRAMS
 .PHONY: extract-version
 extract-version:
 	/bin/sh svnxrev.sh ..
+
+py_csft.cxx: py_csft.pyx
+	@cython py_csft.pyx --cplus -o py_csft.cxx
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

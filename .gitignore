@@ -74,6 +74,11 @@
 /test/ql/*.class
 /test/ql/*.exe
 
+# Cython
+/src/py_csft.cxx
+/src/py_csft.h
+/src/py_csft_api.h
+
 # file types
 *.o
 *.pyc
