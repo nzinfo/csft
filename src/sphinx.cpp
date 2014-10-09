@@ -26133,7 +26133,8 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
         int iBytes = strlen ( (const char*)sWord );
         bool bAdvancePos = true;
         if(m_pTokenizer->IsPreTokenized()) {
-            if(sWord[iBytes-1] != 'x')
+            // m_tState.m_iHitPos should not be 0, add for some stupid pass a none _x token at the very beginning.
+            if(sWord[iBytes-1] != 'x' && m_tState.m_iHitPos)
                 bAdvancePos = false;  // not an advance token.
             sWord[iBytes-2] = '\0'; // change token_x   -> token\0x
             iBytes -= 2;    // decrease length
