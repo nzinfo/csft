@@ -61,3 +61,8 @@ src/py_layer.cpp
 src/py_layer.h
 src/py_source.cpp
 src/py_source.h
+src/py_iface.cpp
+src/py_iface.h
+src/py_source2.cpp
+src/py_source2.h
+src/py_csft.pyx
