@@ -8,6 +8,7 @@
 
 #include "py_layer.h"
 #include "py_source.h"
+#include "py_csft.h"
 
 #if USE_PYTHON
 
@@ -83,58 +84,40 @@ def __coreseek_find_pysource(sName): \n\
 bool	cftInitialize( const CSphConfigSection & hPython)
 {
 #if USE_PYTHON
-	if (!Py_IsInitialized()) {
-		Py_Initialize();
-		//PyEval_InitThreads();
+    CSphString progName = "csft";
+    Py_SetProgramName((char*)progName.cstr());
 
-		if (!Py_IsInitialized()) {
-			return false;
-		}
-		int nRet = init_python_layer_helpers();
-		if(nRet != 0) {
-			PyErr_Print();
-			PyErr_Clear();
-			return false;
-		}
-	}
-	//init paths
-	PyObject * main_module = NULL;
-	//try //to disable -GX
-	{
-		
-		CSphVector<CSphString>	m_dPyPaths;
+    if (!Py_IsInitialized()) {
+        Py_InitializeEx(0);
+        //PyEval_InitThreads();
+
+        if (!Py_IsInitialized()) {
+            return false;
+        }
+        // init extension.
+        initpy_csft();
+        // init legacy helper
+        init_python_layer_helpers();
+    }
+
+    // init paths
+    {
+
+        CSphVector<CSphString>	m_dPyPaths;
         LOC_GETAS(hPython, m_dPyPaths, "python_path");
-        printf("dddd");
-		///XXX: append system pre-defined path here.
-		{
-			main_module = PyImport_AddModule("__main__");  //+1
-			//init paths
-			PyObject* pFunc = PyObject_GetAttrString(main_module, "__coreseek_set_python_path");
-
-			if(pFunc && PyCallable_Check(pFunc)){
-				ARRAY_FOREACH ( i, m_dPyPaths )
-				{
-                    printf("add path=%s\n", m_dPyPaths[i].cstr());
-                    PyObject* pArgsKey  = Py_BuildValue("(s)", m_dPyPaths[i].cstr() );
-					PyObject* pResult = PyEval_CallObject(pFunc, pArgsKey);
-					Py_XDECREF(pArgsKey);
-					Py_XDECREF(pResult);
-				}
-			} // end if
-			if (pFunc)
-				Py_XDECREF(pFunc);
-			//Py_XDECREF(main_module); //no needs to decrease refer to __main__ module, else will got a crash!
-		}
-	}/*
-	catch (...) {
-		PyErr_Print();
-		PyErr_Clear(); //is function can be undefined
-		Py_XDECREF(main_module);
-		return false;
-	}*/
-	///XXX: hook the ext interface here.
-	
-    //initCsfHelper(); //the Csf
+        ///XXX: append system pre-defined path here.
+        ARRAY_FOREACH ( i, m_dPyPaths )
+        {
+           __setPythonPath( m_dPyPaths[i].cstr() );
+        }
+    }
+    // check the demo[debug] object creation.
+    if( hPython("__debug_object_class") )
+    {
+        CSphString demoClassName = hPython.GetStr ( "__debug_object_class" );
+        PyObject* m_pTypeObj = __getPythonClassByName(demoClassName.cstr());
+        printf("The python type object's address %p .\n", m_pTypeObj);
+    }
 #endif
 	return true;
 }

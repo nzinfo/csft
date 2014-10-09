@@ -476,7 +476,7 @@ cdef class PySourceWrap(object):
             ret = self._pysource.setup(source_conf)
             if ret or ret == None:
                 #check obj has necessary method.
-                if not attr_callable(self._pysource, 'feed'):
+                if not attr_callable(self._pysource, 'gather'):
                     return -2
 
                 return 0
@@ -560,9 +560,9 @@ cdef class PySourceWrap(object):
 
     cpdef int getJoinField(self, const char* attrName):
         # programal optional, if has join field , the method must define.
-        if attr_callable(self._pysource, 'feedJoinField'):
+        if attr_callable(self._pysource, 'gatherJoinField'):
             try:
-                ret = self._pysource.feedJoinField(attrName, self._docInfo, self._hitCollecotr)
+                ret = self._pysource.gatherJoinField(attrName, self._docInfo, self._hitCollecotr)
                 if ret or ret == None:
                     return 0
             except Exception, ex:
@@ -587,7 +587,7 @@ cdef class PySourceWrap(object):
     cpdef int next(self):
         # should check this function when binding
         try:
-            if self._pysource.feed(self._docInfo, self._hitCollecotr): # must return True | some value, return None | False will stop indexing.
+            if self._pysource.gather(self._docInfo, self._hitCollecotr): # must return True | some value, return None | False will stop indexing.
                 return 0
             else:
                 return 1
@@ -643,10 +643,12 @@ cdef public int py_source_setup(void *ptr, const CSphConfigSection & hSource):
     return self.setup(conf_dict)
 
     # temp usage for crc32 key ------->
+    """
     if False:
         keys = ["integer", "timestamp", "boolean", "float", "long", "string", "poly2d", "field", "json"]
         for k in keys:
             print k, getCRC32(k, len(k))
+    """
     #print conf_items
 
 # - [Renamed] GetSchema -> buildSchema  @Deprecated
@@ -739,10 +741,9 @@ cdef dict wrap_sphinx_config(const CSphConfigSection & hSource):
 # pass source config infomation.
 cdef public api CSphSource * createPythonDataSourceObject ( const char* sName, const char * class_name ):
     cdef CSphSource_Python2* pySource
-
     sName = class_name
     clsType = __findPythonClass(sName)
-    #print "hhhhh\n"
+    #print "hhhhh\n", clsType
     if clsType:
         # Do error report @user code.
         try:
