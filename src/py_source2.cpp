@@ -1,5 +1,5 @@
-#include "pysource.h"
-#include "pycsft.h"
+#include "py_source2.h"
+#include "py_csft.h"
 
 //#define PYSOURCE_DEBUG 1
 #define PYSOURCE_DEBUG 0
@@ -163,7 +163,7 @@ ISphHits *	CSphSource_Python2::IterateJoinedHits ( CSphString & sError ){
     // eof check
     if ( m_iJoinedHitField>=m_tSchema.m_dFields.GetLength() )
     {
-        m_tDocInfo.m_iDocID = 0;
+        m_tDocInfo.m_uDocID = 0;
         return &m_tHits;
     }
 
@@ -180,22 +180,22 @@ ISphHits *	CSphSource_Python2::IterateJoinedHits ( CSphString & sError ){
 
             // set data & fields here.
             memset(m_dFields,0,sizeof(m_dFields));
-            m_tDocInfo.m_iDocID = 0;
+            m_tDocInfo.m_uDocID = 0;
             if (py_source_get_join_field(_obj, tAttr.m_sName.cstr()) != 0)
                 return NULL; //has error in script
-            if(m_tDocInfo.m_iDocID == 0)
+            if(m_tDocInfo.m_uDocID == 0)
                 break; // no more data @this_field.            
 
             // lets skip joined document totally if there was no such document ID returned by main query
-            if ( !m_dAllIds.BinarySearch ( m_tDocInfo.m_iDocID ) )
+            if ( !m_dAllIds.BinarySearch ( m_tDocInfo.m_uDocID ) )
                 continue;
 
             // field start? restart ids
             if ( !m_iJoinedHitID )
-                m_iJoinedHitID = m_tDocInfo.m_iDocID;
+                m_iJoinedHitID = m_tDocInfo.m_uDocID;
 
             // docid asc requirement violated? report an error
-            if ( m_iJoinedHitID>m_tDocInfo.m_iDocID )
+            if ( m_iJoinedHitID>m_tDocInfo.m_uDocID )
             {
                 sError.SetSprintf ( "joined field '%s': query MUST return document IDs in ASC order",
                     m_tSchema.m_dFields[m_iJoinedHitField].m_sName.cstr() );
@@ -203,9 +203,9 @@ ISphHits *	CSphSource_Python2::IterateJoinedHits ( CSphString & sError ){
             }
 
             // next document? update tracker, reset position
-            if ( m_iJoinedHitID<m_tDocInfo.m_iDocID )
+            if ( m_iJoinedHitID<m_tDocInfo.m_uDocID )
             {
-                m_iJoinedHitID = m_tDocInfo.m_iDocID;
+                m_iJoinedHitID = m_tDocInfo.m_uDocID;
                 //memset(m_iJoinedHitPositions, 0, sizeof(m_iJoinedHitPositions) );
                 //m_iJoinedHitPos = 0;
             }
@@ -235,7 +235,7 @@ ISphHits *	CSphSource_Python2::IterateJoinedHits ( CSphString & sError ){
     }
     if ( m_iJoinedHitField>=m_tSchema.m_dFields.GetLength() )
     {
-        m_tDocInfo.m_iDocID = ( m_tHits.Length() ? 1 : 0 ); // to eof or not to eof
+        m_tDocInfo.m_uDocID = ( m_tHits.Length() ? 1 : 0 ); // to eof or not to eof
         return &m_tHits;
     }
     return &m_tHits;
@@ -289,7 +289,7 @@ bool CSphSource_Python2::IterateMultivaluedNext () {
         if(!docid)
             return false;
         //printf("doc %lld\t v %lld\n", docid, v);
-        m_tDocInfo.m_iDocID = (SphDocID_t)docid;
+        m_tDocInfo.m_uDocID = (SphDocID_t)docid;
         if ( tAttr.m_eAttrType==SPH_ATTR_UINT32SET )
             m_dMva.Add ( (DWORD) v );
         else
@@ -357,8 +357,9 @@ BYTE ** CSphSource_Python2::NextDocument ( CSphString & sError ) {
     if(!bHasMoreDoc) {
         // might be has exception... if nRet != -1
         if(py_source_after_index(_obj, nRet == 1) != 0) {
-            // if u wanna exit, set docid not 0 & return NULL.
-            m_tDocInfo.m_iDocID = -1;
+            // if u wanna exit, set docid  0 & return NULL.
+            // FIXME: original code docid assign -1, why?
+            m_tDocInfo.m_uDocID = 0;
             return NULL; // this will cause IterateDocument return false.
         }
     } // end moreDoc check.

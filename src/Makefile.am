@@ -30,7 +30,7 @@ BUILT_SOURCES = extract-version py_csft.cxx
 extract-version:
 	/bin/sh svnxrev.sh ..
 
-pycsft.cxx: py_csft.pyx
+py_csft.cxx: py_csft.pyx
 	@cython py_csft.pyx --cplus -o py_csft.cxx
 
 if USE_RLP

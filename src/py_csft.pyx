@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-cimport pycsft
+cimport py_csft
 cimport cpython.ref as cpy_ref
 from cpython.ref cimport Py_INCREF, Py_DECREF, Py_XDECREF
 from cpython.exc cimport PyErr_Fetch, PyErr_Restore
@@ -75,7 +75,7 @@ cdef extern from "sphinxstd.h":
         const char * cstr () const
 
 ## --- python conf ---
-cdef extern from "pyiface.h":
+cdef extern from "py_iface.h":
     cdef cppclass CSphStringList:
         int GetLength () const
         void Reset ()
@@ -115,12 +115,10 @@ cdef extern from "sphinx.h":
         SPH_ATTR_NONE
         SPH_ATTR_INTEGER
         SPH_ATTR_TIMESTAMP
-        SPH_ATTR_ORDINAL
         SPH_ATTR_BOOL
         SPH_ATTR_FLOAT
         SPH_ATTR_BIGINT
         SPH_ATTR_STRING
-        SPH_ATTR_WORDCOUNT
         SPH_ATTR_POLY2D
         SPH_ATTR_STRINGPTR
         SPH_ATTR_TOKENCOUNT
@@ -168,7 +166,7 @@ cdef extern from "sphinxutils.h":
         bool IterateNext () const
         const CSphString & IterateGetKey () const
 
-cdef extern from "pyiface.h":
+cdef extern from "py_iface.h":
 
     cdef uint32_t getCRC32(const char* data, size_t iLength)
 
@@ -197,7 +195,7 @@ cdef extern from "pyiface.h":
         void setAttrString( int iIndex, const char* s)
         void setField( int iIndex, const char* utf8_str)
 
-cdef extern from "pysource.h":
+cdef extern from "py_source2.h":
     cdef cppclass CSphSource_Python2:
         CSphSource_Python2 ( const char * sName, cpy_ref.PyObject* obj)
         CSphMatch   m_tDocInfo
@@ -205,43 +203,11 @@ cdef extern from "pysource.h":
         ISphHits *  getHits ()
 
 
-## --- python tokenizer ---
-
-## --- python cache ---
-
-## --- python query ---
-
 """
     Define Python Wrap, for Python side.
     Wrap the python code interface
     -> after import c++ class, we needs build python wrap... silly.
 """
-
-## --- python conf ---
-cdef class PySphConfigWrap(object):
-    cdef PySphConfig* conf_
-    def __init__(self):
-        self.conf_ = NULL
-
-    cdef init_wrap(self, PySphConfig* conf):
-        self.conf_ = conf
-
-    # FIXME: should raise an exception.
-    def hasSection(self, sType, sName):
-        if self.conf_:
-            return self.conf_.hasSection(sType, sName)
-        return False
-
-    def addSection(self, sType, sName):
-        if self.conf_:
-            return self.conf_.addSection(sType, sName)
-        return False
-
-    # if not section section, just return false.
-    def addKey(self, sType, sName, sKey, sValue):
-        if self.conf_:
-            return self.conf_.addKey(sType, sName, sKey, sValue)
-        return False
 
 ## --- python source ---
 def attr_callable(obj, attr_name):
@@ -280,12 +246,12 @@ cdef class PySchemaWrap(object):
             SPH_ATTR_NONE:"none",
             SPH_ATTR_INTEGER:"integer",
             SPH_ATTR_TIMESTAMP:"timestamp",
-            SPH_ATTR_ORDINAL:"str2ord",
+            #SPH_ATTR_ORDINAL:"str2ord",
             SPH_ATTR_BOOL:"boolean",
             SPH_ATTR_FLOAT:"float",
             SPH_ATTR_BIGINT:"long",
             SPH_ATTR_STRING:"string",
-            SPH_ATTR_WORDCOUNT:"wordcount",
+            #SPH_ATTR_WORDCOUNT:"wordcount",
             SPH_ATTR_POLY2D:"poly2d",
             SPH_ATTR_STRINGPTR:"stringPtr",
             SPH_ATTR_TOKENCOUNT:"tokencount",
@@ -655,54 +621,13 @@ cdef class PySourceWrap(object):
         self._killListPos += 1
         return 0
 
-## --- python tokenizer ---
-
-## --- python cache ---
-
-## --- python query ---
-
 """
     Define Python Wrap , for CPP side.
 """
 
-## --- python conf ---
-cdef class PyConfProviderWrap:
-    cdef ConfProviderWrap* _p
-    cdef cpy_ref.PyObject* _pyconf
-    def __init__(self, pyConfObj):
-        self._pyconf = <cpy_ref.PyObject*>pyConfObj # the user customed config object.
-        self._p = new ConfProviderWrap(<cpy_ref.PyObject*>self)
-
-    cdef int process(self, PySphConfig & hConf):
-        cdef int nRet = 0
-        _pyconf = <object>self._pyconf
-        hConfwrap = PySphConfigWrap(); hConfwrap.init_wrap(&hConf)
-        nRet = _pyconf.process(hConfwrap)
-        if nRet == None:
-            return 0
-        return int(nRet)
-
-## --- python source ---
-
-## --- python tokenizer ---
-
-## --- python cache ---
-
-## --- python query ---
-
-
 """
     Python Object's C API
 """
-
-## --- python conf ---
-
-cdef public int py_iconfprovider_process(void *ptr, PySphConfig& hConf):
-    #gc.collect()
-    cdef PyConfProviderWrap self = <PyConfProviderWrap>(ptr)
-    #import sys
-    #print sys.getrefcount(self)
-    return self.process(hConf)
 
 ## --- python source ---
 # 处理配置文件的读取, 读取 配置到  key -> value; key-> valuelist.
@@ -782,42 +707,10 @@ cdef public int py_source_get_kill_list_item(void *ptr, uint64_t* opDocID):
 # - [Removed] GetFieldOrder -> 在 buildSchema 统一处理
 # - [Removed] BuildHits -> 有 TokenPolicy 模块处理
 
-## --- python tokenizer ---
-
-## --- python cache ---
-
-## --- python query ---
-
 
 """
     Object creation function.
 """
-
-## --- python conf ---
-
-cdef public api IConfProvider* createPythonConfObject(const char* class_name, const CSphConfigSection & conf_python_section):
-    cdef PyConfProviderWrap pyconf
-    cdef dict conf_dict
-    #cdef cpy_ref.PyObject* ptr
-
-    conf_dict = wrap_sphinx_config(conf_python_section)
-
-    sName = class_name
-    clsType = __findPythonClass(sName)
-    if clsType:
-        obj = clsType(conf_dict)
-        pyconf = PyConfProviderWrap(obj)
-        Py_XINCREF(<cpy_ref.PyObject*>pyconf)  
-        return <IConfProvider*>(pyconf._p)
-    else:
-        return NULL # provider not found.
-
-cdef public api void destoryPythonConfObject(cpy_ref.PyObject*  ptr):
-    #import sys
-    #print sys.getrefcount(<object>ptr),'0000\n\n\n'
-    Py_CLEAR(ptr); 
-    return
-
 # 处理配置文件的读取, 读取 配置到  key -> value; key-> valuelist.
 cdef dict wrap_sphinx_config(const CSphConfigSection & hSource):
     cdef const char* key
@@ -867,12 +760,5 @@ cdef public api CSphSource * createPythonDataSourceObject ( const char* sName, c
         return <CSphSource*>pySource
     else:
         return NULL
-
-## --- python tokenizer ---
-
-## --- python cache ---
-
-## --- python query ---
-
 
 #end of file

@@ -3,7 +3,7 @@
 
 #include "sphinx.h"
 #include "py_layer.h"
-#include "pyiface.h"
+#include "py_iface.h"
 
 
 class CSphSource_Python2 : public CSphSource_Document

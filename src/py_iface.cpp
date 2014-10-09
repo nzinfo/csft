@@ -2,13 +2,13 @@
 #include "sphinxutils.h"
 #include "py_layer.h"
 #include "py_iface.h"
-#include "pycsft.h"
+#include "py_csft.h"
 #include "py_source2.h"
 
 // get string
 #define LOC_GETS(_arg,_key) \
     if ( hSource.Exists(_key) ) \
-        _arg = hSource[_key];
+        _arg = hSource[_key].strval();
 
 // get array of strings
 #define LOC_GETAS(_arg,_key) \
@@ -22,6 +22,12 @@
         return NULL; \
     }
 
+uint32_t getConfigValues(const CSphConfigSection & hSource, const char* sKey, CSphVector<CSphString>& values){
+    // hSource reference as the following.. (hidden)
+    int orig_length = values.GetLength();
+    LOC_GETAS(values, sKey);
+    return values.GetLength() - orig_length;
+}
 //------ Python Data Source Block -------
 
 typedef enum columnType_ {

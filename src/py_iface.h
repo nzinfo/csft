@@ -18,6 +18,7 @@
 
 typedef CSphVector<CSphString> CSphStringList;
 
+uint32_t getConfigValues(const CSphConfigSection & hSource, const char* sKey, CSphStringList& value);
 //------ Python Data Source Block -------
 
 void initColumnInfo(CSphColumnInfo& info, const char* sName, const char* sType);
@@ -42,8 +43,8 @@ public:
      */
     void bind(CSphSource* s, CSphMatch* m) { _s = s; _m = m; }
 public:
-    inline void setDocID(uint64_t id) {     _m->m_iDocID = (SphDocID_t)id;   }
-    inline uint64_t getDocID() {    return _m->m_iDocID;    }
+    inline void setDocID(uint64_t id) {     _m->m_uDocID = (SphDocID_t)id;   }
+    inline uint64_t getDocID() {    return _m->m_uDocID;    }
     int  getAttrCount();
     int  getFieldCount();
     void setAttr ( int iIndex, SphAttr_t uValue ) ;
