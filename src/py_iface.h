@@ -31,7 +31,7 @@ CSphColumnInfo* getSchemaField(CSphSchema* pSchema, int iIndex);
 
 uint32_t getCRC32(const char* data, size_t iLength);
 
-CSphSource * SpawnSourcePython2 ( const CSphConfigSection & hSource, const char * sSourceName);
+bool SpawnSourcePython2 ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython);
 
 
 class PySphMatch

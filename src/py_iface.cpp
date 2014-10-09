@@ -15,11 +15,11 @@
     for ( CSphVariant * pVal = hSource(_key); pVal; pVal = pVal->m_pNext ) \
         _arg.Add ( pVal->cstr() );
 
-#define LOC_CHECK_RET_NULL(_hash,_key,_msg,_add) \
+#define LOC_CHECK_RET_FALSE(_hash,_key,_msg,_add) \
     if (!( _hash.Exists ( _key ) )) \
     { \
         fprintf ( stdout, "ERROR: key '%s' not found " _msg "\n", _key, _add ); \
-        return NULL; \
+        return false; \
     }
 
 uint32_t getConfigValues(const CSphConfigSection & hSource, const char* sKey, CSphVector<CSphString>& values){
@@ -206,28 +206,29 @@ void PySphMatch::setField( int iIndex, const char* utf8_str)
 //------------------------------------------------
 
 #if USE_PYTHON
-CSphSource * SpawnSourcePython2 ( const CSphConfigSection & hSource, const char * sSourceName )
+bool SpawnSourcePython2 ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython)
 {
     assert ( hSource["type"]=="python" );
 
-    LOC_CHECK_RET_NULL ( hSource, "name", "in source '%s'.", sSourceName ); //-> should move to setup.
+    LOC_CHECK_RET_FALSE ( hSource, "name", "in source '%s'.", sSourceName ); //-> should move to setup.
 
     CSphString	PySourceName;
     LOC_GETS(PySourceName, "name");
 
-    CSphSource_Python2 * pPySource = (CSphSource_Python2*)createPythonDataSourceObject( sSourceName, PySourceName.cstr() );
-    if(!pPySource) {
+    *pSrcPython = NULL;
+    CSphSource_Python2* pSource = (CSphSource_Python2*)createPythonDataSourceObject( sSourceName, PySourceName.cstr() );
+    if(!pSource) {
         fprintf ( stdout, "ERROR: Create Python data source failure.\n");
-        return NULL;
+        return false;
     }
-    if ( !pPySource->Setup ( hSource ) ) {
-        if(pPySource->GetErrorMessage().Length())
-            fprintf ( stdout, "ERROR: %s\n", pPySource->GetErrorMessage().cstr());
-        SafeDelete ( pPySource );
-        return NULL;
+    if ( !pSource->Setup ( hSource ) ) {
+        if(pSource->GetErrorMessage().Length())
+            fprintf ( stdout, "ERROR: %s\n", pSource->GetErrorMessage().cstr());
+        SafeDelete ( pSource );
+        return false;
     }
-
-    return pPySource;
+    *pSrcPython = pSource;
+    return true;
 }
 #endif
 

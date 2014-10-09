@@ -20,7 +20,7 @@
 
 bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython)
 {
-	assert ( hSource["type"]=="python" );
+    assert ( hSource["type"]=="python_legacy" );
 
 	LOC_CHECK ( hSource, "name", "in source '%s'.", sSourceName );
 	
