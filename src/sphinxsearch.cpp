@@ -24,7 +24,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 /// query debugging printouts
-#define QDEBUG 0
+#define QDEBUG 1
 
 #if QDEBUG
 #define QDEBUGARG(_arg) _arg
@@ -1788,6 +1788,114 @@ void ExtPayload_c::GetTermDupes ( const ExtQwordsHash_t & hQwords, CSphVector<WO
 
 	ExtQword_t & tQword = hQwords[ m_tWord.m_sWord ];
 	dTermDupes[m_tWord.m_iAtomPos] = (WORD)tQword.m_iQueryPos;
+}
+
+/*
+ * 从外部数据传入的候选的文档列表，用于权限控制、 join 计算等  --coreseek
+ */
+class ExtCustomDocList_c : public ExtNode_i
+{
+private:
+    //CSphVector<ExtPayloadEntry_t>	m_dCache;
+    ExtPayloadKeyword_t				m_tWord;
+    FieldMask_t						m_dFieldMask;
+
+    //int		m_iCurDocsEnd;		///< end of the last docs chunk returned, exclusive, ie [begin,end)
+    //int		m_iCurHit;			///< end of the last hits chunk (within the last docs chunk) returned, exclusive
+
+public:
+    explicit						ExtCustomDocList_c ( const XQNode_t * pNode, const ISphQwordSetup & tSetup );
+    virtual void					Reset ( const ISphQwordSetup & tSetup );
+    virtual void					HintDocid ( SphDocID_t ) {} // FIXME!!! implement with tree
+    virtual const ExtDoc_t *		GetDocsChunk();
+    virtual const ExtHit_t *		GetHitsChunk ( const ExtDoc_t * pDocs );
+
+    virtual int						GetQwords ( ExtQwordsHash_t & hQwords );
+    virtual void					SetQwordsIDF ( const ExtQwordsHash_t & hQwords );
+    virtual void					GetTermDupes ( const ExtQwordsHash_t & , CSphVector<WORD> & ) const;
+    virtual bool					GotHitless () { return false; }
+    virtual int						GetDocsCount () { return m_tWord.m_iDocs; }
+    virtual uint64_t				GetWordID () const { return m_tWord.m_uWordID; }
+};
+
+ExtCustomDocList_c::ExtCustomDocList_c ( const XQNode_t * pNode, const ISphQwordSetup & tSetup )
+{
+    // sanity checks
+    // this node must be only created for a huge OR of tiny expansions
+    assert ( pNode->m_dWords.GetLength()==1 );
+    assert ( tSetup.m_eDocinfo!=SPH_DOCINFO_INLINE );
+
+    (XQKeyword_t &)m_tWord = *pNode->m_dWords.Begin();
+    m_dFieldMask = pNode->m_dSpec.m_dFieldMask;
+    m_iAtomPos = m_tWord.m_iAtomPos;
+
+    BYTE sTmpWord [ 3*SPH_MAX_WORD_LEN + 4 ];
+    // our little stemming buffer (morphology aware dictionary might need to change the keyword)
+    strncpy ( (char*)sTmpWord, m_tWord.m_sWord.cstr(), sizeof(sTmpWord) );
+    sTmpWord[sizeof(sTmpWord)-1] = '\0';
+
+    // setup keyword disk reader
+    m_tWord.m_uWordID = tSetup.m_pDict->GetWordID ( sTmpWord );
+    m_tWord.m_sDictWord = (const char *)sTmpWord;
+    m_tWord.m_fIDF = -1.0f;
+    m_tWord.m_iDocs = 0;
+    m_tWord.m_iHits = 0;
+}
+
+void ExtCustomDocList_c::Reset ( const ISphQwordSetup & tSetup )
+{
+
+}
+
+const ExtDoc_t * ExtCustomDocList_c::GetDocsChunk()
+{
+    return NULL;
+}
+
+const ExtHit_t * ExtCustomDocList_c::GetHitsChunk ( const ExtDoc_t * pDocs )
+{
+    return NULL;
+}
+
+int ExtCustomDocList_c::GetQwords ( ExtQwordsHash_t & hQwords )
+{
+    int iMax = -1;
+    ExtQword_t tQword;
+    tQword.m_sWord = m_tWord.m_sWord;
+    tQword.m_sDictWord = m_tWord.m_sDictWord;
+    tQword.m_iDocs = m_tWord.m_iDocs;
+    tQword.m_iHits = m_tWord.m_iHits;
+    tQword.m_fIDF = -1.0f;
+    tQword.m_fBoost = m_tWord.m_fBoost;
+    tQword.m_iQueryPos = m_tWord.m_iAtomPos;
+    tQword.m_bExpanded = true;
+    tQword.m_bExcluded = m_tWord.m_bExcluded;
+
+    hQwords.Add ( tQword, m_tWord.m_sWord );
+    if ( !m_tWord.m_bExcluded )
+        iMax = Max ( iMax, m_tWord.m_iAtomPos );
+
+    return iMax;
+}
+
+
+void ExtCustomDocList_c::SetQwordsIDF ( const ExtQwordsHash_t & hQwords )
+{
+    // pull idfs
+    if ( m_tWord.m_fIDF<0.0f )
+    {
+        assert ( hQwords ( m_tWord.m_sWord ) );
+        m_tWord.m_fIDF = hQwords ( m_tWord.m_sWord )->m_fIDF;
+    }
+}
+
+void ExtCustomDocList_c::GetTermDupes ( const ExtQwordsHash_t & hQwords, CSphVector<WORD> & dTermDupes ) const
+{
+    if ( m_tWord.m_bExcluded )
+        return;
+
+    ExtQword_t & tQword = hQwords[ m_tWord.m_sWord ];
+    dTermDupes[m_tWord.m_iAtomPos] = (WORD)tQword.m_iQueryPos;
 }
 
 //////////////////////////////////////////////////////////////////////////
