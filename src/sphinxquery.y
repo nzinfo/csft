@@ -108,6 +108,8 @@ keyword:
 	| TOK_FLOAT							{ $$ = pParser->AddKeyword ( ( $1.iStrIndex>=0 ) ? pParser->m_dIntTokens[$1.iStrIndex].cstr() : NULL ); }
 	| '=' keyword						{ $$ = $2; assert ( $$->m_dWords.GetLength()==1 ); if ( !($$->m_dWords[0].m_sWord.IsEmpty()) ) $$->m_dWords[0].m_sWord.SetSprintf ( "=%s", $$->m_dWords[0].m_sWord.cstr() ); }
 	;
+	| '$' keyword						{ $$ = $2; assert ( $$->m_dWords.GetLength()==1 ); if ( !($$->m_dWords[0].m_sWord.IsEmpty()) ) $$->m_dWords[0].m_sWord.SetSprintf ( "$%s", $$->m_dWords[0].m_sWord.cstr() ); }
+	;
 
 sentence:
 	sp_item TOK_SENTENCE sp_item		{ $$ = pParser->AddOp ( SPH_QUERY_SENTENCE, $1, $3 ); }
