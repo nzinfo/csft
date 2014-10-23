@@ -24,7 +24,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 /// query debugging printouts
-#define QDEBUG 1
+#define QDEBUG 0
 
 #if QDEBUG
 #define QDEBUGARG(_arg) _arg

@@ -55,7 +55,8 @@ public:
 	void			AddQuery ( XQNode_t * pNode );
 	XQNode_t *		AddKeyword ( const char * sKeyword );
 	XQNode_t *		AddKeyword ( XQNode_t * pLeft, XQNode_t * pRight );
-	XQNode_t *		AddOp ( XQOperator_e eOp, XQNode_t * pLeft, XQNode_t * pRight, int iOpArg=0 );
+    XQNode_t *      AddVariant ( XQNode_t * pNode );
+    XQNode_t *		AddOp ( XQOperator_e eOp, XQNode_t * pLeft, XQNode_t * pRight, int iOpArg=0 );
 	void			SetPhrase ( XQNode_t * pNode, bool bSetExact );
 
 	void			Cleanup ();
@@ -1016,7 +1017,16 @@ int XQParser_t::GetToken ( YYSTYPE * lvalp )
 
 				// this special is handled in HandleModifiers()
 				continue;
-			} else
+            } else if ( sToken[0]=='%' )
+            {
+                // use $ might be more common, but due to easy lex...
+                const char * pTokEnd = m_pTokenizer->GetTokenEnd();
+                if ( pTokEnd<m_pTokenizer->GetBufferEnd() && !isspace ( pTokEnd[0] ) )
+                    bWasFrontModifier = true;
+
+                // this special is handled in HandleModifiers()
+                continue;
+            } else
 			{
 				bool bWasQuoted = m_bQuoted;
 				// all the other specials are passed to parser verbatim
@@ -1086,7 +1096,7 @@ int XQParser_t::GetToken ( YYSTYPE * lvalp )
 		break;
 	}
 
-	if ( bWasFrontModifier && m_iPendingType!=TOK_KEYWORD )
+    if ( bWasFrontModifier && m_iPendingType!=TOK_KEYWORD )
 		Warning ( "modifiers must be applied to keywords, not operators" );
 
 	// someone must be pending now!
@@ -1133,6 +1143,7 @@ void XQParser_t::HandleModifiers ( XQKeyword_t & tKeyword )
 
 	const char * sQuery = reinterpret_cast<char *> ( m_sQuery );
 	tKeyword.m_bFieldStart = ( sTokStart-sQuery )>0 && sTokStart [ -1 ]=='^';
+    tKeyword.m_bVariant = ( sTokStart-sQuery )>0 && sTokStart [ -1 ]=='%';
 
 	if ( sTokEnd[0]=='$' )
 	{
@@ -1166,6 +1177,13 @@ XQNode_t * XQParser_t::AddKeyword ( const char * sKeyword )
 	return pNode;
 }
 
+XQNode_t * XQParser_t::AddVariant ( XQNode_t * pNode)
+{
+    // current reuse add keyword.
+    printf("get variant name=%s\n", pNode->m_dWords[0].m_sWord.cstr());
+    m_dSpawned.Add ( pNode );
+    return pNode;
+}
 
 XQNode_t * XQParser_t::AddKeyword ( XQNode_t * pLeft, XQNode_t * pRight )
 {
@@ -1718,6 +1736,7 @@ static void xqDump ( const XQNode_t * pNode, int iIndent )
 			const XQKeyword_t & tWord = pNode->m_dWords[i];
 
 			const char * sLocTag = "";
+            if ( tWord.m_bVariant ) sLocTag = ", variant";
 			if ( tWord.m_bFieldStart ) sLocTag = ", start";
 			if ( tWord.m_bFieldEnd ) sLocTag = ", end";
 

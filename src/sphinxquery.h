@@ -27,6 +27,7 @@ struct XQKeyword_t
 	int					m_iAtomPos;
 	bool				m_bFieldStart;	///< must occur at very start
 	bool				m_bFieldEnd;	///< must occur at very end
+    bool                m_bVariant;     ///< the doclist will be read from a remote server. --coreseek.
 	float				m_fBoost;		///< keyword IDF will be multiplied by this
 	bool				m_bExpanded;	///< added by prefix expansion
 	bool				m_bExcluded;	///< excluded by query (rval to operator NOT)
@@ -37,6 +38,7 @@ struct XQKeyword_t
 		: m_iAtomPos ( -1 )
 		, m_bFieldStart ( false )
 		, m_bFieldEnd ( false )
+        , m_bVariant( false )
 		, m_fBoost ( 1.0f )
 		, m_bExpanded ( false )
 		, m_bExcluded ( false )
@@ -49,6 +51,7 @@ struct XQKeyword_t
 		, m_iAtomPos ( iPos )
 		, m_bFieldStart ( false )
 		, m_bFieldEnd ( false )
+        , m_bVariant( false )
 		, m_fBoost ( 1.0f )
 		, m_bExpanded ( false )
 		, m_bExcluded ( false )
