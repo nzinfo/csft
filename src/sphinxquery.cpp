@@ -55,7 +55,6 @@ public:
 	void			AddQuery ( XQNode_t * pNode );
 	XQNode_t *		AddKeyword ( const char * sKeyword );
 	XQNode_t *		AddKeyword ( XQNode_t * pLeft, XQNode_t * pRight );
-    XQNode_t *      AddVariant ( XQNode_t * pNode );
     XQNode_t *		AddOp ( XQOperator_e eOp, XQNode_t * pLeft, XQNode_t * pRight, int iOpArg=0 );
 	void			SetPhrase ( XQNode_t * pNode, bool bSetExact );
 
@@ -108,8 +107,9 @@ public:
 	ISphTokenizer *			m_pTokenizer;
 	CSphDict *				m_pDict;
 
-	CSphVector<XQNode_t*>	m_dSpawned;
-	XQNode_t *				m_pRoot;
+    CSphVector<XQNode_t*>	m_dSpawned;
+    CSphVector<CSphString>	m_dVariants;
+    XQNode_t *				m_pRoot;
 
 	bool					m_bStopOnInvalid;
 	int						m_iAtomPos;
@@ -427,7 +427,8 @@ void XQParser_t::Cleanup ()
 		SafeDelete ( m_dSpawned[i] );
 	}
 	m_dSpawned.Reset ();
-	m_dStateSpec.Reset();
+    m_dStateSpec.Reset();
+    m_dVariants.Reset();
 }
 
 
@@ -1174,15 +1175,10 @@ XQNode_t * XQParser_t::AddKeyword ( const char * sKeyword )
 	XQNode_t * pNode = new XQNode_t ( *m_dStateSpec.Last() );
 	pNode->m_dWords.Add ( tAW );
 	m_dSpawned.Add ( pNode );
+    if(tAW.m_bVariant) {
+        m_dVariants.Add(sKeyword);
+    }
 	return pNode;
-}
-
-XQNode_t * XQParser_t::AddVariant ( XQNode_t * pNode)
-{
-    // current reuse add keyword.
-    printf("get variant name=%s\n", pNode->m_dWords[0].m_sWord.cstr());
-    m_dSpawned.Add ( pNode );
-    return pNode;
 }
 
 XQNode_t * XQParser_t::AddKeyword ( XQNode_t * pLeft, XQNode_t * pRight )
@@ -1682,6 +1678,8 @@ bool XQParser_t::Parse ( XQQuery_t & tParsed, const char * sQuery, const CSphQue
 	}
 
 	tParsed.m_pRoot = m_pRoot ? m_pRoot : new XQNode_t ( *m_dStateSpec.Last() );
+    // update vairant
+    tParsed.m_dVariants = m_dVariants;
 	return true;
 }
 

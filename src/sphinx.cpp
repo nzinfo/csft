@@ -1689,7 +1689,7 @@ private:
 	bool						LoadPersistentMVA ( CSphString & sError );
 
 	bool						JuggleFile ( const char* szExt, CSphString & sError, bool bNeedOrigin=true ) const;
-	XQNode_t *					ExpandPrefix ( XQNode_t * pNode, CSphQueryResultMeta * pResult, CSphScopedPayload * pPayloads ) const;
+    XQNode_t *					ExpandPrefix ( XQNode_t * pNode, CSphQueryResultMeta * pResult, CSphScopedPayload * pPayloads ) const;
 
 	const CSphRowitem *			CopyRow ( const CSphRowitem * pDocinfo, DWORD * pTmpDocinfo, const CSphColumnInfo * pNewAttr, int iOldStride ) const;
 
@@ -18912,6 +18912,7 @@ bool CSphIndex_VLN::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pRe
 	// non-random at the start, random at the end
 	dSorters.Sort ( CmpPSortersByRandom_fn() );
 
+    // When use variant in query, there at least one keywords, so no scan mode.
 	// fast path for scans
 	if ( pQuery->m_sQuery.IsEmpty() )
 		return MultiScan ( pQuery, pResult, iSorters, &dSorters[0], tArgs );
@@ -18982,6 +18983,26 @@ bool CSphIndex_VLN::MultiQuery ( const CSphQuery * pQuery, CSphQueryResult * pRe
 		iCommonSubtrees = sphMarkCommonSubtrees ( 1, &tParsed );
 
 	tParsed.m_bNeedSZlist = pQuery->m_bZSlist;
+
+    // ask remote server, get doclist.      --coreseek
+    {
+        /*
+         * The fact is the index provide an in memory key/value store, so that,
+         * ExtNode's can read doc-list from it.
+         * Each time should ask redis key/value store update the in memory one.
+         *
+         */
+        // get all keys
+        {
+            ARRAY_FOREACH ( j, tParsed.m_dVariants)
+            {
+                const CSphString & tStr = tParsed.m_dVariants[j];
+                printf("variant = %s\n", tStr.cstr());
+            }
+        }
+        // connect failure?
+        // timeout ?
+    }
 
 	CSphQueryNodeCache tNodeCache ( iCommonSubtrees, m_iMaxCachedDocs, m_iMaxCachedHits );
 	bool bResult = ParsedMultiQuery ( pQuery, pResult, iSorters, &dSorters[0], tParsed, pDict, tArgs, &tNodeCache, tStatDiff );
@@ -19089,6 +19110,21 @@ bool CSphIndex_VLN::MultiQueryEx ( int iQueries, const CSphQuery * pQueries,
 		ppResults[i]->m_tIOStats.Stop();
 	}
 
+    // ask remote server, get doclist.      --coreseek
+    {
+        printf("check the removet doclist\n");
+        // get all keys
+        for ( int i=0; i<iQueries; i++ )
+        {
+            ARRAY_FOREACH ( j, dXQ[i].m_dVariants)
+            {
+                const CSphString & tStr = dXQ[i].m_dVariants[j];
+                printf("variant = %s\n", tStr.cstr());
+            }
+        }
+        // connect failure?
+        // timeout ?
+    }
 	// continue only if we have at least one non-failed
 	if ( bResult )
 	{
@@ -20680,7 +20716,7 @@ protected:
 	bool				m_bApplyMorph;
 
 protected:
-	int					ParseMorphology ( const char * szMorph, CSphString & sError );
+    int					ParseMorphology ( const char * szMorph, CSphString & sError );
 	SphWordID_t			FilterStopword ( SphWordID_t uID ) const;	///< filter ID against stopwords list
 	CSphDict *			CloneBase ( CSphTemplateDictTraits * pDict ) const;
 	virtual bool		HasState () const;

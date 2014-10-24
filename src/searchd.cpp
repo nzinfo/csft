@@ -341,6 +341,9 @@ static DWORD			g_uHAPeriodKarma	= 60;		// by default use the last 1 minute stati
 static int				g_iAgentConnectTimeout = 1000;
 static int				g_iAgentQueryTimeout = 3000;	// global (default). May be override by index-scope values, if one specified
 
+static int				g_iKVStoreConnectTimeout = 1000;
+static int				g_iKVStoreQueryTimeout = 3000;	// global (default). May be override by index-scope values, if one specified
+
 const int	MAX_RETRY_COUNT		= 8;
 const int	MAX_RETRY_DELAY		= 1000;
 
@@ -879,6 +882,39 @@ public:
 		}
 		return sName;
 	}
+};
+
+struct KVStoreDesc_t
+{
+    CSphString		m_sHost;		///< remote searchd host
+    int				m_iPort;		///< remote searchd port, 0 if local
+    CSphString		m_sPath;		///< local searchd UNIX socket path
+    //CSphString		m_sIndexes;		///< remote index names to query
+    //bool			m_bBlackhole;	///< blackhole agent flag
+    int				m_iFamily;		///< TCP or UNIX socket
+    DWORD			m_uAddr;		///< IP address
+    bool			m_bPersistent;	///< whether to keep the persistent connection to the agent.
+    RentPersistent	m_dPersPool;	///< socket number, -1 if not connected (has sense only if the connection is persistent)
+
+public:
+    KVStoreDesc_t ()
+        : m_iPort ( -1 )
+        , m_iFamily ( AF_INET )
+        , m_uAddr ( 0 )
+        , m_bPersistent ( false )
+        , m_dPersPool ( -1 )
+    {}
+
+    CSphString GetName() const
+    {
+        CSphString sName;
+        switch ( m_iFamily )
+        {
+        case AF_INET: sName.SetSprintf ( "%s:%u", m_sHost.cstr(), m_iPort ); break;
+        case AF_UNIX: sName = m_sPath; break;
+        }
+        return sName;
+    }
 };
 
 /// per-host dashboard
@@ -4259,7 +4295,7 @@ public:
 				AgentDesc_t & dAgent = pTarget->Add();
 				dAgent = m_dAgents[i].GetAgents()[j];
 			}
-	}
+    }
 
 	void ShareHACounters()
 	{
@@ -4316,11 +4352,45 @@ struct IRequestBuilder_t : public ISphNoncopyable
 	virtual void BuildRequest ( AgentConn_t & tAgent, NetOutputBuffer_c & tOut ) const = 0;
 };
 
-
 struct IReplyParser_t
 {
 	virtual ~IReplyParser_t () {} // to avoid gcc4 warns
 	virtual bool ParseReply ( MemInputBuffer_c & tReq, AgentConn_t & tAgent ) const = 0;
+};
+
+struct RedisPingRequestBuilder_t : public IRequestBuilder_t
+{
+    explicit RedisPingRequestBuilder_t ( int iCookie = 0 )
+        : m_iCookie ( iCookie )
+    {}
+    virtual void BuildRequest ( AgentConn_t &, NetOutputBuffer_c & tOut ) const
+    {
+        // header
+        tOut.SendWord ( SEARCHD_COMMAND_PING );
+        tOut.SendWord ( VER_COMMAND_PING );
+        tOut.SendInt ( 4 );
+        tOut.SendInt ( m_iCookie );
+    }
+
+protected:
+    const int m_iCookie;
+};
+
+struct RedisPingReplyParser_t : public IReplyParser_t
+{
+    explicit RedisPingReplyParser_t ( int * pCookie )
+        : m_pCookie ( pCookie )
+    {}
+
+    virtual bool ParseReply ( MemInputBuffer_c & tReq, AgentConn_t & ) const
+    {
+        //printf("got reply????\n");
+        *m_pCookie += tReq.GetDword ();
+        return true;
+    }
+
+protected:
+    int * m_pCookie;
 };
 
 inline void agent_stats_inc ( AgentConn_t & tAgent, eAgentStats iCounter )
@@ -9189,13 +9259,28 @@ struct ExprHook_t : public ISphExprHook
 struct LocalIndex_t
 {
 	CSphString	m_sName;
+    int			m_iKVStoreConnectTimeout;		///< in msec
+    int			m_iKVStoreQueryTimeout;		///< in msec
 	int			m_iOrderTag;
 	int			m_iWeight;
 	int64_t		m_iMass;
+    CSphVector<AgentConn_t> m_dKVStores;      ///< Possible KVStore Connection, reuse  Agent Connction
+
 	LocalIndex_t ()
-		: m_iOrderTag ( 0 )
+        : m_iKVStoreConnectTimeout(g_iKVStoreConnectTimeout)
+        , m_iKVStoreQueryTimeout(g_iKVStoreQueryTimeout)
+        , m_iOrderTag ( 0 )
 		, m_iWeight ( 1 )
 	{ }
+
+    AgentDesc_t * GetKVStore ()
+    {
+       if(m_dKVStores.GetLength())
+            return &m_dKVStores[0];
+       return NULL;
+    }
+    // for set agent connection
+
 };
 
 
@@ -9910,6 +9995,103 @@ bool SearchHandler_c::RunLocalSearch ( int iLocal, ISphMatchSorter ** ppSorters,
 
 void SearchHandler_c::RunLocalSearches ( ISphMatchSorter * pLocalSorter, const char * sDistName, DWORD uFactorFlags )
 {
+    // test search's working mode.
+    // FIXME: connection to redis in main process. should move to thread -- coreseek
+    if(1)
+    {
+        int64_t iNow = sphMicroTimer();
+        //printf("time 1 , %llu\n", sphMicroTimer());
+        int iCookie = (int)iNow;
+        // connect local redis via TCP/IP
+        CSphScopedPtr<RedisPingRequestBuilder_t> tReqBuilder ( NULL );
+        CSphScopedPtr<CSphRemoteAgentsController> tDistCtrl ( NULL );
+
+        tReqBuilder = new RedisPingRequestBuilder_t ( iCookie );
+
+        CSphVector<AgentConn_t> dAgents;
+        {
+            dAgents.Add();
+            //dAgents.Add().TakeTraits ( *pDist->m_dAgents[j].GetRRAgent ( pDist->m_eHaStrategy ) );
+            dAgents.Last().m_sHost = "127.0.0.1";
+            dAgents.Last().m_iPort = 6380;
+            dAgents.Last().m_iFamily = AF_INET;
+            dAgents.Last().m_uAddr = sphGetAddress ( dAgents.Last().m_sHost.cstr() );
+
+            //dAgents.Last().m_iStoreTag = iTagsCount;
+            //dAgents.Last().m_iWeight = iWeight;
+        }
+        if(1) {
+            tDistCtrl = new CSphRemoteAgentsController ( 1, dAgents, *tReqBuilder.Ptr(), g_iPingInterval );
+            if ( dAgents.GetLength() )
+            {
+                /*
+                while ( !bDistDone )
+                {
+                    // don't forget to check incoming replies after send was over
+                    tDistCtrl->WaitAgentsEvent();
+                    bDistDone = tDistCtrl->IsDone();
+                    // wait for remote queries to complete
+                    if ( tDistCtrl->HasReadyAgents() )
+                    {
+                        // process the result?
+                        printf("got a resp\n");
+                    }
+                }
+                */
+                // as we have only one kvstore...
+                int iAgentsDone = 0;
+                if ( dAgents.GetLength() )
+                {
+                    iAgentsDone = tDistCtrl->Finish();
+                }
+
+                int iReplyCookie = 0;
+                if ( iAgentsDone )
+                {
+                    // try get the result...
+                    RedisPingReplyParser_t tParser ( &iReplyCookie );
+                    RemoteWaitForAgents ( dAgents, g_iPingInterval, tParser );
+                }
+            }
+        }
+        // try use sync raw socket.
+        if(0) {
+            int iSock = -1;
+
+            struct sockaddr_in sin;
+            memset ( &sin, 0, sizeof(sin) );
+            sin.sin_family = AF_INET;
+            sin.sin_addr.s_addr = dAgents.Last().m_uAddr;
+            sin.sin_port = htons ( (short)dAgents.Last().m_iPort );
+
+            iSock = socket ( AF_INET, SOCK_STREAM, 0 );
+            if ( iSock<0 )
+                sphFatal ( "failed to create TCP socket: %s", sphSockError() );
+
+            if ( connect ( iSock, (struct sockaddr*)&sin, sizeof(sin) )<0 )
+            {
+                sphWarning ( "failed to connect to \n");
+            }else{
+
+                // send request
+                NetOutputBuffer_c tOut ( iSock );
+                tOut.SendDword ( SPHINX_CLIENT_VERSION );
+                tOut.SendWord ( SEARCHD_COMMAND_STATUS );
+                tOut.SendWord ( VER_COMMAND_STATUS );
+                tOut.SendInt ( 4 ); // request body length
+                tOut.SendInt ( 1 ); // dummy body
+                tOut.Flush ();
+
+                // get reply
+                NetInputBuffer_c tIn ( iSock );
+                if ( !tIn.ReadFrom ( 12, 5 ) ) // magic_header_size=12, magic_timeout=5
+                    printf ( "handshake failure (no response)\n" );
+            }
+        }
+    }
+
+    printf("before run real query.\n");
+
 	if ( g_iDistThreads>1 && m_dLocal.GetLength()>1 )
 	{
 		RunLocalSearchesMT();
@@ -10689,6 +10871,8 @@ void SearchHandler_c::RunSubset ( int iStart, int iEnd )
         //  - check query required for cache?
         //  - capture the result & save to disk.
         //  - load fs path to save the result
+        //  - cache act as a server... so?
+
         CSphStringBuilder tBuf;
         ARRAY_FOREACH ( iLocal, m_dLocal )
         {
@@ -10702,6 +10886,16 @@ void SearchHandler_c::RunSubset ( int iStart, int iEnd )
                 tBuf.Reset();
             }
         }
+
+        /*
+         *  As Sphinx core have no network function
+         *      - we needs get variant here.
+         *  As Query String Pared in core
+         *      - try another way find the variant-term.
+         *  & Call network layer fetch set(s).
+         *      if have variant in query.
+         */
+
         // do real query.
 		RunLocalSearches ( pLocalSorter, dAgents.GetLength() ? tFirst.m_sIndexes.cstr() : NULL, uLocalPFFlags );
 		tmLocal += sphMicroTimer();
@@ -19859,6 +20053,27 @@ void ConfigureLocalIndex ( ServedDesc_t & tIdx, const CSphConfigSection & hIndex
 	tIdx.m_sGlobalIDFPath = hIndex.GetStr ( "global_idf" );
 	tIdx.m_bOnDiskAttrs = ( hIndex.GetInt ( "ondisk_attrs", 0 )==1 );
 	tIdx.m_bOnDiskPools = ( strcmp ( hIndex.GetStr ( "ondisk_attrs", "" ), "pool" )==0 );
+
+    // configure options
+    /*
+    if ( hIndex("kvstore_connect_timeout") )
+    {
+        if ( hIndex["kvstore_connect_timeout"].intval()<=0 )
+            sphWarning ( "index '%s': kvstore_connect_timeout must be positive, ignored", szIndexName );
+        else
+            tIdx.m_i = hIndex["kvstore_connect_timeout"].intval();
+    }
+
+    tIdx.m_bDivideRemoteRanges = hIndex.GetInt ( "divide_remote_ranges", 0 )!=0;
+
+    if ( hIndex("agent_query_timeout") )
+    {
+        if ( hIndex["agent_query_timeout"].intval()<=0 )
+            sphWarning ( "index '%s': agent_query_timeout must be positive, ignored", szIndexName );
+        else
+            tIdx.m_iAgentQueryTimeout = hIndex["agent_query_timeout"].intval();
+    }
+    */
 }
 
 

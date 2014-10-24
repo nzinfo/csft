@@ -277,6 +277,7 @@ struct XQQuery_t : public ISphNoncopyable
 	CSphString				m_sParseWarning;
 
 	CSphVector<CSphString>	m_dZones;
+    CSphVector<CSphString>	m_dVariants;
 	XQNode_t *				m_pRoot;
 	bool					m_bNeedSZlist;
 	bool					m_bSingleWord;

@@ -1319,6 +1319,7 @@ ExtNode_i::ExtNode_i ()
 
 static ISphQword * CreateQueryWord ( const XQKeyword_t & tWord, const ISphQwordSetup & tSetup, CSphDict * pZonesDict=NULL )
 {
+    // remote doclist should be pollute here. --coreseek.
 	BYTE sTmp [ 3*SPH_MAX_WORD_LEN + 16 ];
 	strncpy ( (char*)sTmp, tWord.m_sWord.cstr(), sizeof(sTmp) );
 	sTmp[sizeof(sTmp)-1] = '\0';
