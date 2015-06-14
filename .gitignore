@@ -73,6 +73,11 @@
 /Makefile.in
 /src/Makefile.in
 
+# libstemmer
+/libstemmer_c/libstemmer/
+/libstemmer_c/runtime/
+/libstemmer_c/src_c/
+
 # for coreseek fav editor
 *.swp
 
