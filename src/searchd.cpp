@@ -42,6 +42,7 @@ extern "C"
 #define SEARCHD_BACKLOG			5
 #define SPHINXAPI_PORT			9312
 #define SPHINXQL_PORT			9306
+#define REDISCLI_PORT			9379        // the coreseek redis cli port
 #define SPH_ADDRESS_SIZE		sizeof("000.000.000.000")
 #define SPH_ADDRPORT_SIZE		sizeof("000.000.000.000:00000")
 #define MVA_UPDATES_POOL		1048576
@@ -172,7 +173,7 @@ enum ProtocolType_e
 {
 	PROTO_SPHINX = 0,
 	PROTO_MYSQL41,
-
+    PROTO_REDIS,
 	PROTO_TOTAL
 };
 
@@ -2477,6 +2478,7 @@ ProtocolType_e ProtoByName ( const CSphString & sProto )
 {
 	if ( sProto=="sphinx" )			return PROTO_SPHINX;
 	else if ( sProto=="mysql41" )	return PROTO_MYSQL41;
+    else if ( sProto=="cli" )       return PROTO_REDIS;
 
 	sphFatal ( "unknown listen protocol type '%s'", sProto.cstr() ? sProto.cstr() : "(NULL)" );
 
@@ -18720,6 +18722,24 @@ static void HandleClientMySQL ( int iSock, const char * sClientIP, ThdDesc_t * p
 	SphCrashLogger_c::SetLastQuery ( CrashQuery_t() );
 }
 
+
+static void HandleClientRedis ( int iSock, const char * sClientIP, ThdDesc_t * pThd )
+{
+    MEMORY ( MEM_CLI_HANDLE );
+    THD_STATE ( THD_HANDSHAKE );
+
+    const int INTERACTIVE_TIMEOUT = 900;
+    NetInputBuffer_c tIn ( iSock );
+    NetOutputBuffer_c tOut ( iSock ); // OPTIMIZE? looks like buffer size matters a lot..
+    int64_t iCID = ( pThd ? pThd->m_iConnID : g_iConnID );
+
+    // send pong only
+    tOut.SendBytes("pong\n\0", 6);
+    tOut.Flush();
+    // set off query guard
+    SphCrashLogger_c::SetLastQuery ( CrashQuery_t() );
+}
+
 //////////////////////////////////////////////////////////////////////////
 // HANDLE-BY-LISTENER
 //////////////////////////////////////////////////////////////////////////
@@ -18730,6 +18750,7 @@ void HandleClient ( ProtocolType_e eProto, int iSock, const char * sClientIP, Th
 	{
 		case PROTO_SPHINX:		HandleClientSphinx ( iSock, sClientIP, pThd ); break;
 		case PROTO_MYSQL41:		HandleClientMySQL ( iSock, sClientIP, pThd ); break;
+        case PROTO_REDIS:		HandleClientRedis ( iSock, sClientIP, pThd ); break;
 		default:				assert ( 0 && "unhandled protocol type" ); break;
 	}
 }
@@ -22638,7 +22659,7 @@ void ConfigureAndPreload ( const CSphConfig & hConf, const CSphVector<const char
 
 			if ( HasFiles ( tIndex, sphGetExts ( SPH_EXT_TYPE_NEW ) ) )
 			{
-				tIndex.m_bOnlyNew = !HasFiles ( tIndex, sphGetExts ( SPH_EXT_TYPE_CUR ) );
+                tIndex.m_bOnlyNew = !HasFiles ( tIndex, sphGetExts ( SPH_EXT_TYPE_CUR ) );
 				if ( RotateIndexGreedy ( tIndex, sIndexName ) )
 				{
 					CSphString sError;
@@ -22675,9 +22696,10 @@ void ConfigureAndPreload ( const CSphConfig & hConf, const CSphVector<const char
 	InitPersistentPool();
 
 	tmLoad += sphMicroTimer();
-	if ( !iValidIndexes )
-		sphFatal ( "no valid indexes to serve" );
-	else
+    if ( !iValidIndexes ) {
+        sphWarning ( "no valid indexes to serve" );   // in redis mode, no valid index can start. --coreseek
+        // sphFatal ( "no valid indexes to serve" );
+    } else
 		fprintf ( stdout, "precached %d indexes in %0.3f sec\n", iCounter-1, float(tmLoad)/1000000 );
 }
 
@@ -23235,6 +23257,7 @@ int WINAPI ServiceMain ( int argc, char **argv )
 			tListener.m_iSock = sphCreateInetSocket ( htonl ( INADDR_ANY ), SPHINXQL_PORT );
 			tListener.m_eProto = PROTO_MYSQL41;
 			g_dListeners.Add ( tListener );
+            // proto redis is not default listen on --coreseek
 		}
 	}
 
