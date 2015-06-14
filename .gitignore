@@ -63,3 +63,19 @@
 /test/ql/data/*.lock
 /test/ql/*.class
 /test/ql/*.exe
+
+# for mac & coreseek build
+/configure
+/config/config.h.in
+/api/libsphinxclient/Makefile.in
+/doc/Makefile.in
+/libstemmer_c/Makefile.in
+/Makefile.in
+/src/Makefile.in
+
+# for coreseek fav editor
+*.swp
+
+# for autoconf & automake
+/aclocal.m4
+/autom4te.cache/
