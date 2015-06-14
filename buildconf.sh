@@ -2,5 +2,5 @@
 
 autoheader \
 && aclocal \
-&& automake --foreign \
+&& automake --foreign --add-missing \
 && autoconf

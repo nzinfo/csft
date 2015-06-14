@@ -13,6 +13,9 @@ AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/searchd.cpp])
 AC_CONFIG_HEADER([config/config.h])
 
+m4_pattern_allow([AM_PROG_AR])
+AM_PROG_AR
+
 # hack to locate expat/iconv in /usr/local on BSD systems
 CPPFLAGS="$CPPFLAGS -I/usr/local/include"
 LIBS="$LIBS -L/usr/local/lib"

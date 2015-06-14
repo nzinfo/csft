@@ -79,3 +79,5 @@
 # for autoconf & automake
 /aclocal.m4
 /autom4te.cache/
+/config/ar-lib
+/config/compile
