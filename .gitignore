@@ -86,3 +86,11 @@
 /autom4te.cache/
 /config/ar-lib
 /config/compile
+
+# for qt-creator
+/*.user
+
+# for patch
+*.rej
+*.orig
+

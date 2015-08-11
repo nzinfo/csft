@@ -1766,7 +1766,7 @@ int main ( int argc, char ** argv )
 				"\n"
 				"Options are:\n"
 				"--config <file>\t\tread configuration from specified file\n"
-				"\t\t\t(default is sphinx.conf)\n"
+                "\t\t\t(default is csft.conf)\n"
 				"--all\t\t\treindex all configured indexes\n"
 				"--quiet\t\t\tbe quiet, only print errors\n"
 				"--verbose\t\tverbose indexing issues report\n"
@@ -1795,8 +1795,8 @@ int main ( int argc, char ** argv )
 				"--keep-attrs\t\tretain attributes from the old index"
 				"\n"
 				"Examples:\n"
-				"indexer --quiet myidx1\treindex 'myidx1' defined in 'sphinx.conf'\n"
-				"indexer --all\t\treindex all indexes defined in 'sphinx.conf'\n" );
+                "indexer --quiet myidx1\treindex 'myidx1' defined in 'csft.conf'\n"
+                "indexer --all\t\treindex all indexes defined in 'csft.conf'\n" );
 		}
 
 		return 1;

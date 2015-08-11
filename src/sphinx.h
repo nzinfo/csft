@@ -200,13 +200,17 @@ inline const	DWORD *	STATIC2DOCINFO ( const DWORD * pAttrs )	{ return STATIC2DOC
 #endif
 
 #define SPHINX_VERSION			"2.2.10" SPHINX_BITS_TAG SPHINX_TAG " (" SPH_SVN_TAGREV ")"
-#define SPHINX_BANNER			"Sphinx " SPHINX_VERSION "\nCopyright (c) 2001-2015, Andrew Aksyonoff\nCopyright (c) 2008-2015, Sphinx Technologies Inc (http://sphinxsearch.com)\n\n"
+#define SPHINX_BANNER_ORIG		"Sphinx " SPHINX_VERSION "\nCopyright (c) 2001-2015, Andrew Aksyonoff\nCopyright (c) 2008-2015, Sphinx Technologies Inc (http://sphinxsearch.com)\n\n"
 #define SPHINX_SEARCHD_PROTO	1
 #define SPHINX_CLIENT_VERSION	1
 
 #define SPH_MAX_WORD_LEN		42		// so that any UTF-8 word fits 127 bytes
 #define SPH_MAX_FILENAME_LEN	512
 #define SPH_MAX_FIELDS			256
+
+#define CORESEEK_BANNER			"Coreseek FullText Search 5.1 \nCopyright (c) 2008-2015, Beijing Choice Software Technologies Inc (http://www.coreseek.com)\n\n"
+#define SPHINX_BANNER2 "" CORESEEK_BANNER "" SPHINX_BANNER_ORIG
+#define SPHINX_BANNER SPHINX_BANNER2
 
 /////////////////////////////////////////////////////////////////////////////
 

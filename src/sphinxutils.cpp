@@ -1574,12 +1574,12 @@ const char * sphLoadConfig ( const char * sOptConfig, bool bQuiet, CSphConfigPar
 	while ( !sOptConfig )
 	{
 #ifdef SYSCONFDIR
-		sOptConfig = SYSCONFDIR "/sphinx.conf";
+        sOptConfig = SYSCONFDIR "/csft.conf";
 		if ( sphIsReadable ( sOptConfig ) )
 			break;
 #endif
 
-		sOptConfig = "./sphinx.conf";
+        sOptConfig = "./csft.conf";
 		if ( sphIsReadable ( sOptConfig ) )
 			break;
 
@@ -1590,9 +1590,9 @@ const char * sphLoadConfig ( const char * sOptConfig, bool bQuiet, CSphConfigPar
 	if ( !sOptConfig )
 		sphDie ( "no readable config file (looked in "
 #ifdef SYSCONFDIR
-		SYSCONFDIR "/sphinx.conf, "
+        SYSCONFDIR "/csft.conf, "
 #endif
-		"./sphinx.conf)" );
+        "./csft.conf)" );
 
 	if ( !bQuiet )
 		fprintf ( stdout, "using config file '%s'...\n", sOptConfig );
