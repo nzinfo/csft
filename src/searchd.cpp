@@ -6969,7 +6969,7 @@ void LogQueryPlain ( const CSphQuery & tQuery, const CSphQueryResult & tRes )
 
 	// optional query comment
 	if ( !tQuery.m_sComment.IsEmpty() )
-		tBuf.Appendf ( " [%s]", tQuery.m_sComment.cstr() );
+        tBuf.Appendf ( " [%s]", tQuery.m_sComment.cstr() );
 
 	// query
 	// (m_sRawQuery is empty when using MySQL handler)
@@ -7349,6 +7349,10 @@ static void LogQuery ( const CSphQuery & q, const CSphQueryResult & tRes, const 
 {
 	if ( g_iQueryLogMinMs && tRes.m_iQueryTime<g_iQueryLogMinMs )
 		return;
+
+    // optional query comment
+    if ( !q.m_sComment.IsEmpty() && q.m_sComment == "__anonymous__")
+        return;
 
 	switch ( g_eLogFormat )
 	{
