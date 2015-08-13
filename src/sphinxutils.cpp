@@ -407,6 +407,8 @@ static KeyDesc_t g_dKeysIndex[] =
 	{ "min_word_len",			0, NULL },
 	{ "charset_type",			KEY_REMOVED, NULL },
 	{ "charset_table",			0, NULL },
+    { "charset_dictpath",		0, NULL }, //coreseek: mmseg's dictionary path
+    { "charset_debug",			0, NULL }, //coreseek: debug output tokens
 	{ "ignore_chars",			0, NULL },
 	{ "min_prefix_len",			0, NULL },
 	{ "min_infix_len",			0, NULL },
@@ -1133,13 +1135,25 @@ void sphConfTokenizer ( const CSphConfigSection & hIndex, CSphTokenizerSettings 
 {
 	tSettings.m_iNgramLen = Max ( hIndex.GetInt ( "ngram_len" ), 0 );
 
-	if ( hIndex ( "ngram_chars" ) )
+    if(hIndex("charset_debug"))
+        tSettings.m_iDebug = hIndex["charset_debug"].intval();
+
+    if ( hIndex ( "ngram_chars" ) )
 	{
 		if ( tSettings.m_iNgramLen )
 			tSettings.m_iType = TOKENIZER_NGRAM;
 		else
 			sphWarning ( "ngram_chars specified, but ngram_len=0; IGNORED" );
 	}
+
+#if USE_MMSEG
+    //XXX:fixme : sphinx changes tokenizer create process
+    if (hIndex("charset_dictpath") && CSphString(hIndex.GetStr("charset_type")) =="zh_cn.utf-8" )
+    {
+        tSettings.m_sDictPath = hIndex.GetStr("charset_dictpath");
+        tSettings.m_iType = TOKENIZER_ZHCN_UTF8;
+    }
+#endif
 
 	tSettings.m_sCaseFolding = hIndex.GetStr ( "charset_table" );
 	tSettings.m_iMinWordLen = Max ( hIndex.GetInt ( "min_word_len", 1 ), 1 );
@@ -1274,6 +1288,7 @@ bool sphConfIndex ( const CSphConfigSection & hIndex, CSphIndexSettings & tSetti
 	tSettings.m_iEmbeddedLimit = hIndex.GetSize ( "embedded_limit", 16384 );
 	tSettings.m_bIndexFieldLens = hIndex.GetInt ( "index_field_lengths" )!=0;
 	tSettings.m_sIndexTokenFilter = hIndex.GetStr ( "index_token_filter" );
+    tSettings.m_bDebugDump = hIndex.GetInt ( "charset_debug" )!=0;
 
 	// prefix/infix fields
 	CSphString sFields;

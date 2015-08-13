@@ -30,5 +30,9 @@ RLP_INC =
 endif
 
 AM_CPPFLAGS = $(LIBRE2_CFLAGS) $(RLP_INC) -DSYSCONFDIR="\"$(sysconfdir)\"" -DDATADIR="\"$(localstatedir)/data\""
+if USE_MMSEG
+COMMON_LIBS = libsphinx.a $(LIBSTEMMER_LIBS) $(MYSQL_LIBS) $(PGSQL_LIBS) $(LIBRE2_LIBS) $(RLP_LIBS) $(MMSEG_LIBS)
+else
 COMMON_LIBS = libsphinx.a $(LIBSTEMMER_LIBS) $(MYSQL_LIBS) $(PGSQL_LIBS) $(LIBRE2_LIBS) $(RLP_LIBS)
+endif
 LDADD = $(COMMON_LIBS)

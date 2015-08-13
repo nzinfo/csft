@@ -141,6 +141,16 @@
 	#pragma message("Automatically linking with btutils.lib")
 #endif
 
+#if ( USE_WINDOWS && USE_MMSEG )
+	#if _DEBUG
+		#pragma comment(linker, "/defaultlib:libcss_d.lib")
+	#else
+		#pragma comment(linker, "/defaultlib:libcss.lib")
+	#endif
+	#pragma message("Automatically linking with libcss.lib")
+    #pragma warning(disable:4530) // for ugly mmseg
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 // logf() is not there sometimes (eg. Solaris 9)
@@ -2552,10 +2562,14 @@ class CSphTokenizer_UTF8 : public CSphTokenizerBase2
 public:
 								CSphTokenizer_UTF8 ();
 	virtual void				SetBuffer ( const BYTE * sBuffer, int iLength );
+    virtual bool                IsPreTokenized()    {   return m_bPreTokenized;   }
 	virtual BYTE *				GetToken ();
 	virtual ISphTokenizer *		Clone ( ESphTokenizerClone eMode ) const;
 	virtual int					GetCodepointLength ( int iCode ) const;
 	virtual int					GetMaxCodepointLength () const { return m_tLC.GetMaxCodepointLength(); }
+
+protected:
+    bool    m_bPreTokenized;
 };
 
 
@@ -2576,6 +2590,78 @@ protected:
 	CSphString			m_sNgramCharsStr;
 };
 
+#if USE_MMSEG
+
+#include "SegmenterManager.h"
+#include "Segmenter.h"
+
+typedef CSR_Singleton<css::SegmenterManager> SegmenterManagerSingleInstance;
+
+template < bool IS_QUERY >
+class CSphTokenizer_UTF8MMSeg : public CSphTokenizer_UTF8<IS_QUERY>
+{
+public:
+                                CSphTokenizer_UTF8MMSeg ();
+                                ~CSphTokenizer_UTF8MMSeg() {
+                                    if(m_seg){
+                                        SafeDelete ( m_seg );
+                                    }
+                                }
+
+    virtual void				SetBuffer ( const BYTE * sBuffer, int iLength );
+    virtual BYTE *				GetToken ();
+    virtual ISphTokenizer *		Clone ( ESphTokenizerClone eMode ) const;
+    virtual const BYTE*			GetThesaurus(BYTE * sBuffer, int iLength );
+    bool                        IsSegment(const BYTE * pCur);
+
+    CSphTokenizerBase* SetDictPath(const char* path) {	m_dictpath = path; return this; }
+
+    virtual const char *	GetBufferPtr () const		{ 		return (const char *) CSphTokenizer_UTF8MMSeg<IS_QUERY>::m_pCur;   }
+
+    virtual const char *			GetTokenStart () const		{ 	return m_segToken;      }
+
+    virtual int						GetLastTokenLen () const    {   return m_iLastTokenLenMMSeg;    }
+
+    virtual void                    ReloadSegDictionary()    {
+        if(m_seg){
+            SafeDelete ( m_seg );
+        }
+        m_seg = NULL;
+
+        if(m_mgr) {
+            SegmenterManagerSingleInstance::Free(); // free preexist instance.
+            m_mgr = NULL;
+        }
+    }
+protected:
+    char*               m_segToken;
+    size_t              m_segoffset;
+    int                 m_iLastTokenLenMMSeg;
+    BYTE				m_sAccumSeg [ 3*SPH_MAX_WORD_LEN+3 ];	///< folded token accumulator
+    BYTE *				m_pAccumSeg;							///< current accumulator position
+    CSphVector<u2>      m_tokenlens;
+    int                 m_tokenpos;
+protected:
+    // virtual bool				IsSegment(const BYTE * pCur);
+    CSphString m_dictpath;
+
+    // mmseg related
+    css::Segmenter* m_seg;
+    css::SegmenterManager* m_mgr;
+    css::Segmenter* GetSegmenter(const char* dict_path){
+        int nRet = 0;
+        if(!m_mgr) {
+            m_mgr = SegmenterManagerSingleInstance::Get();
+            if(dict_path)
+                nRet = m_mgr->init(dict_path);
+        }
+        if(nRet == 0 && !m_seg)
+            m_seg = m_mgr->getSegmenter(false);
+        return m_seg;
+    }
+};
+
+#endif
 
 struct CSphNormalForm
 {
@@ -3795,6 +3881,15 @@ ISphTokenizer * sphCreateUTF8NgramTokenizer ()
 	return new CSphTokenizer_UTF8Ngram<false> ();
 }
 
+#if USE_MMSEG
+ISphTokenizer *	sphCreateUTF8ChineseTokenizer ( const char* dict_path )
+{
+    CSphTokenizer_UTF8MMSeg<false>* tokenizer = new CSphTokenizer_UTF8MMSeg<false> ();
+    tokenizer->SetDictPath(dict_path);
+    return tokenizer;
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 enum
@@ -4380,6 +4475,7 @@ CSphTokenizerSettings::CSphTokenizerSettings ()
 	: m_iType				( TOKENIZER_UTF8 )
 	, m_iMinWordLen			( 1 )
 	, m_iNgramLen			( 0 )
+    , m_iDebug				( 0 )
 {
 }
 
@@ -4391,7 +4487,11 @@ bool LoadTokenizerSettings ( CSphReader & tReader, CSphTokenizerSettings & tSett
 		return true;
 
 	tSettings.m_iType = tReader.GetByte ();
-	if ( tSettings.m_iType!=TOKENIZER_UTF8 && tSettings.m_iType!=TOKENIZER_NGRAM )
+#if USE_MMSEG
+    if ( tSettings.m_iType!=TOKENIZER_UTF8 && tSettings.m_iType!=TOKENIZER_NGRAM && tSettings.m_iType!=TOKENIZER_ZHCN_UTF8)
+#else
+    if ( tSettings.m_iType!=TOKENIZER_UTF8 && tSettings.m_iType!=TOKENIZER_NGRAM)
+#endif
 	{
 		sWarning = "can't load an old index with SBCS tokenizer";
 		return false;
@@ -4419,7 +4519,11 @@ bool LoadTokenizerSettings ( CSphReader & tReader, CSphTokenizerSettings & tSett
 	tSettings.m_sIgnoreChars = tReader.GetString ();
 	tSettings.m_iNgramLen = tReader.GetDword ();
 	tSettings.m_sNgramChars = tReader.GetString ();
-	if ( uVersion>=15 )
+#if USE_MMSEG
+    //mmseg --coreseek, mmseg option make coreseek & sphinx's index is NOT the same.
+    tSettings.m_sDictPath		= tReader.GetString ();
+#endif
+    if ( uVersion>=15 )
 		tSettings.m_sBlendChars = tReader.GetString ();
 	if ( uVersion>=24 )
 		tSettings.m_sBlendMode = tReader.GetString();
@@ -4450,6 +4554,10 @@ void SaveTokenizerSettings ( CSphWriter & tWriter, ISphTokenizer * pTokenizer, i
 	tWriter.PutString ( tSettings.m_sIgnoreChars.cstr () );
 	tWriter.PutDword ( tSettings.m_iNgramLen );
 	tWriter.PutString ( tSettings.m_sNgramChars.cstr () );
+#if USE_MMSEG
+    // if turn mmseg off, the index(s) are compat again.
+    tWriter.PutString ( tSettings.m_sDictPath.cstr () );
+#endif
 	tWriter.PutString ( tSettings.m_sBlendChars.cstr () );
 	tWriter.PutString ( tSettings.m_sBlendMode.cstr () );
 }
@@ -4724,6 +4832,9 @@ ISphTokenizer * ISphTokenizer::Create ( const CSphTokenizerSettings & tSettings,
 	{
 		case TOKENIZER_UTF8:	pTokenizer = sphCreateUTF8Tokenizer (); break;
 		case TOKENIZER_NGRAM:	pTokenizer = sphCreateUTF8NgramTokenizer (); break;
+#if USE_MMSEG
+        case TOKENIZER_ZHCN_UTF8:   pTokenizer = sphCreateUTF8ChineseTokenizer(tSettings.m_sDictPath.cstr()); break;
+#endif
 		default:
 			sError.SetSprintf ( "failed to create tokenizer (unknown charset type '%d')", tSettings.m_iType );
 			return NULL;
@@ -5963,7 +6074,20 @@ CSphTokenizer_UTF8<IS_QUERY>::CSphTokenizer_UTF8 ()
 {
 	CSphString sTmp;
 	SetCaseFolding ( SPHINX_DEFAULT_UTF8_TABLE, sTmp );
-	m_bHasBlend = false;
+
+    // BEGIN CJK There is no case folding, should do this in remote tokenizer.
+    // Here just make CJK Charactor will remain. --coreseek
+    CSphVector<CSphRemapRange> dRemaps;
+    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+
+    m_tLC.AddRemaps ( dRemaps,
+        FLAG_CODEPOINT_NGRAM ); // !COMMIT support other n-gram lengths than 1
+    // ENDCJK
+    m_bPreTokenized = false;    // by default use original route.
+
+    m_bHasBlend = false;
 }
 
 
@@ -5973,10 +6097,29 @@ void CSphTokenizer_UTF8<IS_QUERY>::SetBuffer ( const BYTE * sBuffer, int iLength
 	// check that old one is over and that new length is sane
 	assert ( iLength>=0 );
 
-	// set buffer
+    // set buffer
 	m_pBuffer = sBuffer;
+    // check is pre-segment buffer, with prefix 0xFFFA
+    // if True, the following should be 0xFFA, 0x41, [ctx]      --coreseek
+    m_bPreTokenized = false;
+    if(iLength > 4)
+    {
+        // there is a ' ' (space, 32) as padding. might not true
+        unsigned char mask[] = {32, 239, 191, 186, 65};
+        unsigned char mask_bare[] = {239, 191, 186, 65};
+        if(strncmp( (const char *)mask, (const char *)sBuffer, 5) == 0) {
+            // 0xFFFA is a magic number , if it's in head, mark this buffer pre-tokenized.
+            m_bPreTokenized = true;
+            m_pBuffer += 5;
+        }else
+        if(strncmp( (const char *)mask_bare, (const char *)sBuffer, 4) == 0) {
+            m_bPreTokenized = true;
+            m_pBuffer += 4;
+        }
+    }
+
 	m_pBufferMax = sBuffer + iLength;
-	m_pCur = sBuffer;
+    m_pCur = m_pBuffer;
 	m_pTokenStart = m_pTokenEnd = NULL;
 	m_pBlendStart = m_pBlendEnd = NULL;
 
@@ -5994,7 +6137,7 @@ BYTE * CSphTokenizer_UTF8<IS_QUERY>::GetToken ()
 	m_bTokenBoundary = false;
 	m_bWasSynonym = false;
 
-	return m_bHasBlend
+    return m_bHasBlend
 		? DoGetToken<IS_QUERY,true>()
 		: DoGetToken<IS_QUERY,false>();
 }
@@ -6409,6 +6552,152 @@ BYTE * CSphTokenizer_UTF8Ngram<IS_QUERY>::GetToken ()
 	assert ( m_iNgramLen==1 );
 	return CSphTokenizer_UTF8<IS_QUERY>::GetToken ();
 }
+//////////////////////////////////////////////////////////////////////////
+#if USE_MMSEG
+//////////////////////////////////////////////////////////////////////////
+template < bool IS_QUERY >
+CSphTokenizer_UTF8MMSeg<IS_QUERY>::CSphTokenizer_UTF8MMSeg ()
+        :CSphTokenizer_UTF8<IS_QUERY>()
+        , m_segoffset(0)
+{
+    //over ride charmap
+    CSphVector<CSphRemapRange> dRemaps;
+    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+
+    CSphTokenizer_UTF8<IS_QUERY>::m_tLC.AddRemaps ( dRemaps,
+        FLAG_CODEPOINT_NGRAM | FLAG_CODEPOINT_SPECIAL); // !COMMIT support other n-gram lengths than 1
+    m_pAccumSeg = m_sAccumSeg;
+    //m_iLastTokenBufferLen = 0;
+    m_iLastTokenLenMMSeg = 0;
+
+    m_mgr = NULL;
+    m_seg = NULL;
+    m_tokenlens.Reserve(1024*512);  // resize to 512K
+}
+
+template < bool IS_QUERY >
+void CSphTokenizer_UTF8MMSeg<IS_QUERY>::SetBuffer ( const BYTE * sBuffer, int iLength )
+{
+    CSphTokenizer_UTF8<IS_QUERY>::SetBuffer(sBuffer, iLength);
+    css::Segmenter* seg = GetSegmenter(m_dictpath.cstr());
+    if(seg)
+        seg->setBuffer((u1*)CSphTokenizer_UTF8MMSeg<IS_QUERY>::m_pBuffer, iLength);
+    else
+        sphDie ( " Tokenizer initialization failure. " );
+    m_segoffset = 0;
+    m_segToken = (char*)CSphTokenizer_UTF8MMSeg<IS_QUERY>::m_pCur;
+    
+    m_tokenlens.Reset();
+    m_tokenpos = 0;
+    {
+    	u2 len = 0, symlen = 0;
+        while(1){
+            len = 0;
+            char* tok = (char*)seg->peekToken(len,symlen);
+            if(!tok || !*tok || !len)
+                break;
+            seg->popToken(len);
+
+            m_tokenlens.Add(len);
+            //printf("%*.*s/p ",symlen,symlen,tok);
+        }
+    }
+}
+
+template < bool IS_QUERY >
+bool	CSphTokenizer_UTF8MMSeg<IS_QUERY>::IsSegment(const BYTE * pCur)
+{
+    // this code might have bug, but as it will removed in next release...
+    size_t offset = pCur - CSphTokenizer_UTF8<IS_QUERY>::m_pBuffer;
+    //if(offset == 0)	return false;
+    //printf("pcur: %s\n", pCur);
+
+    //css::Segmenter* seg = GetSegmenter(m_dictpath.cstr()); //TODO fill blank here
+    {
+        u2 len = 0, symlen = 0;
+        while(m_segoffset < offset) {
+            //tok = (const char*)seg->peekToken(len, symlen);
+            //seg->popToken(len);
+            len = m_tokenlens[m_tokenpos];
+            m_tokenpos ++;
+            m_segoffset += len;
+            //printf("tok: %*.*s, len=%d\t ",len,len,tok, len);
+            if(m_tokenpos >= m_tokenlens.GetLength() || len==0){
+                //break?
+                break;
+            }
+        }
+        /*
+        printf("\n");
+        printf("seg_off %d vs off %d\n", m_segoffset, offset);
+        if(m_segoffset != offset)
+        	printf("seg_pcur: %s\n", pCur);
+        */
+        return (m_segoffset == offset);
+    } //end if seg
+    return true;
+}
+
+template < bool IS_QUERY >
+BYTE *	CSphTokenizer_UTF8MMSeg<IS_QUERY>::GetToken ()
+{
+    //return CSphTokenizer_UTF8<IS_QUERY>::GetToken();
+    m_iLastTokenLenMMSeg = 0;
+    //BYTE* tok = CSphTokenizer_UTF8::GetToken();
+    while(!IsSegment(CSphTokenizer_UTF8<IS_QUERY>::m_pCur) || m_pAccumSeg == m_sAccumSeg)
+    {
+        BYTE* tok = CSphTokenizer_UTF8<IS_QUERY>::GetToken();
+        //printf("utf8_token: %s \t ", tok);
+        if(!tok){
+            m_iLastTokenLenMMSeg = 0;
+            return NULL;
+        }
+
+        int token_buf_len = strlen((const char*)tok);
+
+        if(m_pAccumSeg == m_sAccumSeg)
+            m_segToken = (char*)CSphTokenizer_UTF8<IS_QUERY>::m_pTokenStart;
+
+        if ( (m_pAccumSeg - m_sAccumSeg)<SPH_MAX_WORD_LEN )  {
+            ::memcpy(m_pAccumSeg, tok, token_buf_len);
+            m_pAccumSeg += token_buf_len;
+            m_iLastTokenLenMMSeg += CSphTokenizer_UTF8<IS_QUERY>::GetLastTokenLen();
+        }
+    }
+    {
+        *m_pAccumSeg = 0;
+        //m_iLastTokenBufferLen = m_pAccumSeg - m_sAccumSeg;
+        m_pAccumSeg = m_sAccumSeg;
+
+        return m_sAccumSeg;
+    }
+}
+
+template < bool IS_QUERY >
+ISphTokenizer * CSphTokenizer_UTF8MMSeg<IS_QUERY>::Clone ( ESphTokenizerClone eMode ) const
+{
+    CSphTokenizerBase * pClone;
+    if ( eMode!=SPH_CLONE_INDEX ) {
+        pClone = (new CSphTokenizer_UTF8MMSeg<true>())->SetDictPath(m_dictpath.cstr());
+    }else{
+        pClone = (new CSphTokenizer_UTF8MMSeg<false>())->SetDictPath(m_dictpath.cstr());
+    }
+    pClone->CloneBase ( this, eMode );
+    return pClone;
+}
+
+template < bool IS_QUERY >
+const BYTE* CSphTokenizer_UTF8MMSeg<IS_QUERY>::GetThesaurus(BYTE * sBuffer, int iLength )
+{
+    css::Segmenter* seg = GetSegmenter(m_dictpath.cstr());
+    if(seg)
+        return (const BYTE*)seg->thesaurus((const char*)sBuffer, iLength);
+    return NULL;
+}
+
+#endif
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -9658,6 +9947,7 @@ void CSphIndex::SetupQueryTokenizer()
 	// create and setup a master copy of query time tokenizer
 	// that we can then use to create lightweight clones
 	SafeDelete ( m_pQueryTokenizer );
+    m_pTokenizer->ReloadSegDictionary();
 	m_pQueryTokenizer = m_pTokenizer->Clone ( SPH_CLONE_QUERY );
 	if ( IsStarDict() )
 	{
@@ -25810,6 +26100,7 @@ void CSphSource::Setup ( const CSphSourceSettings & tSettings )
 	m_bIndexExactWords = tSettings.m_bIndexExactWords;
 	m_iOvershortStep = Min ( Max ( tSettings.m_iOvershortStep, 0 ), 1 );
 	m_iStopwordStep = Min ( Max ( tSettings.m_iStopwordStep, 0 ), 1 );
+    m_bDebugDump = tSettings.m_bDebugDump; //coreseek: assign debug charset setting
 	m_bIndexSP = tSettings.m_bIndexSP;
 	m_dPrefixFields = tSettings.m_dPrefixFields;
 	m_dInfixFields = tSettings.m_dInfixFields;
@@ -26414,11 +26705,28 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 	while ( ( m_iMaxHits==0 || m_tHits.m_dData.GetLength()+BUILD_REGULAR_HITS_COUNT<m_iMaxHits )
 		&& ( sWord = m_pTokenizer->GetToken() )!=NULL )
 	{
+        //FIXME: dump token to console --coreseek
+        //debug dump
+        if(m_pTokenizer->DumpToken()) {
+            printf("%s_x ", sWord); // make the same as pre-tokenized text.
+        }
+
+        // fix sWork if in pre-tokenized mode.
+        int iBytes = strlen ( (const char*)sWord );
+        bool bAdvancePos = true;
+        if(m_pTokenizer->IsPreTokenized()) {
+            // m_tState.m_iHitPos should not be 0, add for some stupid pass a none _x token at the very beginning.
+            if(sWord[iBytes-1] != 'x' && m_tState.m_iHitPos)
+                bAdvancePos = false;  // not an advance token.
+            sWord[iBytes-2] = '\0'; // change token_x   -> token\0x
+            iBytes -= 2;    // decrease length
+        }
+
 		m_pDict->SetApplyMorph ( m_pTokenizer->GetMorphFlag() );
 
 		int iLastBlendedStart = TrackBlendedStart ( m_pTokenizer, iBlendedHitsStart, m_tHits.Length() );
 
-		if ( !bPayload )
+        if ( !bPayload && bAdvancePos)
 		{
 			HITMAN::AddPos ( &m_tState.m_iHitPos, m_tState.m_iBuildLastStep + m_pTokenizer->GetOvershortCount()*m_iOvershortStep );
 			if ( m_pTokenizer->GetBoundary() )
@@ -26430,7 +26738,7 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 
 		if ( bGlobalPartialMatch )
 		{
-			int iBytes = strlen ( (const char*)sWord );
+            //int iBytes = strlen ( (const char*)sWord );
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD;
 			sBuf[iBytes+1] = '\0';
@@ -26440,7 +26748,7 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 		ESphTokenMorph eMorph = m_pTokenizer->GetTokenMorph();
 		if ( m_bIndexExactWords && eMorph!=SPH_TOKEN_MORPH_GUESS )
 		{
-			int iBytes = strlen ( (const char*)sWord );
+            //int iBytes = strlen ( (const char*)sWord );
 			memcpy ( sBuf + 1, sWord, iBytes );
 			sBuf[0] = MAGIC_WORD_HEAD_NONSTEMMED;
 			sBuf[iBytes+1] = '\0';
@@ -26476,6 +26784,27 @@ void CSphSource_Document::BuildRegularHits ( SphDocID_t uDocid, bool bPayload, b
 				m_tHits.AddHit ( uDocid, m_pDict->GetWordIDNonStemmed ( sBuf ), m_tState.m_iHitPos );
 		} else
 			m_tState.m_iBuildLastStep = m_iStopwordStep;
+#if USE_MMSEG
+        // works only when mmseg is on.
+        // zh_cn only GetThesaurus
+        {
+            int iBytes = strlen ( (const char*)sWord );
+            const BYTE* tbuf_ptr = m_pTokenizer->GetThesaurus(sWord, iBytes);
+            if(tbuf_ptr) {
+                while(*tbuf_ptr) {
+                    size_t len = strlen((const char*)tbuf_ptr);
+                    SphWordID_t iWord = m_pDict->GetWordID ( tbuf_ptr ,len , true);
+                    if ( iWord ) {
+                        m_tHits.AddHit ( uDocid, iWord, m_tState.m_iHitPos );
+                        // mmseg; do not inc step for we are in 'one' hit.
+                        //m_tState.m_iBuildLastStep = m_pTokenizer->TokenIsBlended() ? 0 : 1;
+                    }
+                    tbuf_ptr += len + 1; //move next
+                }
+            }
+            //end if buf
+        }//end GetThesaurus
+#endif
 	}
 
 	m_tState.m_bProcessingHits = ( sWord!=NULL );
