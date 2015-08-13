@@ -39,6 +39,8 @@ extern "C"
 #include <limits.h>
 #include <locale.h>
 
+#include "py_layer.h"
+
 #define SEARCHD_BACKLOG			5
 #define SPHINXAPI_PORT			9312
 #define SPHINXQL_PORT			9306
@@ -1834,6 +1836,9 @@ void Shutdown ()
 		sphShutdownWordforms ();
 		sphShutdownGlobalIDFs ();
 		sphAotShutdown ();
+#if USE_PYTHON
+                cftShutdown(); //clean up
+#endif
 	}
 
 	ARRAY_FOREACH ( i, g_dListeners )
@@ -22927,6 +22932,19 @@ int WINAPI ServiceMain ( int argc, char **argv )
 	if ( !sphInitCharsetAliasTable ( sError ) )
 		sphFatal ( "failed to init charset alias table: %s", sError.cstr() );
 
+    /////////////////////
+    // init python layer
+    ////////////////////
+    if ( hConf("python") && hConf["python"]("python") )
+    {
+        CSphConfigSection & hPython = hConf["python"]["python"];
+#if USE_PYTHON
+        if(!cftInitialize(hPython))
+            sphDie ( "Python layer's initiation failed.");
+#else
+        sphDie ( "Python layer defined, but search does Not supports python. used --with-python to recompile.");
+#endif
+    }
 	////////////////////////
 	// stop running searchd
 	////////////////////////

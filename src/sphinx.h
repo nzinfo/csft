@@ -32,6 +32,8 @@
 
 	#define UNALIGNED_RAM_ACCESS	1
 	#define USE_LITTLE_ENDIAN		1
+    #define USE_PYTHON              1       /// whether to compile Python support, NOTE:Coreseek Fork, this option must be on!
+    #define USE_PYTHON_DEBUG        0       ///link to _d.lib or not
 #else
 	#define USE_WINDOWS		0	/// whether to compile for Windows
 #endif
@@ -208,7 +210,12 @@ inline const	DWORD *	STATIC2DOCINFO ( const DWORD * pAttrs )	{ return STATIC2DOC
 #define SPH_MAX_FILENAME_LEN	512
 #define SPH_MAX_FIELDS			256
 
+#if USE_PYTHON
+#define CORESEEK_BANNER			"Coreseek FullText Search 5.1 (ext:Python)\nCopyright (c) 2008-2015, Beijing Choice Software Technologies Inc (http://www.coreseek.com)\n\n"
+#else
 #define CORESEEK_BANNER			"Coreseek FullText Search 5.1 \nCopyright (c) 2008-2015, Beijing Choice Software Technologies Inc (http://www.coreseek.com)\n\n"
+#endif
+
 #define SPHINX_BANNER2 "" CORESEEK_BANNER "" SPHINX_BANNER_ORIG
 #define SPHINX_BANNER SPHINX_BANNER2
 

@@ -353,6 +353,7 @@ static KeyDesc_t g_dKeysSource[] =
 	{ "unpack_mysqlcompress",	KEY_LIST, NULL },
 	{ "unpack_mysqlcompress_maxsize", 0, NULL },
 	{ "odbc_dsn",				0, NULL },
+    { "name",					0, NULL },              // -coreseek -pysource
 	{ "sql_joined_field",		KEY_LIST, NULL },
 	{ "sql_attr_string",		KEY_LIST, NULL },
 	{ "sql_attr_str2wordcount", KEY_REMOVED | KEY_LIST, NULL },
@@ -563,8 +564,10 @@ static KeyDesc_t g_dKeysCommon[] =
 	{ "rlp_max_batch_size",		0, NULL },
 	{ "rlp_max_batch_docs",		0, NULL },
 	{ "plugin_dir",				0, NULL },
+    { "python_path",            KEY_LIST, NULL },   // -coreseek -pysource
 	{ NULL,						0, NULL }
 };
+
 
 struct KeySection_t
 {
@@ -579,7 +582,7 @@ static KeySection_t g_dConfigSections[] =
 	{ "index",		g_dKeysIndex,	true },
 	{ "indexer",	g_dKeysIndexer,	false },
 	{ "searchd",	g_dKeysSearchd,	false },
-	{ "common",		g_dKeysCommon,	false },
+    { "common",		g_dKeysCommon,	false },
 	{ NULL,			NULL,			false }
 };
 
@@ -683,7 +686,16 @@ bool CSphConfigParser::ValidateKey ( const char * sKey )
 	// check if the key is known
 	while ( pDesc->m_sKey && strcasecmp ( pDesc->m_sKey, sKey ) )
 		pDesc++;
-	if ( !pDesc->m_sKey )
+    // in py-source mode, user can append custom key.
+    CSphConfigSection & tSec = m_tConf[m_sSectionType][m_sSectionName];
+    bool bNoCheck = false;
+    // This piece cause that type assignment must be the 1st line in source section.
+    if(tSec.Exists ( "type") ) {
+        bNoCheck = (tSec["type"].strval().Begins("python") &&  tSec["type"].strval().Length() == 6);
+    }
+    // -coreseek -pysource
+
+    if ( !bNoCheck && !pDesc->m_sKey )
 	{
 		snprintf ( m_sError, sizeof(m_sError), "unknown key name '%s'", sKey );
 		return false;
