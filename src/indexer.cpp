@@ -24,6 +24,8 @@
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
+#include "py_layer.h"
+#include "py_iface.h"
 
 #if USE_WINDOWS
 	#define snprintf	_snprintf
@@ -39,6 +41,7 @@
 
 static bool			g_bQuiet		= false;
 static bool			g_bProgress		= true;
+static bool			g_bProgressForce		= false;
 static bool			g_bPrintQueries	= false;
 static bool			g_bKeepAttrs	= false;
 
@@ -878,6 +881,24 @@ CSphSource * SpawnSource ( const CSphConfigSection & hSource, const char * sSour
 		return SpawnSourceMySQL ( hSource, sSourceName, bBatchedRLP );
 	#endif
 
+#if USE_PYTHON
+    if ( hSource["type"]=="python_legacy") {
+        CSphSource* ptr;
+        if(SpawnSourcePython ( hSource, sSourceName, &ptr)) {
+            return ptr;
+        }else
+            return NULL;
+    }
+
+    if ( hSource["type"]=="python") {
+        CSphSource* ptr;
+        if(SpawnSourcePython2 ( hSource, sSourceName, &ptr)) {
+            return ptr;
+        }else
+            return NULL;
+    }
+#endif
+
 	#if USE_ODBC
 	if ( hSource["type"]=="odbc" )
 		return SpawnSourceODBC ( hSource, sSourceName, bBatchedRLP );
@@ -1687,7 +1708,11 @@ int main ( int argc, char ** argv )
 		{
 			g_bProgress = false;
 
-		} else if ( strcasecmp ( argv[i], "--all" )==0 )
+        } else if ( strcasecmp ( argv[i], "--progress" )==0 )
+        {
+            g_bProgressForce = true;
+
+        } else if ( strcasecmp ( argv[i], "--all" )==0 )
 		{
 			bIndexAll = true;
 
@@ -1750,8 +1775,8 @@ int main ( int argc, char ** argv )
 	if ( !g_bQuiet && sizeof(SphDocID_t)==4 )
 		fprintf ( stdout, "32-bit IDs are deprecated, rebuild your binaries with --enable-id64" );
 
-	if ( !isatty ( fileno(stdout) ) )
-		g_bProgress = false;
+    if (!g_bProgressForce && !isatty ( fileno(stdout) ) )
+        g_bProgress = false;
 
 	if ( i!=argc || argc<2 )
 	{
@@ -1883,6 +1908,20 @@ int main ( int argc, char ** argv )
 
 	sphConfigureCommon ( hConf );
 
+    /////////////////////
+    // init python layer
+    ////////////////////
+    if ( hConf("common") && hConf["common"]("common") )
+    {
+#if USE_PYTHON
+        CSphConfigSection & hPython = hConf["common"]["common"];
+        if(!cftInitialize(hPython))
+            sphDie ( "Python layer's initiation failed.");
+#else
+        sphDie ( "Python layer defined, but indexer does Not supports python. used --enbale-python to recompile.");
+#endif
+    }
+
 	/////////////////////
 	// index each index
 	////////////////////
@@ -1979,6 +2018,10 @@ int main ( int argc, char ** argv )
 
 #if SPH_DEBUG_LEAKS
 	sphAllocsStats ();
+#endif
+
+#if USE_PYTHON
+    cftShutdown(); //clean up
 #endif
 
 	return bIndexedOk ? 0 : 1;

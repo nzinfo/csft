@@ -1,0 +1,1 @@
+cython py_csft.pyx --cplus -o py_csft.cxx

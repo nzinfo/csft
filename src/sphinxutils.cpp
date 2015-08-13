@@ -406,7 +406,7 @@ static KeyDesc_t g_dKeysIndex[] =
 	{ "wordforms",				KEY_LIST, NULL },
 	{ "embedded_limit",			0, NULL },
 	{ "min_word_len",			0, NULL },
-	{ "charset_type",			KEY_REMOVED, NULL },
+	{ "charset_type",			0, NULL }, //coreseek remove charset_type warning..
 	{ "charset_table",			0, NULL },
 	{ "ignore_chars",			0, NULL },
 	{ "min_prefix_len",			0, NULL },
@@ -691,7 +691,10 @@ bool CSphConfigParser::ValidateKey ( const char * sKey )
     bool bNoCheck = false;
     // This piece cause that type assignment must be the 1st line in source section.
     if(tSec.Exists ( "type") ) {
-        bNoCheck = (tSec["type"].strval().Begins("python") &&  tSec["type"].strval().Length() == 6);
+        // two valid type with `python` prefix,
+        // - python_legacy : original python source interface writen by hand.
+        // - python : newly designed interface, using cython.
+        bNoCheck = (tSec["type"].strval().Begins("python"));
     }
     // -coreseek -pysource
 
@@ -708,7 +711,7 @@ bool CSphConfigParser::ValidateKey ( const char * sKey )
 				sKey, m_sFileName.cstr(), m_iLine, pDesc->m_sExtra );
 
 	// warn about list/non-list keys
-	if (!( pDesc->m_iFlags & KEY_LIST ))
+	if ( !bNoCheck && !( pDesc->m_iFlags & KEY_LIST ))
 	{
 		CSphConfigSection & tSec = m_tConf[m_sSectionType][m_sSectionName];
 		if ( tSec(sKey) && !tSec[sKey].m_bTag )

@@ -7,6 +7,8 @@
 #include "sphinxutils.h"
 
 #include "py_layer.h"
+#include "py_source.h"
+#include "py_csft.h"
 
 #if USE_PYTHON
 
@@ -19,12 +21,12 @@
 
 bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSourceName, CSphSource** pSrcPython)
 {
-	assert ( hSource["type"]=="python" );
+    assert ( hSource["type"]=="python_legacy" );
 
 	LOC_CHECK ( hSource, "name", "in source '%s'.", sSourceName );
 	
     * pSrcPython = NULL;
-    /*
+
 	CSphSource_Python * pPySource = new CSphSource_Python ( sSourceName );
 	if ( !pPySource->Setup ( hSource ) ) {
 		if(pPySource->m_sError.Length())
@@ -32,9 +34,9 @@ bool SpawnSourcePython ( const CSphConfigSection & hSource, const char * sSource
 		SafeDelete ( pPySource );
 	}
 
-	pSrcPython = pPySource;
-    */
-    return false;
+    * pSrcPython = pPySource;
+
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -55,17 +57,17 @@ int init_python_layer_helpers()
 	//helper function to append path to env.
 	nRet = PyRun_SimpleString("\n\
 def __coreseek_set_python_path(sPath):\n\
-	sPaths = [x.lower() for x in sys.path]\n\
-	sPath = os.path.abspath(sPath)\n\
-	if sPath not in sPaths:\n\
-		sys.path.append(sPath)\n\
-	#print sPaths\n\
+    sPaths = [x.lower() for x in sys.path]\n\
+    sPath = os.path.abspath(sPath)\n\
+    if sPath not in sPaths:\n\
+        sys.path.append(sPath)\n\
+    #print sPaths\n\
 \n");
 	if(nRet) return nRet;
 	// helper function to find data source
 	nRet = PyRun_SimpleString("\n\
 def __coreseek_find_pysource(sName): \n\
-    pos = sName.find('.') \n\
+    pos = sName.rfind('.') \n\
     module_name = sName[:pos]\n\
     try:\n\
         exec ('%s=__import__(\"%s\")' % (module_name, module_name))\n\
@@ -82,56 +84,40 @@ def __coreseek_find_pysource(sName): \n\
 bool	cftInitialize( const CSphConfigSection & hPython)
 {
 #if USE_PYTHON
-	if (!Py_IsInitialized()) {
-		Py_Initialize();
-		//PyEval_InitThreads();
+    CSphString progName = "csft";
+    Py_SetProgramName((char*)progName.cstr());
 
-		if (!Py_IsInitialized()) {
-			return false;
-		}
-		int nRet = init_python_layer_helpers();
-		if(nRet != 0) {
-			PyErr_Print();
-			PyErr_Clear();
-			return false;
-		}
-	}
-	//init paths
-	PyObject * main_module = NULL;
-	//try //to disable -GX
-	{
-		
-		CSphVector<CSphString>	m_dPyPaths;
-		LOC_GETAS(hPython, m_dPyPaths, "path");
-		///XXX: append system pre-defined path here.
-		{
-			main_module = PyImport_AddModule("__main__");  //+1
-			//init paths
-			PyObject* pFunc = PyObject_GetAttrString(main_module, "__coreseek_set_python_path");
+    if (!Py_IsInitialized()) {
+        Py_InitializeEx(0);
+        //PyEval_InitThreads();
 
-			if(pFunc && PyCallable_Check(pFunc)){
-				ARRAY_FOREACH ( i, m_dPyPaths )
-				{
-					PyObject* pArgsKey  = Py_BuildValue("(s)",m_dPyPaths[i].cstr() );
-					PyObject* pResult = PyEval_CallObject(pFunc, pArgsKey);
-					Py_XDECREF(pArgsKey);
-					Py_XDECREF(pResult);
-				}
-			} // end if
-			if (pFunc)
-				Py_XDECREF(pFunc);
-			//Py_XDECREF(main_module); //no needs to decrease refer to __main__ module, else will got a crash!
-		}
-	}/*
-	catch (...) {
-		PyErr_Print();
-		PyErr_Clear(); //is function can be undefined
-		Py_XDECREF(main_module);
-		return false;
-	}*/
-	///XXX: hook the ext interface here.
-	
-    //initCsfHelper(); //the Csf
+        if (!Py_IsInitialized()) {
+            return false;
+        }
+        // init extension.
+        initpy_csft();
+        // init legacy helper
+        init_python_layer_helpers();
+    }
+
+    // init paths
+    {
+
+        CSphVector<CSphString>	m_dPyPaths;
+        LOC_GETAS(hPython, m_dPyPaths, "python_path");
+        ///XXX: append system pre-defined path here.
+        ARRAY_FOREACH ( i, m_dPyPaths )
+        {
+           __setPythonPath( m_dPyPaths[i].cstr() );
+        }
+    }
+    // check the demo[debug] object creation.
+    if( hPython("__debug_object_class") )
+    {
+        CSphString demoClassName = hPython.GetStr ( "__debug_object_class" );
+        PyObject* m_pTypeObj = __getPythonClassByName(demoClassName.cstr());
+        printf("The python type object's address %p .\n", m_pTypeObj);
+    }
 #endif
 	return true;
 }
