@@ -6077,10 +6077,14 @@ CSphTokenizer_UTF8<IS_QUERY>::CSphTokenizer_UTF8 ()
 
     // BEGIN CJK There is no case folding, should do this in remote tokenizer.
     // Here just make CJK Charactor will remain. --coreseek
+    // 4e00 - 9fff CJK unified ideographs
+    // 3000 - 303f CJK symbols and punctuation
+    // 3040 - 30ff Hiragana/Katagana
+    // ff00 - ffff half/fullwidth forms
     CSphVector<CSphRemapRange> dRemaps;
-    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9FFF, 0x4e00 ) );
     dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
-    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x30FF, 0x3000 ) );
 
     m_tLC.AddRemaps ( dRemaps,
         FLAG_CODEPOINT_NGRAM ); // !COMMIT support other n-gram lengths than 1
@@ -6562,9 +6566,9 @@ CSphTokenizer_UTF8MMSeg<IS_QUERY>::CSphTokenizer_UTF8MMSeg ()
 {
     //over ride charmap
     CSphVector<CSphRemapRange> dRemaps;
-    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9fff, 0x4e00 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x4e00, 0x9FFF, 0x4e00 ) );
     dRemaps.Add ( CSphRemapRange ( 0xFF00, 0xFFFF, 0xFF00 ) );
-    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x303F, 0x3000 ) );
+    dRemaps.Add ( CSphRemapRange ( 0x3000, 0x30FF, 0x3000 ) );
 
     CSphTokenizer_UTF8<IS_QUERY>::m_tLC.AddRemaps ( dRemaps,
         FLAG_CODEPOINT_NGRAM | FLAG_CODEPOINT_SPECIAL); // !COMMIT support other n-gram lengths than 1
